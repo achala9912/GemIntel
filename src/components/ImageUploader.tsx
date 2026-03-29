@@ -1,0 +1,95 @@
+'use client';
+
+import { useState, useRef } from 'react';
+import styles from './ImageUploader.module.css';
+
+interface ImageUploaderProps {
+  onAnalyze: () => void;
+  isAnalyzing: boolean;
+  buttonText?: string;
+}
+
+export default function ImageUploader({ onAnalyze, isAnalyzing, buttonText = "Analyze Gem" }: ImageUploaderProps) {
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setImagePreview(url);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      const url = URL.createObjectURL(file);
+      setImagePreview(url);
+    }
+  };
+
+  const clearImage = () => {
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  return (
+    <div className={styles.uploaderContainer}>
+      {!imagePreview ? (
+        <div 
+          className={styles.dropzone}
+          onClick={() => fileInputRef.current?.click()}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+        >
+          <div className={styles.icon}>📸</div>
+          <h3>Upload Gemstone Image</h3>
+          <p>Drag and drop or click to browse</p>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileChange} 
+            accept="image/*" 
+            hidden 
+          />
+        </div>
+      ) : (
+        <div className={`${styles.previewContainer} animate-fade-in`}>
+          <div className={styles.imageWrapper}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imagePreview} alt="Gemstone Preview" className={styles.previewImage} />
+            {!isAnalyzing && (
+              <button className={styles.clearBtn} onClick={clearImage}>✕</button>
+            )}
+            
+            {isAnalyzing && (
+              <div className={styles.scanningOverlay}>
+                <div className={styles.scanLine}></div>
+              </div>
+            )}
+          </div>
+          
+          <button 
+            className={`btn-primary ${styles.analyzeBtn}`} 
+            onClick={onAnalyze}
+            disabled={isAnalyzing}
+          >
+            {isAnalyzing ? (
+              <>
+                <span className="spinner"></span> Processing AI...
+              </>
+            ) : buttonText}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
