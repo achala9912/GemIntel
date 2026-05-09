@@ -143,6 +143,19 @@
   margin-top: 1rem;
 }
 
+.breakdownGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.breakdownCard {
+  padding: 1.25rem;
+  border-radius: var(--border-radius-lg);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 .threeDContainer {
   width: 100%;
   aspect-ratio: 16/9;
