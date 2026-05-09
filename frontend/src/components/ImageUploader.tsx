@@ -4,13 +4,14 @@ import { useState, useRef } from 'react';
 import styles from './ImageUploader.module.css';
 
 interface ImageUploaderProps {
-  onAnalyze: () => void;
+  onAnalyze: (file?: File | null) => void;
   isAnalyzing: boolean;
   buttonText?: string;
 }
 
 export default function ImageUploader({ onAnalyze, isAnalyzing, buttonText = "Analyze Gem" }: ImageUploaderProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -18,6 +19,7 @@ export default function ImageUploader({ onAnalyze, isAnalyzing, buttonText = "An
     if (file) {
       const url = URL.createObjectURL(file);
       setImagePreview(url);
+      setSelectedFile(file);
     }
   };
 
@@ -31,11 +33,13 @@ export default function ImageUploader({ onAnalyze, isAnalyzing, buttonText = "An
     if (file && file.type.startsWith('image/')) {
       const url = URL.createObjectURL(file);
       setImagePreview(url);
+      setSelectedFile(file);
     }
   };
 
   const clearImage = () => {
     setImagePreview(null);
+    setSelectedFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -79,7 +83,7 @@ export default function ImageUploader({ onAnalyze, isAnalyzing, buttonText = "An
           
           <button 
             className={`btn-primary ${styles.analyzeBtn}`} 
-            onClick={onAnalyze}
+            onClick={() => onAnalyze(selectedFile)}
             disabled={isAnalyzing}
           >
             {isAnalyzing ? (
