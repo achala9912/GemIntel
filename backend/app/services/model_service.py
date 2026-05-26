@@ -28,7 +28,12 @@ def load_all_models():
     gem_model = pipeline_bundle["model"]
     scaler = pipeline_bundle["scaler"]
     label_encoder = pipeline_bundle["label_encoder"]
-    print("✅ All assets loaded successfully.")
+    
+    # Load AI filter model
+    from app.services.ai_filter_service import load_ai_filter_model
+    load_ai_filter_model()
+    
+    print("[Assets] All assets loaded successfully.")
 
 def run_inference(base_image: Image.Image):
     """Executes both models, calculates weighted ensemble, and returns payload."""
@@ -52,17 +57,22 @@ def run_inference(base_image: Image.Image):
     xgb_raw_features = prepare_for_xgboost(base_image)
     scaled_features = scaler.transform(xgb_raw_features)
     
-    # CRITICAL CHANGE: Use predict_proba instead of predict
     xgb_probs = gem_model.predict_proba(scaled_features)[0] 
     
     xgb_pred_idx = int(np.argmax(xgb_probs))
     xgb_label = label_encoder.inverse_transform([xgb_pred_idx])[0]
 
     # --- THE ENSEMBLE ---
-    # Calculate the weighted average of probabilities for both classes [Class 0, Class 1]
-    ensemble_probs = (W_EFF * eff_probs) + (W_XGB * xgb_probs)
     
-    # Find the winning class from the combined probabilities
+    # Calculate the weighted average of probabilities for both classes [Class 0, Class 1]
+    # Weighted probabilities for each class
+    final_natural = (W_EFF * eff_probs[0]) + (W_XGB * xgb_probs[0])
+    final_synthetic = (W_EFF * eff_probs[1]) + (W_XGB * xgb_probs[1])
+
+    # Combined probability array
+    ensemble_probs = np.array([final_natural, final_synthetic])
+
+    # Final prediction
     final_pred_idx = int(np.argmax(ensemble_probs))
     final_label = label_encoder.inverse_transform([final_pred_idx])[0]
     final_confidence = float(ensemble_probs[final_pred_idx])

@@ -11,3 +11,10 @@ GEM_PIPELINE_PATH = os.path.join(MODELS_DIR, "xgboost_model.pkl")
 # Ensemble Weights
 W_EFF = 0.6
 W_XGB = 0.4
+
+# AI Filter Configuration
+AI_FILTER_MODEL_PATH = os.path.join(MODELS_DIR, "ai-filter.pt")
+AI_FILTER_THRESHOLD = 0.6
+W_FREQ = 0.3
+W_CNN = 0.4
+W_META = 0.3

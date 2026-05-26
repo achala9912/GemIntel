@@ -20,7 +20,7 @@ async def startup_event():
     try:
         load_all_models()
     except Exception as e:
-        print(f"❌ Critical error loading models: {e}")
+        print(f"[Error] Critical error loading models: {e}")
 
 # Include all routes
 app.include_router(router)
