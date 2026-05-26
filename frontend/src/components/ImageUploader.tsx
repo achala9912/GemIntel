@@ -6,10 +6,16 @@ import styles from './ImageUploader.module.css';
 interface ImageUploaderProps {
   onAnalyze: (file?: File | null) => void;
   isAnalyzing: boolean;
+  analysisStatus?: string | null;
   buttonText?: string;
 }
 
-export default function ImageUploader({ onAnalyze, isAnalyzing, buttonText = "Analyze Gem" }: ImageUploaderProps) {
+export default function ImageUploader({ 
+  onAnalyze, 
+  isAnalyzing, 
+  analysisStatus = null,
+  buttonText = "Analyze Gem" 
+}: ImageUploaderProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -80,6 +86,15 @@ export default function ImageUploader({ onAnalyze, isAnalyzing, buttonText = "An
               </div>
             )}
           </div>
+          {isAnalyzing && (
+            <div className={styles.statusStepperContainer}>
+              <div className={styles.statusSpinner}></div>
+              <div className={styles.statusTextContainer}>
+                <div className={styles.statusTitle}>GemIntel Pipeline</div>
+                <div className={styles.statusDescription}>{analysisStatus || 'Analyzing...'}</div>
+              </div>
+            </div>
+          )}
           
           <button 
             className={`btn-primary ${styles.analyzeBtn}`} 
@@ -88,7 +103,7 @@ export default function ImageUploader({ onAnalyze, isAnalyzing, buttonText = "An
           >
             {isAnalyzing ? (
               <>
-                <span className="spinner"></span> Processing AI...
+                <span className="spinner"></span> Analyzing...
               </>
             ) : buttonText}
           </button>
