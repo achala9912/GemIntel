@@ -1,6 +1,9 @@
 import io
 from PIL import Image
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from typing import List
+import cv2
+import numpy as np
 from app.services.model_service import run_inference
 
 router = APIRouter()
@@ -36,6 +39,53 @@ async def authenticate_gem(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/reconstruct")
+async def reconstruct_gem(
+    files: List[UploadFile] = File(...),
+    gem_type: str = Form(...),
+    weight: float = Form(...)
+):
+    try:
+        # Decode files to CV2 images
+        images = []
+        for file in files:
+            file_bytes = await file.read()
+            nparr = np.frombuffer(file_bytes, np.uint8)
+            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            if img is not None:
+                images.append(img)
+                
+        if len(images) < 10:
+            raise HTTPException(status_code=400, detail="A minimum of 10 side-view images is required for reconstruction.")
+            
+        from app.services.reconstruction_service import (
+            reconstruct_visual_hull, 
+            extract_metrics, 
+            predict_cut_and_yield, 
+            generate_mesh
+        )
+        
+        # Reconstruct voxel grid (size 128)
+        voxels = reconstruct_visual_hull(images, size=128)
+        
+        # Calculate volume metrics and ratios
+        metrics = extract_metrics(voxels, gem_type, weight)
+        
+        # Run RF models to estimate cut name and yield
+        predictions = predict_cut_and_yield(metrics)
+        
+        # Generate 3D marching cubes mesh
+        mesh = generate_mesh(voxels)
+        
+        return {
+            "status": "success",
+            "metrics": metrics,
+            "predictions": predictions,
+            "mesh": mesh
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Visual hull reconstruction failed: {str(e)}")
+
 @router.get("/health")
 def health_check():
-    return {"status": "healthy"}
+    return {"status": "healthy"}
