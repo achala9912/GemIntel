@@ -3,12 +3,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router
 from app.services.model_service import load_all_models
 
+import os
+
 app = FastAPI(title="Dual-Branch Gem Authentication API")
 
-# Setup CORS
+# Setup CORS - Allow local development by default and custom origins via env variable
+origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
+env_origins = os.getenv("ALLOWED_ORIGINS")
+if env_origins:
+    origins.extend([o.strip() for o in env_origins.split(",") if o.strip()])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"], 
+    allow_origins=origins, 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
