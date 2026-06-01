@@ -1,0 +1,44 @@
+name: Sync to Hugging Face Spaces
+
+on:
+  push:
+    branches: [hf-deploy]
+    paths:
+      - 'backend/**' # Only trigger if files in backend folder change
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          lfs: true # Download LFS files if any exist on GitHub
+
+      - name: Push to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          # Configure git author info
+          git config --global user.email "deploy-action@github.com"
+          git config --global user.name "GitHub Deploy Action"
+          
+          # Navigate to backend directory and initialize temporary git repository
+          cd backend
+          git init
+          git checkout -b main
+          
+          # Configure Git LFS in the temporary repo so Hugging Face accepts large models
+          git lfs install
+          git lfs track "models/*.pth"
+          git lfs track "models/*.pt"
+          git lfs track "models/*.pkl"
+          git add .gitattributes
+          
+          # Add and commit backend files
+          git add .
+          git commit -m "Sync from GitHub Action [skip ci]"
+          
+          # Force push to the Hugging Face Space repository
+          git push -f https://AcHa99:$HF_TOKEN@huggingface.co/spaces/AcHa99/gemintel-api main
