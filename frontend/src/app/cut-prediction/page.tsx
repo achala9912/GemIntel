@@ -3,15 +3,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-
-interface ProjectedPoint {
-  x: number;
-  y: number;
-  z: number;
-  origX: number;
-  origY: number;
-  origZ: number;
-}
+import * as THREE from 'three';
 
 const gemstoneOptions = [
   { value: 'Blue Sapphire', label: 'Blue Sapphire', color: 'bg-blue-500', desc: 'Corundum mineral family' },
@@ -252,201 +244,170 @@ export default function CutPrediction() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Custom 3D render loop
+  // Three.js WebGL Scene setup
   useEffect(() => {
-    if (!showResult || !canvasRef.current || !meshData) return;
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!showResult || !canvas || !meshData) return;
     
-    let animationId: number;
+    // Set up Scene, Camera, and WebGLRenderer
+    const scene = new THREE.Scene();
+    scene.background = null; // Transparent background to show card backdrop
     
-    const resizeCanvas = () => {
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * (window.devicePixelRatio || 1);
-      canvas.height = rect.height * (window.devicePixelRatio || 1);
+    const rect = canvas.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    
+    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 10);
+    camera.position.z = 3.0 / zoomScale;
+    
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvas,
+      alpha: true,
+      antialias: true,
+      preserveDrawingBuffer: true
+    });
+    renderer.setPixelRatio(window.devicePixelRatio || 1);
+    renderer.setSize(width, height);
+    renderer.shadowMap.enabled = true;
+    
+    // Lights Setup
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
+    scene.add(ambientLight);
+    
+    const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.0);
+    dirLight1.position.set(2, 4, 3);
+    scene.add(dirLight1);
+    
+    const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.3);
+    dirLight2.position.set(-2, -4, -3);
+    scene.add(dirLight2);
+    
+    const pointLight = new THREE.PointLight(0xffffff, 0.8, 10);
+    pointLight.position.set(0, 0, 2);
+    scene.add(pointLight);
+
+    // Group container for rotation
+    const modelGroup = new THREE.Group();
+    scene.add(modelGroup);
+
+    // Build BufferGeometry dynamically from meshData
+    const geometry = new THREE.BufferGeometry();
+    const verticesArr = new Float32Array(meshData.vertices.flat());
+    geometry.setAttribute('position', new THREE.BufferAttribute(verticesArr, 3));
+    
+    const indicesArr = new Uint16Array(meshData.faces.flat());
+    geometry.setIndex(new THREE.BufferAttribute(indicesArr, 1));
+    
+    geometry.computeVertexNormals();
+
+    // Define Gem Specular Colors
+    let gemColor = 0x3b82f6; // Blue Sapphire (Blue)
+    if (gemType === 'Spinel') gemColor = 0xec4899; // Spinel (Pink)
+    if (gemType === 'Topaz') gemColor = 0xf59e0b; // Topaz (Amber)
+
+    // Premium physical refractive gemstone material
+    const shadedMaterial = new THREE.MeshPhysicalMaterial({
+      color: gemColor,
+      roughness: 0.08,
+      metalness: 0.1,
+      transmission: 0.72, // volumetric glass transparency
+      ior: 2.417,          // Index of refraction matching diamond/sapphire closely
+      thickness: 1.8,     // refraction volume thickness
+      specularIntensity: 1.0,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.05,
+      side: THREE.DoubleSide,
+      flatShading: true   // shows faceted gemstone geometry borders clearly!
+    });
+
+    let mainObject: THREE.Object3D;
+
+    if (renderMode === 'shaded') {
+      const mesh = new THREE.Mesh(geometry, shadedMaterial);
+      
+      // Add very subtle wireframe outline overlay to define facets
+      const lineMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.12,
+        side: THREE.DoubleSide
+      });
+      const outline = new THREE.Mesh(geometry, lineMaterial);
+      
+      modelGroup.add(mesh);
+      modelGroup.add(outline);
+      mainObject = mesh;
+    } else if (renderMode === 'wireframe') {
+      const wireframeGeo = new THREE.WireframeGeometry(geometry);
+      const lineMat = new THREE.LineBasicMaterial({
+        color: gemColor,
+        linewidth: 1.5,
+        transparent: true,
+        opacity: 0.8
+      });
+      const lines = new THREE.LineSegments(wireframeGeo, lineMat);
+      
+      // Translucent physical volume fill inside the wireframe
+      const fillMat = new THREE.MeshBasicMaterial({
+        color: gemColor,
+        transparent: true,
+        opacity: 0.07,
+        side: THREE.DoubleSide
+      });
+      const fillMesh = new THREE.Mesh(geometry, fillMat);
+      
+      modelGroup.add(lines);
+      modelGroup.add(fillMesh);
+      mainObject = lines;
+    } else {
+      // Points (particle cloud) mode
+      const pointsMat = new THREE.PointsMaterial({
+        color: gemColor,
+        size: 0.06,
+        transparent: true,
+        opacity: 0.85
+      });
+      const points = new THREE.Points(geometry, pointsMat);
+      modelGroup.add(points);
+      mainObject = points;
+    }
+
+    // Resize Handler
+    const handleResize = () => {
+      if (!canvas) return;
+      const currentRect = canvas.getBoundingClientRect();
+      camera.aspect = currentRect.width / currentRect.height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(currentRect.width, currentRect.height);
     };
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-    
-    const render = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    window.addEventListener('resize', handleResize);
+
+    // Animation loop
+    let animationId: number;
+    const animate = () => {
+      animationId = requestAnimationFrame(animate);
       
-      const width = canvas.width;
-      const height = canvas.height;
-      
-      // Auto-rotation handling
       if (autoRotate && !isDraggingRef.current) {
         rotationRef.current.y += 0.008 * rotationSpeed;
       }
       
-      const pitch = rotationRef.current.x;
-      const yaw = rotationRef.current.y;
+      modelGroup.rotation.x = rotationRef.current.x;
+      modelGroup.rotation.y = rotationRef.current.y;
       
-      const cosX = Math.cos(pitch);
-      const sinX = Math.sin(pitch);
-      const cosY = Math.cos(yaw);
-      const sinY = Math.sin(yaw);
+      camera.position.z = 3.0 / zoomScale;
       
-      // Define Light Vector
-      const lightSource = [0.5, 0.5, -1.0];
-      const lightLen = Math.sqrt(lightSource[0]**2 + lightSource[1]**2 + lightSource[2]**2);
-      const lDir = [lightSource[0]/lightLen, lightSource[1]/lightLen, lightSource[2]/lightLen];
-      
-      // Select base color based on mineral type selection
-      let baseRGB = [59, 130, 246]; // Blue Sapphire (Blue)
-      if (gemType === 'Spinel') baseRGB = [236, 72, 153]; // Spinel (Pink)
-      if (gemType === 'Topaz') baseRGB = [245, 158, 11]; // Topaz (Amber)
-      
-      // Project 3D vertices onto 2D screen
-      const projected: ProjectedPoint[] = meshData.vertices.map((v: number[]) => {
-        // Rotate around Y axis
-        const x1 = v[0] * cosY - v[2] * sinY;
-        const z1 = v[0] * sinY + v[2] * cosY;
-        
-        // Rotate around X axis
-        const y2 = v[1] * cosX - z1 * sinX;
-        const z2 = v[1] * sinX + z1 * cosX;
-        
-        // Perspective projection formula
-        const fov = 3.0;
-        const perspective = fov / (fov + z2);
-        
-        // Bounding scaling
-        const baseScale = Math.min(width, height) * 0.38 * zoomScale;
-        
-        const px = width / 2 + x1 * baseScale * perspective;
-        const py = height / 2 - y2 * baseScale * perspective;
-        
-        return { x: px, y: py, z: z2, origX: x1, origY: y2, origZ: z2 };
-      });
-      
-      if (renderMode === 'points') {
-        projected.forEach((p) => {
-          const alpha = Math.max(0.2, Math.min(1.0, (3.0 - p.z) / 4.0));
-          ctx.fillStyle = `rgba(${baseRGB[0]}, ${baseRGB[1]}, ${baseRGB[2]}, ${alpha})`;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, 3 * zoomScale, 0, 2 * Math.PI);
-          ctx.fill();
-        });
-      } else {
-        // Shaded and Wireframe modes require sorting faces (Painter's Algorithm)
-        const faceZDepths = meshData.faces.map((face, index) => {
-          const z0 = projected[face[0]].z;
-          const z1 = projected[face[1]].z;
-          const z2 = projected[face[2]].z;
-          const avgZ = (z0 + z1 + z2) / 3.0;
-          return { index, avgZ };
-        });
-        
-        // Sort back-to-front
-        faceZDepths.sort((a, b) => b.avgZ - a.avgZ);
-        
-        faceZDepths.forEach((item) => {
-          const face = meshData.faces[item.index];
-          const p0 = projected[face[0]];
-          const p1 = projected[face[1]];
-          const p2 = projected[face[2]];
-          
-          // Backface culling via 2D cross product
-          const crossProduct = (p1.x - p0.x) * (p2.y - p0.y) - (p1.y - p0.y) * (p2.x - p0.x);
-          const isFront = crossProduct > 0;
-          
-          // Calculate facet normals to solve diffuse lighting
-          const ax = p1.origX - p0.origX;
-          const ay = p1.origY - p0.origY;
-          const az = p1.origZ - p0.origZ;
-          const bx = p2.origX - p0.origX;
-          const by = p2.origY - p0.origY;
-          const bz = p2.origZ - p0.origZ;
-          
-          const nx = ay * bz - az * by;
-          const ny = az * bx - ax * bz;
-          const nz = ax * by - ay * bx;
-          
-          const nLen = Math.sqrt(nx*nx + ny*ny + nz*nz);
-          let intensity = 0.55;
-          if (nLen > 0) {
-            const dot = (nx * lDir[0] + ny * lDir[1] + nz * lDir[2]) / nLen;
-            intensity = Math.max(0.12, Math.min(1.0, (dot + 1.1) / 2.1));
-          }
-          
-          ctx.beginPath();
-          ctx.moveTo(p0.x, p0.y);
-          ctx.lineTo(p1.x, p1.y);
-          ctx.lineTo(p2.x, p2.y);
-          ctx.closePath();
-          
-          if (renderMode === 'shaded') {
-            if (isFront) {
-              const r = Math.round(baseRGB[0] * intensity);
-              const g = Math.round(baseRGB[1] * intensity);
-              const b = Math.round(baseRGB[2] * intensity);
-              ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.9)`;
-              ctx.fill();
-              
-              ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-              ctx.lineWidth = 0.8;
-              ctx.stroke();
-            } else {
-              // Dim backfaces
-              const r = Math.round(baseRGB[0] * 0.25 * intensity);
-              const g = Math.round(baseRGB[1] * 0.25 * intensity);
-              const b = Math.round(baseRGB[2] * 0.25 * intensity);
-              ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.25)`;
-              ctx.fill();
-              
-              ctx.strokeStyle = `rgba(${baseRGB[0]}, ${baseRGB[1]}, ${baseRGB[2]}, 0.05)`;
-              ctx.lineWidth = 0.5;
-              ctx.stroke();
-            }
-          } else if (renderMode === 'wireframe') {
-            ctx.fillStyle = isFront 
-              ? `rgba(${baseRGB[0]}, ${baseRGB[1]}, ${baseRGB[2]}, 0.06)` 
-              : `rgba(${baseRGB[0]}, ${baseRGB[1]}, ${baseRGB[2]}, 0.015)`;
-            ctx.fill();
-            
-            ctx.strokeStyle = isFront
-              ? `rgba(${baseRGB[0] + 30}, ${baseRGB[1] + 30}, ${baseRGB[2] + 30}, 0.65)`
-              : `rgba(${baseRGB[0]}, ${baseRGB[1]}, ${baseRGB[2]}, 0.12)`;
-            ctx.lineWidth = isFront ? 1.1 : 0.55;
-            ctx.stroke();
-          }
-        });
-      }
-      
-      // Viewport borders overlay
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.025)';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(16, 16, width - 32, height - 32);
-      
-      // Bottom axis coordinates indicator
-      const cx = 50;
-      const cy = height - 50;
-      const xEnd = [cx + cosY * 18, cy - sinY * sinX * 18];
-      const yEnd = [cx, cy - cosX * 18];
-      const zEnd = [cx + sinY * 18, cy + cosY * sinX * 18];
-      
-      ctx.lineWidth = 1.5;
-      ctx.strokeStyle = 'rgba(239, 68, 68, 0.6)';
-      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(xEnd[0], xEnd[1]); ctx.stroke();
-      ctx.strokeStyle = 'rgba(16, 185, 129, 0.6)';
-      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(yEnd[0], yEnd[1]); ctx.stroke();
-      ctx.strokeStyle = 'rgba(59, 130, 246, 0.6)';
-      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(zEnd[0], zEnd[1]); ctx.stroke();
-      
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-      ctx.font = '9px monospace';
-      ctx.fillText('Digital Twin Viewport', 24, 28);
-      
-      animationId = requestAnimationFrame(render);
+      renderer.render(scene, camera);
     };
-    
-    render();
-    
+    animate();
+
+    // Cleanups
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animationId);
+      geometry.dispose();
+      shadedMaterial.dispose();
+      renderer.dispose();
     };
   }, [showResult, meshData, renderMode, autoRotate, rotationSpeed, zoomScale, gemType]);
 
@@ -772,7 +733,6 @@ export default function CutPrediction() {
         </div>
 
         <header className="text-center mb-12 animate-fade-in">
-       
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-4">
             Gem Cut Prediction & <span className="gradient-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400">3D Visualizer</span>
           </h1>
