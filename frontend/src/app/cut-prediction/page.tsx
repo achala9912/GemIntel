@@ -772,14 +772,12 @@ export default function CutPrediction() {
         </div>
 
         <header className="text-center mb-12 animate-fade-in">
-          <div className="inline-flex items-center gap-2 bg-violet-500/10 border border-violet-500/20 px-3 py-1 rounded-full text-xs font-bold text-violet-400 uppercase tracking-widest mb-4">
-            Computer Vision Module
-          </div>
+       
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-4">
             Gem Cut Prediction & <span className="gradient-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400">3D Visualizer</span>
           </h1>
           <p className="text-slate-400 max-w-2xl mx-auto text-base md:text-lg leading-relaxed">
-            Reconstruct physical gemstone twin models using multi-angle Visual Hull projection. Evaluate volumetric yields and classify optimal shape layouts with Random Forest models.
+            Let&apos;s find optimal cut shape and material yield.
           </p>
         </header>
 

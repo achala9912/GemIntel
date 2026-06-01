@@ -2,6 +2,7 @@ import os
 import io
 import cv2
 import joblib
+import pandas as pd
 import numpy as np
 from PIL import Image
 from scipy import ndimage
