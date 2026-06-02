@@ -15,25 +15,36 @@ def load_all_models():
     """Triggered on app startup to load models into memory."""
     global eff_model, gem_model, scaler, label_encoder
     
+    print("[BranchPredictor] Initializing dual-branch authentication pipeline...")
+    
     print("Building timm EfficientNet-B4 Skeleton...")
     eff_model = timm.create_model("efficientnet_b4", pretrained=False, num_classes=2)
     
-    print("Loading .pth Weights into Skeleton...")
+    print(f"Loading .pth weights from: {EFF_MODEL_PATH}")
     state_dict = torch.load(EFF_MODEL_PATH, map_location=torch.device('cpu'))
     eff_model.load_state_dict(state_dict)
     eff_model.eval() 
+    print("[BranchPredictor] EfficientNet-B4 loaded successfully on CPU.")
     
-    print("Loading ML Pipeline Bundle...")
+    print(f"Loading XGBoost ML Pipeline Bundle from: {GEM_PIPELINE_PATH}")
     pipeline_bundle = joblib.load(GEM_PIPELINE_PATH)
     gem_model = pipeline_bundle["model"]
     scaler = pipeline_bundle["scaler"]
     label_encoder = pipeline_bundle["label_encoder"]
+    print("[BranchPredictor] XGBoost classifier and scaler loaded successfully.")
     
     # Load AI filter model
     from app.services.ai_filter_service import load_ai_filter_model
     load_ai_filter_model()
+
+    # Load Cut Predictor model
+    from app.services.cut_model_service import get_predictor
+    try:
+        get_predictor().load()
+    except Exception as e:
+        print(f"[Error] Failed to load Cut Predictor: {e}")
     
-    print("[Assets] All assets loaded successfully.")
+    print("[Assets] All application ML models loaded successfully.")
 
 def run_inference(base_image: Image.Image):
     """Executes both models, calculates weighted ensemble, and returns payload."""

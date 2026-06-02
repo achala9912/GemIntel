@@ -33,14 +33,28 @@ class CutPredictor:
                 f"Model directory not found: {self.model_dir}"
             )
 
+        print("[CutPredictor] Initializing gemstone cut prediction models...")
         try:
-            self._cut_model    = joblib.load(self.model_dir / "rf_cut_model.pkl")
-            self._yield_model  = joblib.load(self.model_dir / "rf_yield_model.pkl")
-            self._scaler       = joblib.load(self.model_dir / "scaler.pkl")
+            cut_model_path = self.model_dir / "rf_cut_model.pkl"
+            print(f"[ModelLoader] Loading Cut Classifier from: {cut_model_path}")
+            self._cut_model    = joblib.load(cut_model_path)
+            
+            yield_model_path = self.model_dir / "rf_yield_model.pkl"
+            print(f"[ModelLoader] Loading Yield Regressor from: {yield_model_path}")
+            self._yield_model  = joblib.load(yield_model_path)
+            
+            scaler_path = self.model_dir / "scaler.pkl"
+            print(f"[ModelLoader] Loading StandardScaler configuration: {scaler_path}")
+            self._scaler       = joblib.load(scaler_path)
+            
+            print(f"[ModelLoader] Loading cut labels and features columns definitions...")
             self._cut_encoder  = joblib.load(self.model_dir / "cut_label_encoder.pkl")
             self._feature_cols = joblib.load(self.model_dir / "feature_columns.pkl")
+            
             self._loaded = True
+            print("[CutPredictor] Gemstone ML cut prediction model bundle loaded successfully on CPU.")
         except FileNotFoundError as e:
+            print(f"[CutPredictor] FAILED to load ML assets: Missing file {e.filename}")
             raise FileNotFoundError(
                 f"Missing ML model file in {self.model_dir}: {e.filename}"
             )
