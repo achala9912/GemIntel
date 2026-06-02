@@ -1,16 +1,3 @@
-"""
-model_service.py
-================
-Load trained Random Forest models and predict optimal cut + yield.
-
-Loads .pkl files from models/cut/ (your trained ML models):
-  - rf_cut_model.pkl         (cut type classifier)
-  - rf_yield_model.pkl       (yield % regressor)
-  - scaler.pkl               (StandardScaler)
-  - cut_label_encoder.pkl    (label encoder)
-  - feature_columns.pkl      (feature order)
-"""
-
 import os
 import joblib
 import pandas as pd
@@ -18,11 +5,6 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 
 
-# =========================================================
-# CONFIGURATION
-# =========================================================
-# Path relative to backend/app/services/model_service.py
-# Goes up two levels to backend/, then into models/cut/
 DEFAULT_MODEL_DIR = Path(__file__).parent.parent.parent / "models" / "cut"
 
 
@@ -134,9 +116,7 @@ class CutPredictor:
         }
 
 
-# =========================================================
-# SINGLETON INSTANCE (cached across requests)
-# =========================================================
+
 _predictor_instance: Optional[CutPredictor] = None
 
 

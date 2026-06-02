@@ -89,3 +89,14 @@ export async function getPredictionResult(sessionId: string): Promise<Prediction
 
   return res.json();
 }
+
+
+export async function cancelProcessingPipeline(sessionId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/cut/cancel/${sessionId}`, {
+    method: "POST",
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to cancel processing pipeline: ${res.status} ${res.statusText}`);
+  }
+}

@@ -153,25 +153,39 @@ def _run_pipeline(session_id: str):
     Background pipeline:
       masks (background removal) → visual hull → dimensions → ML predict
     """
+    if session_id not in SESSIONS:
+        return
     session = SESSIONS[session_id]
     upload_dir, masks_dir = _get_session_dirs(session_id)
 
+    def check_cancelled():
+        if session_id not in SESSIONS:
+            return True
+        return SESSIONS[session_id].get("status") == "idle"
+
+    def on_status_change(new_status: str):
+        if session_id in SESSIONS and SESSIONS[session_id].get("status") != "idle":
+            SESSIONS[session_id]["status"] = new_status
+
     try:
         # Steps 1-3: masks + hull + dimensions + mesh
-        session["status"] = "generating_masks"
         reconstruction = reconstruct_full(
             upload_dir     = str(upload_dir),
             masks_dir      = str(masks_dir),
             gem_type       = session["gem_type"],
             real_weight_ct = session["weight_ct"],
+            check_cancelled = check_cancelled,
+            on_status_change = on_status_change,
         )
-        session["status"] = "reconstructing"  # status flips when reconstruct_full progresses
+
+        if check_cancelled():
+            return
 
         metrics = reconstruction["metrics"]
         mesh    = reconstruction["mesh"]
 
         # Step 4: ML prediction
-        session["status"] = "predicting"
+        on_status_change("predicting")
         predictor = get_predictor()
         prediction = predictor.predict(
             gem_type  = session["gem_type"],
@@ -179,6 +193,9 @@ def _run_pipeline(session_id: str):
             width_mm  = metrics["width_mm"],
             depth_mm  = metrics["depth_mm"],
         )
+
+        if check_cancelled():
+            return
 
         # Step 5: assemble result for Three.js
         session["result"] = {
@@ -204,11 +221,25 @@ def _run_pipeline(session_id: str):
                 "face_count":   mesh["face_count"],
             },
         }
-        session["status"] = "done"
+        on_status_change("done")
 
     except Exception as e:
-        session["status"] = "error"
-        session["error"]  = str(e)
+        if session_id in SESSIONS and SESSIONS[session_id].get("status") not in {"idle", "done"}:
+            SESSIONS[session_id]["status"] = "error"
+            SESSIONS[session_id]["error"]  = str(e)
+
+
+@router.post("/cancel/{session_id}")
+async def cancel_session(session_id: str):
+    """Reset processing pipeline state to idle."""
+    if session_id not in SESSIONS:
+        raise HTTPException(404, "Session not found")
+
+    session = SESSIONS[session_id]
+    if session["status"] in {"processing", "generating_masks", "reconstructing", "predicting"}:
+        session["status"] = "idle"
+
+    return {"status": "idle", "session_id": session_id}
 
 
 @router.get("/status/{session_id}")

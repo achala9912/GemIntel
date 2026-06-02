@@ -1,16 +1,3 @@
-"""
-reconstruction_service.py
-=========================
-Self-contained pipeline for cut prediction:
-  1. Background removal + mask generation (rembg)
-  2. Visual hull reconstruction (voxel intersection)
-  3. Dimension extraction (weight-calibrated)
-  4. Three.js-ready mesh export
-
-This service is fully independent — no dependency on other team members' services.
-Ported directly from your Colab notebook.
-"""
-
 import os
 import cv2
 import numpy as np
@@ -23,9 +10,6 @@ from scipy.ndimage import gaussian_filter
 from skimage import measure
 
 
-# =========================================================
-# CONSTANTS
-# =========================================================
 DENSITY_MAP = {
     "blue_sapphire": 4.00,
     "spinel":        3.60,
@@ -35,9 +19,8 @@ DENSITY_MAP = {
 GRID_SIZE = 128
 
 
-# =========================================================
+
 # STEP 1 — BACKGROUND REMOVAL + MASK GENERATION
-# =========================================================
 def generate_mask(input_image_path: str, output_mask_path: str) -> bool:
     """
     Remove background from a single image and save a binary mask.
@@ -68,6 +51,7 @@ def generate_mask(input_image_path: str, output_mask_path: str) -> bool:
 def generate_masks_for_session(
     upload_dir: str,
     masks_dir: str,
+    check_cancelled = None,
 ) -> List[str]:
     """
     Process every image in upload_dir → write binary mask to masks_dir.
@@ -86,6 +70,9 @@ def generate_masks_for_session(
 
     mask_paths = []
     for img_name in image_files:
+        if check_cancelled and check_cancelled():
+            raise InterruptedError("Pipeline cancelled by user")
+
         input_path = os.path.join(upload_dir, img_name)
         stem = Path(img_name).stem
         output_path = os.path.join(masks_dir, f"mask_{stem}.png")
@@ -96,9 +83,8 @@ def generate_masks_for_session(
     return mask_paths
 
 
-# =========================================================
+
 # STEP 2 — VISUAL HULL RECONSTRUCTION
-# =========================================================
 def normalize_mask(mask: np.ndarray, size: int = 128, object_scale: float = 0.85):
     """Crop to gem, center, scale to fill `object_scale` of canvas."""
     mask = (mask > 127).astype(np.uint8) * 255
@@ -123,7 +109,11 @@ def normalize_mask(mask: np.ndarray, size: int = 128, object_scale: float = 0.85
     return canvas > 127
 
 
-def compute_visual_hull(mask_folder: str, size: int = GRID_SIZE) -> np.ndarray:
+def compute_visual_hull(
+    mask_folder: str,
+    size: int = GRID_SIZE,
+    check_cancelled = None,
+) -> np.ndarray:
     """
     Intersect masks taken at evenly-spaced rotation angles (360° / N)
     to reconstruct the gem's 3D voxel volume.
@@ -149,6 +139,9 @@ def compute_visual_hull(mask_folder: str, size: int = GRID_SIZE) -> np.ndarray:
     angle_step = 360.0 / num_masks
 
     for i, file_name in enumerate(mask_files):
+        if check_cancelled and check_cancelled():
+            raise InterruptedError("Pipeline cancelled by user")
+
         angle_rad = np.radians(i * angle_step)
         mask = cv2.imread(os.path.join(mask_folder, file_name), 0)
         if mask is None:
@@ -169,9 +162,9 @@ def compute_visual_hull(mask_folder: str, size: int = GRID_SIZE) -> np.ndarray:
     return voxels
 
 
-# =========================================================
+
 # STEP 3 — DIMENSION EXTRACTION (weight-calibrated)
-# =========================================================
+
 def extract_metrics(
     voxels: np.ndarray,
     gem_type: str,
@@ -213,9 +206,9 @@ def extract_metrics(
     }
 
 
-# =========================================================
+
 # STEP 4 — THREE.JS MESH EXPORT
-# =========================================================
+
 def build_threejs_mesh(
     voxels: np.ndarray,
     dyn_scale: float,
@@ -268,14 +261,16 @@ def build_threejs_mesh(
     }
 
 
-# =========================================================
+
 # ORCHESTRATOR — full pipeline from images → mesh
-# =========================================================
+
 def reconstruct_full(
     upload_dir: str,
     masks_dir: str,
     gem_type: str,
     real_weight_ct: float,
+    check_cancelled = None,
+    on_status_change = None,
 ) -> Dict[str, Any]:
     """
     Full pipeline:
@@ -287,15 +282,23 @@ def reconstruct_full(
     Returns combined dict ready for ML prediction + Three.js render.
     """
     # 1. Background removal + masks
-    generate_masks_for_session(upload_dir, masks_dir)
+    if on_status_change:
+        on_status_change("generating_masks")
+    generate_masks_for_session(upload_dir, masks_dir, check_cancelled)
 
     # 2. Visual hull
-    voxels = compute_visual_hull(masks_dir)
+    if on_status_change:
+        on_status_change("reconstructing")
+    voxels = compute_visual_hull(masks_dir, check_cancelled=check_cancelled)
 
     # 3. Dimensions
+    if check_cancelled and check_cancelled():
+        raise InterruptedError("Pipeline cancelled by user")
     metrics = extract_metrics(voxels, gem_type, real_weight_ct)
 
     # 4. Three.js mesh
+    if check_cancelled and check_cancelled():
+        raise InterruptedError("Pipeline cancelled by user")
     mesh = build_threejs_mesh(voxels, metrics["dynamic_scale_mm"])
 
     return {
