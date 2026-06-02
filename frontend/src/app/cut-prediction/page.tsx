@@ -49,7 +49,7 @@ interface StepIconProps {
 const StepIcon = ({ state, type }: StepIconProps) => {
   if (state === "completed") {
     return (
-      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 scale-100 transition-all duration-300">
+      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 scale-100 transition-all duration-300 shrink-0">
         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
         </svg>
@@ -59,7 +59,7 @@ const StepIcon = ({ state, type }: StepIconProps) => {
 
   if (state === "error") {
     return (
-      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse">
+      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse shrink-0">
         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
         </svg>
@@ -69,7 +69,7 @@ const StepIcon = ({ state, type }: StepIconProps) => {
 
   if (state === "pending") {
     return (
-      <div className="flex items-center justify-center w-6 h-6 rounded-full border border-white/10 text-white/20">
+      <div className="flex items-center justify-center w-6 h-6 rounded-full border border-white/10 text-white/20 shrink-0">
         <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
       </div>
     );
@@ -78,7 +78,7 @@ const StepIcon = ({ state, type }: StepIconProps) => {
   switch (type) {
     case "upload":
       return (
-        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-[0_0_12px_rgba(59,130,246,0.2)]">
+        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-[0_0_12px_rgba(59,130,246,0.2)] shrink-0">
           <svg className="w-3.5 h-3.5 animate-[bounce_1s_infinite]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
           </svg>
@@ -86,7 +86,7 @@ const StepIcon = ({ state, type }: StepIconProps) => {
       );
     case "mask":
       return (
-        <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30 shadow-[0_0_12px_rgba(168,85,247,0.2)] overflow-hidden">
+        <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30 shadow-[0_0_12px_rgba(168,85,247,0.2)] overflow-hidden shrink-0">
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
@@ -95,7 +95,7 @@ const StepIcon = ({ state, type }: StepIconProps) => {
       );
     case "reconstruct":
       return (
-        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 shadow-[0_0_12px_rgba(99,102,241,0.2)]">
+        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 shadow-[0_0_12px_rgba(99,102,241,0.2)] shrink-0">
           <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
             <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
           </svg>
@@ -103,7 +103,7 @@ const StepIcon = ({ state, type }: StepIconProps) => {
       );
     case "predict":
       return (
-        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-pink-500/20 text-pink-400 border border-pink-500/30 shadow-[0_0_12px_rgba(236,72,153,0.2)]">
+        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-pink-500/20 text-pink-400 border border-pink-500/30 shadow-[0_0_12px_rgba(236,72,153,0.2)] shrink-0">
           <svg className="w-3.5 h-3.5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
           </svg>
@@ -111,7 +111,7 @@ const StepIcon = ({ state, type }: StepIconProps) => {
       );
     case "preview":
       return (
-        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 shadow-[0_0_12px_rgba(6,182,212,0.2)]">
+        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 shadow-[0_0_12px_rgba(6,182,212,0.2)] shrink-0">
           <svg className="w-3.5 h-3.5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
           </svg>
@@ -452,30 +452,30 @@ export default function CutPredictionPage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
         <button
           onClick={() => history.back()}
-          className="text-sm opacity-70 hover:opacity-100 mb-6"
+          className="text-sm opacity-70 hover:opacity-100 mb-5 sm:mb-6 inline-flex"
         >
           ← Back to Workspace
         </button>
 
-        <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-center mb-2">
+        <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-center mb-2 leading-tight px-2">
           Gem Cut Prediction &{" "}
           <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
             3D Visualizer
           </span>
         </h1>
-        <p className="text-center text-sm sm:text-base opacity-60 mb-8 sm:mb-12">
+        <p className="text-center text-sm sm:text-base opacity-60 mb-8 sm:mb-12 px-4">
           Let&apos;s find optimal cut shape and material yield.
         </p>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {/* ===== Parameters Card ===== */}
-          <div className="bg-[rgba(255,255,255,0.04)] border border-white/10 rounded-2xl p-6">
-            <h2 className="text-lg font-medium mb-5">
+          <div className="bg-[rgba(255,255,255,0.04)] border border-white/10 rounded-2xl p-4 sm:p-6">
+            <h2 className="text-base sm:text-lg font-medium mb-4 sm:mb-5">
               <span className="opacity-50 mr-2">01</span> Parameters Config
             </h2>
 
             <div className="relative mb-5" ref={dropdownRef}>
-              <label className="block text-xs uppercase tracking-wide opacity-50 my-4">
+              <label className="block text-xs uppercase tracking-wide opacity-50 mt-2 mb-3 sm:my-4">
                 Gemstone mineral type
               </label>
               
@@ -488,24 +488,24 @@ export default function CutPredictionPage() {
                 disabled={isProcessing}
               >
                 {gemType ? (
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-2.5 min-w-0">
                     <span 
-                      className="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_currentColor]" 
+                      className="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_currentColor] shrink-0" 
                       style={{ 
                         backgroundColor: GEM_TYPES.find(g => g.value === gemType)?.dotColor,
                         color: GEM_TYPES.find(g => g.value === gemType)?.dotColor 
                       }} 
                     />
-                    <span className="font-semibold text-white">
+                    <span className="font-semibold text-white truncate">
                       {GEM_TYPES.find((g) => g.value === gemType)?.label}
                     </span>
                   </div>
                 ) : (
-                  <span className="text-white/40 font-medium">Select mineral type...</span>
+                  <span className="text-white/40 font-medium truncate">Select mineral type...</span>
                 )}
                 
                 <svg
-                  className={`w-4 h-4 text-white/50 transition-transform duration-200 ${
+                  className={`w-4 h-4 text-white/50 transition-transform duration-200 shrink-0 ${
                     isDropdownOpen ? "rotate-180" : ""
                   }`}
                   fill="none"
@@ -530,19 +530,19 @@ export default function CutPredictionPage() {
                         gemType === g.value ? "bg-white/[0.03]" : ""
                       }`}
                     >
-                      <div className="flex flex-col">
+                      <div className="flex flex-col min-w-0">
                         <div className="flex items-center gap-2.5">
                           <span 
-                            className="w-2.5 h-2.5 rounded-full transition-transform group-hover:scale-110" 
+                            className="w-2.5 h-2.5 rounded-full transition-transform group-hover:scale-110 shrink-0" 
                             style={{ backgroundColor: g.dotColor }}
                           />
-                          <span className="font-semibold text-white text-sm">{g.label}</span>
+                          <span className="font-semibold text-white text-sm truncate">{g.label}</span>
                         </div>
 
                       </div>
                       
                       {gemType === g.value && (
-                        <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 text-blue-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
                         </svg>
                       )}
@@ -558,7 +558,7 @@ export default function CutPredictionPage() {
             <div className="flex items-center gap-2 mb-6">
               <button
                 onClick={() => setWeight((w) => Math.max(0, +(w - 0.1).toFixed(2)))}
-                className="w-10 h-10 rounded-lg border border-white/10 hover:bg-white/5"
+                className="w-10 h-10 shrink-0 rounded-lg border border-white/10 hover:bg-white/5 active:scale-95 transition"
                 disabled={isProcessing}
               >
                 −
@@ -569,13 +569,13 @@ export default function CutPredictionPage() {
                 onChange={(e) => setWeight(parseFloat(e.target.value) || 0)}
                 step="0.01"
                 min="0"
-                className="flex-1 text-center bg-[rgba(0,0,0,0.4)] border border-white/10 rounded-lg px-3 py-2 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="flex-1 min-w-0 text-center bg-[rgba(0,0,0,0.4)] border border-white/10 rounded-lg px-3 py-2 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 disabled={isProcessing}
               />
-              <span className="text-xs opacity-50 px-2 py-1 border border-white/10 rounded">ct</span>
+              <span className="text-xs opacity-50 px-2 py-1 border border-white/10 rounded shrink-0">ct</span>
               <button
                 onClick={() => setWeight((w) => +(w + 0.1).toFixed(2))}
-                className="w-10 h-10 rounded-lg border border-white/10 hover:bg-white/5"
+                className="w-10 h-10 shrink-0 rounded-lg border border-white/10 hover:bg-white/5 active:scale-95 transition"
                 disabled={isProcessing}
               >
                 +
@@ -585,14 +585,14 @@ export default function CutPredictionPage() {
             {/* Checklist */}
             <div className="border-t border-white/10 pt-4">
               <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                <svg className="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <svg className="w-4 h-4 text-purple-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                 </svg>
                 <span>Reconstruction Checklist</span>
               </h3>
               {checklistItems.map((c, i) => (
                 <div key={i} className="flex justify-between items-start py-2.5 text-sm border-b border-white/[0.02] last:border-0 gap-3">
-                  <span className="flex items-start gap-2">
+                  <span className="flex items-start gap-2 min-w-0">
                     {c.done ? (
                       <svg className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -602,9 +602,9 @@ export default function CutPredictionPage() {
                         <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
                       </div>
                     )}
-                    <span className={`leading-snug ${c.done ? "text-white/80" : "text-white/40"}`}>{c.label}</span>
+                    <span className={`leading-snug break-words ${c.done ? "text-white/80" : "text-white/40"}`}>{c.label}</span>
                   </span>
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded shrink-0 mt-0.5 ${
+                  <span className={`text-[10px] sm:text-xs font-medium px-2 py-0.5 rounded shrink-0 mt-0.5 text-right ${
                     c.done ? "text-emerald-400 bg-emerald-500/5" : "text-yellow-400 bg-yellow-500/5"
                   }`}>
                     {c.detail || (c.done ? "Done" : "Pending")}
@@ -615,27 +615,27 @@ export default function CutPredictionPage() {
           </div>
 
           {/* ===== Image Upload Card ===== */}
-          <div className="bg-[rgba(255,255,255,0.04)] border border-white/10 rounded-2xl p-6">
-            <div className="flex justify-between items-center mb-5">
-              <h2 className="text-lg font-medium">
+          <div className="bg-[rgba(255,255,255,0.04)] border border-white/10 rounded-2xl p-4 sm:p-6">
+            <div className="flex justify-between items-center gap-2 mb-4 sm:mb-5">
+              <h2 className="text-base sm:text-lg font-medium">
                 <span className="opacity-50 mr-2">02</span> Angle Image Capture
               </h2>
-              <span className="text-xs opacity-50">
+              <span className="text-xs opacity-50 shrink-0 text-right">
                 {MIN_IMAGES} to {MAX_IMAGES} pictures
               </span>
             </div>
 
-            <div className="flex gap-2 mb-3">
+            <div className="flex flex-col sm:flex-row gap-2 mb-3">
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="flex-1 border border-white/10 rounded-lg py-2 text-sm hover:bg-white/5 cursor-pointer"
+                className="flex-1 border border-white/10 rounded-lg py-2.5 sm:py-2 text-sm hover:bg-white/5 active:scale-[0.99] transition cursor-pointer"
                 disabled={isProcessing}
               >
                 ⬆ Upload Angle Photos
               </button>
               <button
                 onClick={isCapturing ? stopCamera : startCamera}
-                className={`flex-1 border rounded-lg py-2 text-sm cursor-pointer transition ${
+                className={`flex-1 border rounded-lg py-2.5 sm:py-2 text-sm cursor-pointer active:scale-[0.99] transition ${
                   isCapturing 
                     ? "bg-red-500/20 border-red-500/30 text-red-300 hover:bg-red-500/30" 
                     : "border-white/10 hover:bg-white/5"
@@ -658,7 +658,7 @@ export default function CutPredictionPage() {
                 
                 {/* Visual Alignment Overlay */}
                 <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
-                  <div className="relative w-36 h-36 sm:w-44 sm:h-44 flex items-center justify-center animate-pulse">
+                  <div className="relative w-32 h-32 sm:w-44 sm:h-44 flex items-center justify-center animate-pulse">
                     <svg
                       className="w-full h-full text-blue-500/40 filter drop-shadow-[0_0_8px_rgba(59,130,246,0.4)]"
                       viewBox="0 0 100 100"
@@ -686,7 +686,7 @@ export default function CutPredictionPage() {
                   </div>
                   
                   {/* Bounding Helper Label */}
-                  <span className="mt-3 text-[10px] font-mono tracking-widest text-blue-400/80 bg-black/60 px-2.5 py-0.5 rounded-full uppercase border border-blue-500/10 backdrop-blur-sm">
+                  <span className="mt-3 text-[9px] sm:text-[10px] font-mono tracking-widest text-blue-400/80 bg-black/60 px-2.5 py-0.5 rounded-full uppercase border border-blue-500/10 backdrop-blur-sm">
                     Align Gem Within Frame
                   </span>
                 </div>
@@ -694,7 +694,7 @@ export default function CutPredictionPage() {
                 {/* Flash overlay */}
                 {flash && <div className="absolute inset-0 bg-white pointer-events-none z-20 animate-fade-out" />}
                 
-                <div className="absolute bottom-4 left-0 right-0 z-10 flex flex-row justify-center items-center gap-3 px-4">
+                <div className="absolute bottom-3 sm:bottom-4 left-0 right-0 z-10 flex flex-row justify-center items-center gap-3 px-4">
                   <button
                     type="button"
                     onClick={capturePhoto}
@@ -705,7 +705,7 @@ export default function CutPredictionPage() {
                   <button
                     type="button"
                     onClick={stopCamera}
-                    className="bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-full px-4 py-2 font-semibold text-xs cursor-pointer transition"
+                    className="bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-full px-4 py-2 font-semibold text-xs cursor-pointer transition active:scale-95"
                   >
                     Close
                   </button>
@@ -721,16 +721,17 @@ export default function CutPredictionPage() {
               className="hidden"
             />
 
+            {!isCapturing && (
             <div
               onDrop={onDrop}
               onDragOver={(e) => e.preventDefault()}
-              className="border-2 border-dashed border-white/15 rounded-xl p-8 text-center hover:border-white/30 transition cursor-pointer"
+              className="border-2 border-dashed border-white/15 rounded-xl p-5 sm:p-8 text-center hover:border-white/30 transition cursor-pointer"
               onClick={() => fileInputRef.current?.click()}
             >
               {images.length === 0 ? (
                 <>
                   <div className="text-4xl opacity-30 mb-2">+</div>
-                  <div className="font-medium">Drag and drop files here</div>
+                  <div className="font-medium text-sm sm:text-base">Drag and drop files here</div>
                   <div className="text-xs opacity-50 mt-2 max-w-sm mx-auto">
                     Upload between {MIN_IMAGES} to {MAX_IMAGES} high-definition side-angle
                     gemstone snapshots to perform visual hull calculations.
@@ -755,7 +756,7 @@ export default function CutPredictionPage() {
                           e.stopPropagation();
                           removeImage(img.previewUrl);
                         }}
-                        className="absolute top-1 right-1 bg-black/70 rounded-full w-5 h-5 text-xs z-10"
+                        className="absolute top-1 right-1 bg-black/70 rounded-full w-5 h-5 text-xs z-10 flex items-center justify-center"
                       >
                         ×
                       </button>
@@ -764,12 +765,13 @@ export default function CutPredictionPage() {
                 </div>
               )}
             </div>
+            )}
           </div>
         </div>
 
         {/* Pipeline Progress HUD */}
         {showPipelineHUD && (
-          <div className="mt-6 bg-white/[0.02] border border-white/5 rounded-2xl p-6 relative overflow-hidden shadow-2xl animate-fade-in">
+          <div className="mt-4 sm:mt-6 bg-white/[0.02] border border-white/5 rounded-2xl p-4 sm:p-6 relative overflow-hidden shadow-2xl animate-fade-in">
             {/* Glowing top line */}
             <div className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r ${
               status === "error" 
@@ -781,15 +783,15 @@ export default function CutPredictionPage() {
 
             <h3 className="text-xs font-semibold uppercase tracking-widest pb-4 mb-3 border-b border-white/5 flex items-center gap-2">
               {status === "error" ? (
-                <span className="relative flex h-2 w-2">
+                <span className="relative flex h-2 w-2 shrink-0">
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
                 </span>
               ) : status === "done" ? (
-                <span className="relative flex h-2 w-2">
+                <span className="relative flex h-2 w-2 shrink-0">
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                 </span>
               ) : (
-                <span className="relative flex h-2 w-2">
+                <span className="relative flex h-2 w-2 shrink-0">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
                 </span>
@@ -863,17 +865,17 @@ export default function CutPredictionPage() {
                 return (
                   <div
                     key={step.id}
-                    className={`flex items-center justify-between py-3.5 transition-all duration-300 ${
+                    className={`flex items-center justify-between gap-2 py-3 sm:py-3.5 transition-all duration-300 ${
                       isStepActive ? "bg-white/[0.01] -mx-2 px-2 rounded-lg" : ""
                     }`}
                   >
-                    <span className="flex items-center gap-3">
+                    <span className="flex items-center gap-3 min-w-0">
                       <StepIcon state={stepState} type={step.type} />
-                      <span className={`text-[10px] sm:text-xs transition-colors duration-300 ${textClass}`}>
+                      <span className={`text-[10px] sm:text-xs transition-colors duration-300 break-words ${textClass}`}>
                         {isStepCompleted ? step.completedLabel : isStepActive ? step.activeLabel : step.label}
                       </span>
                     </span>
-                    <span className={`text-[9px] sm:text-[10px] font-mono uppercase tracking-wider transition-colors duration-300 hidden sm:inline ${
+                    <span className={`text-[9px] sm:text-[10px] font-mono uppercase tracking-wider transition-colors duration-300 hidden sm:inline shrink-0 ${
                       isStepActive 
                         ? "text-blue-400 animate-pulse font-bold" 
                         : isStepCompleted 
@@ -892,11 +894,11 @@ export default function CutPredictionPage() {
         )}
 
         {/* ===== Action Buttons ===== */}
-        <div className="mt-6 flex flex-col sm:flex-row gap-3">
+        <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3">
           <button
             onClick={runPipeline}
             disabled={!canSubmit || isProcessing}
-            className={`flex-1 py-4 rounded-xl font-medium transition flex items-center justify-center gap-2 ${
+            className={`flex-1 py-3.5 sm:py-4 rounded-xl font-medium transition flex items-center justify-center gap-2 text-sm sm:text-base ${
               canSubmit && !isProcessing
                 ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-90 cursor-pointer"
                 : isProcessing
@@ -906,7 +908,7 @@ export default function CutPredictionPage() {
           >
             {isProcessing ? (
               <>
-                <svg className="w-5 h-5 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 animate-spin text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
@@ -914,10 +916,10 @@ export default function CutPredictionPage() {
               </>
             ) : (
               <>
-                <svg className="w-5 h-5 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <svg className="w-5 h-5 text-white/80 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
                 </svg>
-                <span>Compute & Generate 3D Cut Model</span>
+                <span>Compute &amp; Generate 3D Cut Model</span>
               </>
             )}
           </button>
@@ -925,7 +927,7 @@ export default function CutPredictionPage() {
           {isProcessing && (
             <button
               onClick={handleStop}
-              className="px-6 py-4 rounded-xl border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 active:scale-[0.98] transition font-medium flex items-center justify-center gap-2 cursor-pointer"
+              className="px-6 py-3.5 sm:py-4 rounded-xl border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 active:scale-[0.98] transition font-medium flex items-center justify-center gap-2 cursor-pointer text-sm sm:text-base"
             >
               <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">
                 <rect x="4" y="4" width="16" height="16" rx="2" />
@@ -936,7 +938,7 @@ export default function CutPredictionPage() {
         </div>
 
         {error && (
-          <div className="mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-300">
+          <div className="mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-300 break-words">
             {error}
           </div>
         )}
