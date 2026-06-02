@@ -1,5 +1,3 @@
-import styles from '@/app/features.module.css';
-
 interface StatCardProps {
   label: string;
   value: React.ReactNode;
@@ -16,12 +14,15 @@ export default function StatCard({
   valueColor
 }: StatCardProps) {
   return (
-    <div className={`${styles.statCard} glass-panel ${delayClass}`}>
-      <span className={styles.statLabel}>{label}</span>
-      <span className={styles.statValue} style={valueColor ? { color: valueColor } : undefined}>
+    <div className={`p-6 text-center flex flex-col gap-2 glass-panel ${delayClass}`}>
+      <span className="text-gray-400 text-xs uppercase tracking-wider font-semibold">{label}</span>
+      <span 
+        className="text-3xl font-extrabold font-sans text-violet-400 my-1" 
+        style={valueColor ? { color: valueColor } : undefined}
+      >
         {value}
       </span>
-      <span className={styles.statDesc}>{description}</span>
+      <span className="text-xs text-gray-300 font-medium leading-relaxed">{description}</span>
     </div>
   );
 }

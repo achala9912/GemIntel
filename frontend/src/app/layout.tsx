@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Outfit } from 'next/font/google';
+import { Outfit, Orbitron } from 'next/font/google';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -9,6 +9,13 @@ const outfit = Outfit({
   weight: ['400', '500', '600', '700'],
   display: 'swap',
   variable: '--font-outfit',
+});
+
+const orbitron = Orbitron({
+  subsets: ['latin'],
+  weight: ['700', '800', '900'],
+  display: 'swap',
+  variable: '--font-orbitron',
 });
 
 export const metadata: Metadata = {
@@ -23,7 +30,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body suppressHydrationWarning className={`${outfit.className} ${outfit.variable} min-h-screen flex flex-col`}>
+      <body suppressHydrationWarning className={`${outfit.className} ${outfit.variable} ${orbitron.variable} min-h-screen flex flex-col`}>
         <Navbar />
         <main className="pt-16 flex-1 flex flex-col">{children}</main>
         <Footer />

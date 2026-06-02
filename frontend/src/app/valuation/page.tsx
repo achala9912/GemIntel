@@ -2,7 +2,6 @@
 
 import FeatureLayout from '@/components/FeatureLayout';
 import StatCard from '@/components/StatCard';
-import styles from '../features.module.css';
 
 export default function Valuation() {
   return (
@@ -12,26 +11,26 @@ export default function Valuation() {
       buttonText="Estimate Value"
       mockDelay={2200}
     >
-      <div className={styles.priceContainer}>
-        <h2 style={{ fontSize: '1.5rem', color: 'var(--text-secondary)' }}>
+      <div className="p-12 text-center flex flex-col items-center justify-center">
+        <h2 className="text-lg text-gray-400 font-semibold uppercase tracking-wider">
           Estimated Market Value
         </h2>
-        <div className={`${styles.priceValue} animate-fade-in`}>
+        <div className="text-5xl md:text-6xl font-extrabold my-4 font-sans bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent animate-fade-in">
           $4,250 - $4,800
         </div>
-        <p style={{ marginTop: '0.5rem', color: 'rgba(255,255,255,0.6)' }}>
+        <p className="mt-1 text-sm text-gray-400">
           Per Carat Average: ~$3,620
         </p>
-        <div className={styles.confidenceBadge}>
+        <div className="inline-block px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-xs font-semibold mt-4">
           AI Confidence Level: High
         </div>
       </div>
 
-      <div className={styles.statsGrid} style={{ padding: '0 2rem 2rem', marginTop: 0 }}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-8 pt-0">
         <StatCard 
           label="Market Trend (30d)" 
           value="+2.4%" 
-          valueColor="var(--success)"
+          valueColor="#10b981"
           description="High demand for this color profile" 
         />
         <StatCard 
@@ -48,8 +47,8 @@ export default function Valuation() {
         />
       </div>
       
-      <div style={{ padding: '0 2rem 2rem', textAlign: 'center' }}>
-        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+      <div className="p-8 pt-0 text-center">
+        <p className="text-xs text-gray-500 leading-normal max-w-lg mx-auto">
           * Disclaimer: Values are generated using algorithmic modeling based on visual markers and
           historical trade data. Not to be used as a certified appraisal for insurance purposes.
         </p>

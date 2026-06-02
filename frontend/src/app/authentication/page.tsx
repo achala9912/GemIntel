@@ -1,42 +1,68 @@
 'use client';
 
 import FeatureLayout from '@/components/FeatureLayout';
-import styles from '../features.module.css';
+import { ShieldCheck, ShieldAlert } from 'lucide-react';
 
-const renderAuthenticationResult = (result: any) => {
+interface AuthenticationResult {
+  status?: string;
+  message?: string;
+  filter_result?: {
+    is_ai_generated?: boolean;
+    aggregated_score?: number;
+    threshold?: number;
+    breakdown?: {
+      frequency_analysis?: { score?: number };
+      detector_model?: { score?: number };
+      metadata_check?: { score?: number };
+    };
+  };
+  ensemble_result?: {
+    confidence?: number;
+  };
+  breakdown?: Record<string, {
+    prediction?: string;
+    confidence?: number;
+    weight_used?: number;
+  }>;
+}
+
+const renderAuthenticationResult = (result: AuthenticationResult) => {
   const filter = result?.filter_result;
   const isAi = result?.status === 'ai_generated' || filter?.is_ai_generated;
   const finalScore = filter?.aggregated_score ?? 0;
   const threshold = filter?.threshold ?? 0.6;
-  const scoreColor = isAi ? '#ff4d4d' : '#00e676'; // Red if AI-generated, Green if Authentic
+  const scoreColorClass = isAi ? 'text-red-400' : 'text-emerald-400';
+  const borderLeftColor = isAi ? 'border-l-red-500' : 'border-l-emerald-500';
 
   return (
-    <div>
-      {/* AI-Generated Block Notice (displayed first if AI-generated) */}
+    <div className="flex flex-col gap-6">
+      {/* AI-Generated Block Notice */}
       {isAi && (
-        <div style={{ padding: '2rem 2rem 0' }}>
-          <div className={`${styles.alertCard} ${styles.alertError} glass-panel`} style={{ margin: 0 }}>
-            <h2 style={{ fontSize: '2rem', color: 'var(--danger)' }}>AI Image Rejected</h2>
-            <p style={{ marginTop: '0.5rem', color: 'var(--text-secondary)' }}>
-              {result.message || 'The image is AI-generated. Please submit a real one.'}
+        <div className="p-8 pb-0">
+          <div className="p-8 text-center border border-red-500/30 bg-red-500/5 rounded-2xl flex flex-col items-center gap-3">
+            <ShieldAlert className="w-10 h-10 text-red-500 animate-bounce" />
+            <h2 className="text-2xl font-bold text-red-500">AI Image Rejected</h2>
+            <p className="text-sm text-gray-400 max-w-md">
+              {result.message || 'The image is AI-generated. Please submit a real gemstone photograph.'}
             </p>
           </div>
         </div>
       )}
 
-      {/* AI Origin Results (only shown when rejected) */}
+      {/* AI Origin Results */}
       {filter && isAi && (
-        <div style={{ padding: '2rem 2rem 1rem' }}>
-          <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '1rem', borderLeft: `6px solid ${scoreColor}` }}>
-            <h3 style={{ marginBottom: '1.25rem', color: scoreColor, fontSize: '1.2rem', fontWeight: 600 }}>
-              AI Origin Filter - {isAi ? 'AI Generated' : 'Authentic'}
+        <div className="px-8 py-4">
+          <div className={`p-6 rounded-2xl bg-white/[0.02] border border-white/5 border-l-4 ${borderLeftColor}`}>
+            <h3 className={`text-base font-bold mb-4 ${scoreColorClass}`}>
+              AI Origin Filter - AI Generated Detection
             </h3>
-            <div style={{ fontFamily: 'monospace', fontSize: '1.05rem', lineHeight: '1.8', color: 'var(--text-primary)' }}>
-              <div>Frequesncy Analysis -&gt; {filter.breakdown?.frequency_analysis?.score?.toFixed(4)}</div>
-              <div>ML Model -&gt; {filter.breakdown?.detector_model?.score?.toFixed(4)}</div>
-              <div>Metadata Check -&gt; {filter.breakdown?.metadata_check?.score?.toFixed(4)}</div>
-              <div style={{ marginTop: '0.75rem', fontWeight: 'bold', borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '0.75rem' }}>
-                Final Score -&gt; <span style={{ color: scoreColor }}>{finalScore.toFixed(4)}</span> (Threshold: {threshold})
+            <div className="font-mono text-sm leading-relaxed text-gray-300 flex flex-col gap-2">
+              <div>Frequency Analysis &rarr; {filter.breakdown?.frequency_analysis?.score?.toFixed(4)}</div>
+              <div>ML Model &rarr; {filter.breakdown?.detector_model?.score?.toFixed(4)}</div>
+              <div>Metadata Check &rarr; {filter.breakdown?.metadata_check?.score?.toFixed(4)}</div>
+              <div className="mt-3 pt-3 border-t border-white/10 font-bold flex justify-between">
+                <span>Final Aggregated Score:</span>
+                <span className={scoreColorClass}>{finalScore.toFixed(4)} <span className="text-xs text-gray-500">(Threshold: {threshold})</span></span>
               </div>
             </div>
           </div>
@@ -46,29 +72,36 @@ const renderAuthenticationResult = (result: any) => {
       {/* Gemstone Authentication Results (if authentic) */}
       {!isAi && (
         <div>
-          <div className={`${styles.alertCard} ${styles.alertSuccess} glass-panel`} style={{ marginTop: '0.5rem', marginInline: '2rem' }}>
-            <h2 style={{ fontSize: '2rem', color: 'var(--success)' }}>Natural Origin Confirmed</h2>
-            <p style={{ marginTop: '0.5rem', color: 'var(--text-secondary)' }}>
-              Ensemble model result based on our trained gemstone authentication pipeline.
-            </p>
-            <div className={styles.confidenceBadge}>
-              {result.ensemble_result?.confidence != null ? `${(result.ensemble_result.confidence * 100).toFixed(1)}%` : 'N/A'} Confidence
+          <div className="mx-8 mt-6">
+            <div className="p-8 text-center border border-emerald-500/30 bg-emerald-500/5 rounded-2xl flex flex-col items-center gap-3">
+              <ShieldCheck className="w-10 h-10 text-emerald-400" />
+              <h2 className="text-2xl font-bold text-emerald-400">Natural Origin Confirmed</h2>
+              <p className="text-sm text-gray-400 max-w-md">
+                Ensemble model result based on our trained gemstone authentication pipeline.
+              </p>
+              <div className="inline-block px-3 py-1 bg-emerald-500/10 text-emerald-400 rounded-full text-xs font-semibold mt-4 border border-emerald-500/20">
+                {result.ensemble_result?.confidence != null ? `${(result.ensemble_result.confidence * 100).toFixed(1)}%` : 'N/A'} Confidence
+              </div>
             </div>
           </div>
 
-          <div style={{ padding: '0 2rem 2rem', marginTop: '1.5rem' }}>
-            <h3 style={{ marginBottom: '1.5rem', fontSize: '1.3rem' }}>Ensemble Breakdown</h3>
-            <div className={styles.breakdownGrid}>
-              {Object.entries(result.breakdown || {}).map(([modelName, modelData]: [string, any]) => (
-                <div key={modelName} className={styles.breakdownCard}>
-                  <h4>{modelName}</h4>
-                  <p style={{ margin: '0.5rem 0 0', fontWeight: 700 }}>{modelData.prediction || 'N/A'}</p>
-                  <p style={{ color: 'var(--text-secondary)', marginTop: '0.75rem' }}>
-                    Confidence: {modelData.confidence != null ? `${(modelData.confidence * 100).toFixed(1)}%` : 'N/A'}
-                  </p>
-                  <p style={{ color: 'var(--text-secondary)', marginTop: '0.35rem' }}>
-                    Weight: {modelData.weight_used != null ? `${(modelData.weight_used * 100).toFixed(0)}%` : 'N/A'}
-                  </p>
+          <div className="p-8">
+            <h3 className="text-lg font-bold mb-4">Ensemble Model Breakdown</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {Object.entries(result.breakdown || {}).map(([modelName, modelData]) => (
+                <div key={modelName} className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col gap-2">
+                  <h4 className="text-xs text-gray-400 font-bold uppercase tracking-wider">{modelName}</h4>
+                  <p className="text-lg font-extrabold text-white my-1 capitalize">{modelData.prediction || 'N/A'}</p>
+                  <div className="text-xs text-gray-400 flex flex-col gap-1 border-t border-white/5 pt-2 mt-1">
+                    <div className="flex justify-between">
+                      <span>Confidence:</span>
+                      <span className="font-semibold text-gray-300">{modelData.confidence != null ? `${(modelData.confidence * 100).toFixed(1)}%` : 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Model Weight:</span>
+                      <span className="font-semibold text-gray-300">{modelData.weight_used != null ? `${(modelData.weight_used * 100).toFixed(0)}%` : 'N/A'}</span>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

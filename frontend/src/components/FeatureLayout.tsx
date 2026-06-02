@@ -2,19 +2,18 @@
 
 import { useState } from 'react';
 import ImageUploader from '@/components/ImageUploader';
-import styles from '@/app/features.module.css';
 
-interface FeatureLayoutProps {
+interface FeatureLayoutProps<T = unknown> {
   title: string;
   description: string;
   buttonText: string;
   mockDelay?: number;
   apiEndpoint?: string;
-  renderResult?: (result: any) => React.ReactNode;
+  renderResult?: (result: T) => React.ReactNode;
   children: React.ReactNode;
 }
 
-export default function FeatureLayout({ 
+export default function FeatureLayout<T = unknown>({ 
   title, 
   description, 
   buttonText, 
@@ -22,11 +21,11 @@ export default function FeatureLayout({
   apiEndpoint,
   renderResult,
   children 
-}: FeatureLayoutProps) {
+}: FeatureLayoutProps<T>) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStatus, setAnalysisStatus] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [analysisResult, setAnalysisResult] = useState<T | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [resetKey, setResetKey] = useState(0);
 
@@ -124,13 +123,13 @@ export default function FeatureLayout({
   };
 
   return (
-    <div className={styles.pageContainer}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>{title}</h1>
-        <p className={styles.description}>{description}</p>
+    <div className="py-16 px-4 max-w-[1000px] mx-auto">
+      <header className="text-center mb-12">
+        <h1 className="text-4xl font-extrabold mb-4 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">{title}</h1>
+        <p className="text-gray-400 text-lg max-w-[600px] mx-auto leading-relaxed">{description}</p>
       </header>
 
-      <main className={styles.workspace}>
+      <main className="flex flex-col gap-12 items-center">
         <ImageUploader 
           key={resetKey}
           onAnalyze={handleAnalyze} 
@@ -140,29 +139,11 @@ export default function FeatureLayout({
         />
 
         {errorMessage && (
-          <div style={{
-            marginTop: '1.5rem',
-            padding: '1rem',
-            borderRadius: '1rem',
-            background: 'rgba(255, 80, 80, 0.12)',
-            color: 'var(--danger, #b00020)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '1rem'
-          }}>
-            <span>{errorMessage}</span>
+          <div className="mt-6 p-4 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 flex flex-col items-center gap-4 text-center max-w-md">
+            <span className="font-semibold text-sm">{errorMessage}</span>
             <button 
               onClick={handleReset}
-              style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                color: 'white',
-                padding: '0.4rem 1.2rem',
-                borderRadius: '0.5rem',
-                cursor: 'pointer',
-                fontSize: '0.85rem'
-              }}
+              className="bg-white/5 border border-white/10 hover:bg-white/10 text-white py-1.5 px-5 rounded-lg cursor-pointer text-xs font-semibold transition"
             >
               Reset
             </button>
@@ -170,25 +151,12 @@ export default function FeatureLayout({
         )}
 
         {showResult && (
-          <div className={`${styles.resultsContainer} glass-panel`}>
-            {renderResult ? renderResult(analysisResult) : children}
-            <div style={{ display: 'flex', justifyContent: 'center', margin: '2rem 0' }}>
+          <div className="w-full glass-panel animate-fade-in">
+            {renderResult ? renderResult(analysisResult as T) : children}
+            <div className="flex justify-center my-8">
               <button 
                 onClick={handleReset}
-                className="btn-primary" 
-                style={{ 
-                  background: 'rgba(255, 255, 255, 0.05)', 
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  color: 'var(--text-primary)',
-                  padding: '0.75rem 2rem',
-                  borderRadius: '0.75rem',
-                  cursor: 'pointer',
-                  fontWeight: 600,
-                  transition: 'all 0.2s',
-                  fontSize: '0.95rem'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
+                className="btn-primary bg-white/5 border border-white/10 text-white hover:bg-white/10 py-3 px-8 rounded-xl cursor-pointer font-semibold text-sm transition"
               >
                 Reset
               </button>

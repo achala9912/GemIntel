@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Gem } from 'lucide-react';
 
 const navItems = [
   { name: 'Home', path: '/' },
@@ -36,8 +36,14 @@ const isActive = (path: string) => {
         <div className="flex h-16 items-center justify-between">
 
           {/* Logo */}
-          <Link href="/" className="text-2xl font-bold">
-            <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+          <Link href="/" className="flex items-center gap-2.5 text-xl font-extrabold tracking-widest group">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 text-cyan-400 group-hover:scale-105 transition-transform">
+              <Gem className="w-4.5 h-4.5" />
+            </div>
+            <span 
+              className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent group-hover:opacity-95 transition-opacity uppercase font-bold"
+              style={{ fontFamily: 'var(--font-orbitron), sans-serif' }}
+            >
               GemIntel
             </span>
           </Link>

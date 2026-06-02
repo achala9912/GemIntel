@@ -2,7 +2,6 @@
 
 import FeatureLayout from '@/components/FeatureLayout';
 import StatCard from '@/components/StatCard';
-import styles from '../features.module.css';
 
 export default function FeatureIdentification() {
   return (
@@ -12,14 +11,14 @@ export default function FeatureIdentification() {
       buttonText="Identify Features"
       mockDelay={2500}
     >
-      <div style={{ padding: '2rem', borderBottom: '1px solid var(--glass-border)' }}>
-        <h2>AI Vision Analysis Report</h2>
-        <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-          Confidence Score: <span style={{ color: 'var(--success)' }}>94%</span>
+      <div className="p-8 border-b border-white/5">
+        <h2 className="text-xl font-bold">AI Vision Analysis Report</h2>
+        <p className="text-gray-400 text-sm mt-2">
+          Confidence Score: <span className="text-emerald-400 font-semibold">94%</span>
         </p>
       </div>
       
-      <div className={styles.statsGrid} style={{ padding: '2rem' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 p-8">
         <StatCard 
           label="Estimated Carat" 
           value="1.25 ct" 
