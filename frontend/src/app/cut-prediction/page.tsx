@@ -591,20 +591,20 @@ export default function CutPredictionPage() {
                 <span>Reconstruction Checklist</span>
               </h3>
               {checklistItems.map((c, i) => (
-                <div key={i} className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 text-sm border-b border-white/[0.02] last:border-0 gap-1.5 sm:gap-2">
-                  <span className="flex items-center gap-2">
+                <div key={i} className="flex justify-between items-start py-2.5 text-sm border-b border-white/[0.02] last:border-0 gap-3">
+                  <span className="flex items-start gap-2">
                     {c.done ? (
-                      <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                      <svg className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     ) : (
-                      <div className="w-4 h-4 rounded-full border border-yellow-500/40 bg-yellow-500/10 flex items-center justify-center shrink-0">
+                      <div className="w-4 h-4 rounded-full border border-yellow-500/40 bg-yellow-500/10 flex items-center justify-center shrink-0 mt-0.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
                       </div>
                     )}
-                    <span className={c.done ? "text-white/80" : "text-white/40"}>{c.label}</span>
+                    <span className={`leading-snug ${c.done ? "text-white/80" : "text-white/40"}`}>{c.label}</span>
                   </span>
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded shrink-0 self-start sm:self-auto ${
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded shrink-0 mt-0.5 ${
                     c.done ? "text-emerald-400 bg-emerald-500/5" : "text-yellow-400 bg-yellow-500/5"
                   }`}>
                     {c.detail || (c.done ? "Done" : "Pending")}
