@@ -20,14 +20,14 @@ export default function Navbar() {
 const isActive = (path: string) => {
   if (!pathname) return false;
 
-  const current = pathname === '/' ? '/' : pathname.replace(/\/$/, '');
-  const target = path === '/' ? '/' : path.replace(/\/$/, '');
+  const current = pathname.replace(/\/$/, '');
+  const target = path.replace(/\/$/, '');
 
   if (target === '/') {
     return current === '/';
   }
 
-  return current === target || current.startsWith(target + '/');
+  return current === target;
 };
 
   return (
@@ -42,7 +42,7 @@ const isActive = (path: string) => {
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Menu */}
           <div className="hidden lg:flex items-center gap-6 h-16">
             {navItems.map((item) => (
               <Link
@@ -50,8 +50,8 @@ const isActive = (path: string) => {
                 href={item.path}
                 className={`flex items-center h-full text-sm font-medium transition-colors duration-200 ${
                   isActive(item.path)
-                    ? 'text-cyan-400'
-                    : 'text-gray-400 hover:text-cyan-300'
+                    ? '!text-cyan-400'
+                    : '!text-gray-400 hover:!text-cyan-300'
                 }`}
               >
                 {item.name}
@@ -59,7 +59,7 @@ const isActive = (path: string) => {
             ))}
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Button */}
           <button
             className="lg:hidden text-white"
             onClick={() => setIsOpen(!isOpen)}
@@ -69,9 +69,9 @@ const isActive = (path: string) => {
           </button>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile Menu */}
         <div
-          className={`absolute top-full left-0 right-0 z-40 border-b border-white/10 bg-slate-950 shadow-2xl shadow-black/40 overflow-hidden transition-all duration-300 lg:hidden ${
+          className={`absolute top-full left-0 right-0 z-40 border-b border-white/10 bg-slate-950 shadow-2xl overflow-hidden transition-all duration-300 lg:hidden ${
             isOpen
               ? 'max-h-96 opacity-100 py-4'
               : 'max-h-0 opacity-0 pointer-events-none'
@@ -85,8 +85,8 @@ const isActive = (path: string) => {
                 onClick={() => setIsOpen(false)}
                 className={`rounded-xl px-4 py-3.5 transition-all duration-200 font-medium ${
                   isActive(item.path)
-                    ? 'text-cyan-400 bg-white/5'
-                    : 'text-gray-300 hover:text-cyan-300 hover:bg-white/5'
+                    ? '!text-cyan-400 bg-white/5'
+                    : '!text-gray-300 hover:!text-cyan-300 hover:bg-white/5'
                 }`}
               >
                 {item.name}
