@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from app.api.routes import router
 from app.services.model_service import load_all_models
 from app.api.cut import router as cut_router
@@ -7,6 +8,10 @@ from app.api.cut import router as cut_router
 import os
 
 app = FastAPI(title="Dual-Branch Gem Authentication API")
+
+@app.get("/")
+def read_root():
+    return RedirectResponse(url="/docs")
 
 # Setup CORS - Allow local development by default and custom origins via env variable
 origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
