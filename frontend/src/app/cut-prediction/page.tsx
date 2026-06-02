@@ -591,7 +591,7 @@ export default function CutPredictionPage() {
                 <span>Reconstruction Checklist</span>
               </h3>
               {checklistItems.map((c, i) => (
-                <div key={i} className="flex justify-between items-center py-2 text-sm border-b border-white/[0.02] last:border-0">
+                <div key={i} className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 text-sm border-b border-white/[0.02] last:border-0 gap-1.5 sm:gap-2">
                   <span className="flex items-center gap-2">
                     {c.done ? (
                       <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
@@ -604,7 +604,7 @@ export default function CutPredictionPage() {
                     )}
                     <span className={c.done ? "text-white/80" : "text-white/40"}>{c.label}</span>
                   </span>
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded ${
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded shrink-0 self-start sm:self-auto ${
                     c.done ? "text-emerald-400 bg-emerald-500/5" : "text-yellow-400 bg-yellow-500/5"
                   }`}>
                     {c.detail || (c.done ? "Done" : "Pending")}
@@ -648,7 +648,7 @@ export default function CutPredictionPage() {
 
             {/* Live Camera View */}
             {isCapturing && (
-              <div className="relative aspect-video bg-black rounded-xl overflow-hidden mb-4 border border-white/10 flex flex-col items-center justify-center">
+              <div className="relative aspect-square sm:aspect-video bg-black rounded-xl overflow-hidden mb-4 border border-white/10 flex flex-col items-center justify-center">
                 <video
                   ref={videoRef}
                   autoPlay
@@ -658,7 +658,7 @@ export default function CutPredictionPage() {
                 
                 {/* Visual Alignment Overlay */}
                 <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
-                  <div className="relative w-44 h-44 flex items-center justify-center animate-pulse">
+                  <div className="relative w-36 h-36 sm:w-44 sm:h-44 flex items-center justify-center animate-pulse">
                     <svg
                       className="w-full h-full text-blue-500/40 filter drop-shadow-[0_0_8px_rgba(59,130,246,0.4)]"
                       viewBox="0 0 100 100"
@@ -694,7 +694,7 @@ export default function CutPredictionPage() {
                 {/* Flash overlay */}
                 {flash && <div className="absolute inset-0 bg-white pointer-events-none z-20 animate-fade-out" />}
                 
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-2">
+                <div className="absolute bottom-4 left-0 right-0 z-10 flex flex-row justify-center items-center gap-3 px-4">
                   <button
                     type="button"
                     onClick={capturePhoto}
