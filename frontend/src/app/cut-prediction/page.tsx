@@ -450,12 +450,7 @@ export default function CutPredictionPage() {
       )}
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
-        <button
-          onClick={() => history.back()}
-          className="text-sm opacity-70 hover:opacity-100 mb-5 sm:mb-6 inline-flex"
-        >
-          ← Back to Workspace
-        </button>
+    
 
         <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-center mb-2 leading-tight px-2">
           Gem Cut Prediction &{" "}
@@ -627,8 +622,12 @@ export default function CutPredictionPage() {
 
             <div className="flex flex-col sm:flex-row gap-2 mb-3">
               <button
-                onClick={() => fileInputRef.current?.click()}
-                className="flex-1 border border-white/10 rounded-lg py-2.5 sm:py-2 text-sm hover:bg-white/5 active:scale-[0.99] transition cursor-pointer"
+                type="button"
+                className={`flex-1 rounded-lg py-2.5 sm:py-2 text-sm transition ${
+                  !isCapturing
+                    ? "bg-blue-500/15 border border-blue-500/40 text-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.15)]"
+                    : "border border-white/10 text-white/60"
+                }`}
                 disabled={isProcessing}
               >
                 ⬆ Upload Angle Photos
@@ -709,6 +708,39 @@ export default function CutPredictionPage() {
                   >
                     Close
                   </button>
+                </div>
+              </div>
+            )}
+
+            {/* Live captured thumbnails (visible while camera is open) */}
+            {isCapturing && images.length > 0 && (
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs opacity-50">Captured</span>
+                  <span className="text-xs opacity-50">{images.length}/{MAX_IMAGES}</span>
+                </div>
+                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                  {images.map((img, i) => (
+                    <div
+                      key={img.previewUrl}
+                      className="relative aspect-square bg-black/40 rounded-md overflow-hidden border border-white/10"
+                    >
+                      <Image
+                        src={img.previewUrl}
+                        alt={`capture ${i}`}
+                        fill
+                        unoptimized
+                        className="object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(img.previewUrl)}
+                        className="absolute top-1 right-1 bg-black/70 rounded-full w-5 h-5 text-xs z-10 flex items-center justify-center"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
