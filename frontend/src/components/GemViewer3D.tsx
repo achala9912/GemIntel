@@ -1,29 +1,11 @@
 "use client";
 
-/**
- * GemViewer3D component
- * =====================
- * Path: frontend/src/components/GemViewer3D.tsx
- *
- * Reusable Three.js viewer for cut prediction results.
- * Port of the standalone 3D_view_threeJS.html demo, wrapped in a React component.
- *
- * Usage:
- *   <GemViewer3D data={predictionResult} onClose={() => ...} />
- *
- * Dependencies (install in frontend):
- *   npm install three @types/three
- */
-
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
 
-// =========================================================
-// TYPES
-// =========================================================
 export interface GemData {
   stone_id?:   string;
   gem_type:    string;
@@ -47,19 +29,48 @@ type ViewMode = "cut" | "overlay" | "rough";
 type LookMode = "clean" | "natural";
 
 
-// =========================================================
-// GEM PRESETS (color per species)
-// =========================================================
-const GEM_PRESETS: Record<string, { color: number; name: string }> = {
-  blue_sapphire: { color: 0x1E5AA8, name: "Blue Sapphire" },
-  spinel:        { color: 0xC13B5F, name: "Spinel" },
-  topaz:         { color: 0xE8A23A, name: "Topaz" },
+interface GemPreset {
+  color: number;          
+  attenuation: number;     
+  fire: number;           
+  name: string;
+  ior: number;            
+  attenuationDist: number; 
+  saturationBoost: number; 
+}
+
+const GEM_PRESETS: Record<string, GemPreset> = {
+  blue_sapphire: {
+    color: 0x1a4f96,
+    attenuation: 0x0a1e50,
+    fire: 0x6baeff,
+    name: "Blue Sapphire",
+    ior: 1.77,
+    attenuationDist: 2.5,
+    saturationBoost: 1.2,
+  },
+  spinel: {
+    color: 0xa8234a,
+    attenuation: 0x5c0a22,
+    fire: 0xff6b8a,
+    name: "Spinel",
+    ior: 1.72,
+    attenuationDist: 2.2,
+    saturationBoost: 1.0,
+  },
+  topaz: {
+    color: 0xc48520,
+    attenuation: 0x6e4408,
+    fire: 0xffe4a0,
+    name: "Topaz",
+    ior: 1.63,
+    attenuationDist: 3.0,
+    saturationBoost: 0.8,
+  },
 };
 
 
-// =========================================================
-// CUT GEOMETRY BUILDERS (matches Python builders)
-// =========================================================
+
 function buildSmooth6Ring(
   rxFn: (t: number) => number,
   ryFn: (t: number) => number,
@@ -80,7 +91,7 @@ function buildSmooth6Ring(
       const theta = (i / n) * Math.PI * 2;
       const rx = a * rxFn(theta);
       const ry = b * ryFn(theta);
-      positions.push(sR * rx, z, sR * ry);   // Three.js: Y is up
+      positions.push(sR * rx, z, sR * ry);   
     }
   }
   positions.push(0, zt, 0);
@@ -133,17 +144,17 @@ function buildCutGeometry(
     const r = (Math.min(L, W)/2)*s, dS = D*s;
     return buildSmooth6Ring(t => Math.cos(t), t => Math.sin(t), r, r, dS);
   }
-  // Oval or Emerald (treated as oval-like for now)
+ 
   const a = (L/2)*s, b = (W/2)*s, dS = D*s;
   return buildSmooth6Ring(t => Math.cos(t), t => Math.sin(t), a, b, dS);
 }
 
 
-// =========================================================
-// ZONING TEXTURE (natural sapphire color variation)
-// =========================================================
-function makeZoningTexture(baseColorHex: number): THREE.CanvasTexture {
-  const size = 256;
+
+// ZONING TEXTURE (natural color banding + silk inclusions)
+
+function makeZoningTexture(baseColorHex: number, boost: number = 1.0): THREE.CanvasTexture {
+  const size = 512;
   const canvas = document.createElement("canvas");
   canvas.width = size; canvas.height = size;
   const ctx = canvas.getContext("2d")!;
@@ -153,21 +164,55 @@ function makeZoningTexture(baseColorHex: number): THREE.CanvasTexture {
   const g = Math.floor(base.g * 255);
   const b = Math.floor(base.b * 255);
 
+  // Base fill
   ctx.fillStyle = `rgb(${r},${g},${b})`;
   ctx.fillRect(0, 0, size, size);
 
-  for (let i = 0; i < 14; i++) {
-    const lighter = Math.random() > 0.5;
-    const shift = lighter ? 50 : -45;
-    const rr = Math.max(0, Math.min(255, r + shift));
-    const gg = Math.max(0, Math.min(255, g + shift));
-    const bb = Math.max(0, Math.min(255, b + shift + 20));
-    ctx.fillStyle = `rgba(${rr},${gg},${bb},${0.18 + Math.random() * 0.2})`;
+  // Angular growth zoning bands (mimics natural crystal growth)
+  for (let i = 0; i < 20; i++) {
+    const lighter = Math.random() > 0.45;
+    const intensity = (lighter ? 35 : -30) * boost;
+    const rr = Math.max(0, Math.min(255, r + intensity));
+    const gg = Math.max(0, Math.min(255, g + intensity * 0.7));
+    const bb = Math.max(0, Math.min(255, b + intensity + 15));
+    const alpha = 0.08 + Math.random() * 0.14;
+    ctx.fillStyle = `rgba(${rr},${gg},${bb},${alpha})`;
     ctx.save();
     ctx.translate(Math.random() * size, Math.random() * size);
-    ctx.rotate((Math.random() - 0.5) * 1.2);
-    ctx.fillRect(-50, -15, 100, 30);
+    ctx.rotate((Math.random() - 0.5) * 2.0);
+    // Elongated bands for natural growth appearance
+    const bw = 60 + Math.random() * 140;
+    const bh = 8 + Math.random() * 18;
+    ctx.fillRect(-bw / 2, -bh / 2, bw, bh);
     ctx.restore();
+  }
+
+  // Subtle hexagonal zoning (characteristic of corundum)
+  for (let i = 0; i < 6; i++) {
+    const cx = size / 2 + (Math.random() - 0.5) * 80;
+    const cy = size / 2 + (Math.random() - 0.5) * 80;
+    const radius = 40 + Math.random() * 80;
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+    const lighter = Math.random() > 0.5;
+    const s = lighter ? 25 : -20;
+    grad.addColorStop(0, `rgba(${r+s},${g+s},${b+s},0.12)`);
+    grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, size, size);
+  }
+
+
+  ctx.strokeStyle = `rgba(255,255,255,0.04)`;
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i < 30; i++) {
+    const sx = Math.random() * size;
+    const sy = Math.random() * size;
+    const angle = (Math.floor(Math.random() * 3) * 60) * (Math.PI / 180);
+    const len = 15 + Math.random() * 40;
+    ctx.beginPath();
+    ctx.moveTo(sx, sy);
+    ctx.lineTo(sx + Math.cos(angle) * len, sy + Math.sin(angle) * len);
+    ctx.stroke();
   }
 
   const tex = new THREE.CanvasTexture(canvas);
@@ -175,10 +220,6 @@ function makeZoningTexture(baseColorHex: number): THREE.CanvasTexture {
   return tex;
 }
 
-
-// =========================================================
-// COMPONENT
-// =========================================================
 export default function GemViewer3D({
   data,
   onClose,
@@ -191,7 +232,7 @@ export default function GemViewer3D({
   const [look, setLook] = useState<LookMode>("clean");
   const [autoRotate, setAutoRotate] = useState(true);
 
-  // Three.js refs we need to control from React state
+
   const sceneRef     = useRef<THREE.Scene | null>(null);
   const cutMeshRef   = useRef<THREE.Mesh | null>(null);
   const cutEdgesRef  = useRef<THREE.LineSegments | null>(null);
@@ -202,7 +243,7 @@ export default function GemViewer3D({
   const zoningTexRef = useRef<THREE.CanvasTexture | null>(null);
   const controlsRef  = useRef<OrbitControls | null>(null);
 
-  // ---- Initial Three.js setup ----
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -226,13 +267,29 @@ export default function GemViewer3D({
     const pmrem = new THREE.PMREMGenerator(renderer);
     scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-    const key = new THREE.DirectionalLight(0xffffff, 1.4);
-    key.position.set(5, 8, 5); scene.add(key);
-    const fill = new THREE.DirectionalLight(0x8eb5ff, 0.7);
-    fill.position.set(-5, 3, -5); scene.add(fill);
-    const rim = new THREE.PointLight(0xffd9b3, 0.6, 30);
-    rim.position.set(0, -3, 6); scene.add(rim);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.15));
+
+
+    const key = new THREE.DirectionalLight(0xfff5e6, 2.0);
+    key.position.set(4, 10, 3);
+    scene.add(key);
+
+    const crownFire = new THREE.DirectionalLight(0xe8f0ff, 1.2);
+    crownFire.position.set(-2, 8, 6);
+    scene.add(crownFire);
+    const fill = new THREE.DirectionalLight(0x8eb5ff, 0.4);
+    fill.position.set(-6, 2, -4);
+    scene.add(fill);
+
+    // Rim/back light: warm accent to separate gem from background
+    const rim = new THREE.PointLight(0xffd9b3, 0.5, 25);
+    rim.position.set(0, -2, 7);
+    scene.add(rim);
+
+    // Under-pavilion glow: faint light from below to simulate light leakage through pavilion
+    const pavilionGlow = new THREE.PointLight(0xffffff, 0.2, 15);
+    pavilionGlow.position.set(0, -5, 0);
+    scene.add(pavilionGlow);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -254,23 +311,29 @@ export default function GemViewer3D({
     const maxDepth  = data.rough_bbox.y * 0.80;
     const D = Math.min(propDepth, maxDepth);
 
-    // Cut mesh
+
     const cutGeom = buildCutGeometry(data.prediction.cut, L, W, D);
-    const zoningTex = makeZoningTexture(preset.color);
+    const zoningTex = makeZoningTexture(preset.color, preset.saturationBoost);
     zoningTexRef.current = zoningTex;
 
+
     const cutMat = new THREE.MeshPhysicalMaterial({
-      color:                preset.color,
+      color:                new THREE.Color(preset.color).multiplyScalar(1.4),
       metalness:            0.0,
-      roughness:            0.18,
-      transmission:         0.55,
-      thickness:            2.0,
-      ior:                  1.77,
-      attenuationColor:     new THREE.Color(preset.color),
-      attenuationDistance:  0.9,
-      clearcoat:            0.35,
-      clearcoatRoughness:   0.25,
-      envMapIntensity:      0.9,
+      roughness:            0.05,       
+      transmission:         0.92,         
+      thickness:            3.5,          
+      ior:                  preset.ior,
+      attenuationColor:     new THREE.Color(preset.attenuation),
+      attenuationDistance:  preset.attenuationDist,
+      clearcoat:            1.0,         
+      clearcoatRoughness:   0.03,       
+      specularIntensity:    1.0,     
+      specularColor:        new THREE.Color(preset.fire),
+      sheen:                0.15,      
+      sheenRoughness:       0.3,
+      sheenColor:           new THREE.Color(preset.fire),
+      envMapIntensity:      1.5,          
       side:                 THREE.DoubleSide,
     });
     materialRef.current = cutMat;
@@ -315,12 +378,12 @@ export default function GemViewer3D({
       scene.add(roughWf);
     }
 
-    // Inclusions (silk particles)
-    const incCount = 60;
+    // Inclusions (silk particles – rutile needles characteristic of natural corundum)
+    const incCount = 120;
     const incPositions: number[] = [];
-    const ia = (L/2) * 0.78 * 0.7;
-    const ib = (W/2) * 0.78 * 0.7;
-    const ic = (D    * 0.78) * 0.35;
+    const ia = (L/2) * 0.78 * 0.65;
+    const ib = (W/2) * 0.78 * 0.65;
+    const ic = (D    * 0.78) * 0.30;
     for (let i = 0; i < incCount; i++) {
       let x, y, z;
       do {
@@ -333,8 +396,8 @@ export default function GemViewer3D({
     const incGeom = new THREE.BufferGeometry();
     incGeom.setAttribute("position", new THREE.Float32BufferAttribute(incPositions, 3));
     const inc = new THREE.Points(incGeom, new THREE.PointsMaterial({
-      color: 0xdce8ff, size: 0.03, transparent: true,
-      opacity: 0.35, sizeAttenuation: true,
+      color: 0xc8d8ff, size: 0.025, transparent: true,
+      opacity: 0.22, sizeAttenuation: true,
     }));
     inc.visible = false;
     inclusionsRef.current = inc;
@@ -359,7 +422,7 @@ export default function GemViewer3D({
     controls.target.set(0, 0, 0);
     controls.update();
 
-    // ---- Animation loop ----
+
     let animId: number;
     const animate = () => {
       animId = requestAnimationFrame(animate);
@@ -368,7 +431,7 @@ export default function GemViewer3D({
     };
     animate();
 
-    // ---- Resize ----
+
     const onResize = () => {
       if (!container) return;
       camera.aspect = container.clientWidth / container.clientHeight;
@@ -388,7 +451,7 @@ export default function GemViewer3D({
   }, [data]);
 
 
-  // ---- View toggle effect ----
+
   useEffect(() => {
     if (cutMeshRef.current)   cutMeshRef.current.visible   = view !== "rough";
     if (cutEdgesRef.current)  cutEdgesRef.current.visible  = view !== "rough";
@@ -400,29 +463,39 @@ export default function GemViewer3D({
   }, [view, look]);
 
 
-  // ---- Look toggle effect ----
+
   useEffect(() => {
     const mat = materialRef.current;
     const tex = zoningTexRef.current;
     if (!mat) return;
 
+    const preset = GEM_PRESETS[data.gem_type] || GEM_PRESETS.blue_sapphire;
+
     if (look === "natural") {
+
       mat.map = tex;
-      mat.roughness = 0.28;
-      mat.clearcoat = 0.2;
-      mat.clearcoatRoughness = 0.4;
-      mat.transmission = 0.45;
-      mat.envMapIntensity = 0.7;
+      mat.roughness = 0.08;              
+      mat.clearcoat = 0.8;
+      mat.clearcoatRoughness = 0.08;
+      mat.transmission = 0.82;          
+      mat.thickness = 4.0;              
+      mat.attenuationDistance = preset.attenuationDist * 0.7;
+      mat.envMapIntensity = 1.2;
+      mat.sheen = 0.3;              
     } else {
+ 
       mat.map = null;
-      mat.roughness = 0.18;
-      mat.clearcoat = 0.35;
-      mat.clearcoatRoughness = 0.25;
-      mat.transmission = 0.55;
-      mat.envMapIntensity = 0.9;
+      mat.roughness = 0.05;
+      mat.clearcoat = 1.0;
+      mat.clearcoatRoughness = 0.03;
+      mat.transmission = 0.92;
+      mat.thickness = 3.5;
+      mat.attenuationDistance = preset.attenuationDist;
+      mat.envMapIntensity = 1.5;
+      mat.sheen = 0.15;
     }
     mat.needsUpdate = true;
-  }, [look]);
+  }, [look, data.gem_type]);
 
 
   // ---- Auto-rotate toggle ----
@@ -431,9 +504,7 @@ export default function GemViewer3D({
   }, [autoRotate]);
 
 
-  // =========================================================
-  // RENDER
-  // =========================================================
+  
   const preset = GEM_PRESETS[data.gem_type] || GEM_PRESETS.blue_sapphire;
   const { length_mm: L, width_mm: W, depth_mm: D } = data.dimensions;
   const lw = (L / W).toFixed(2);
@@ -443,20 +514,20 @@ export default function GemViewer3D({
       <div ref={containerRef} className="absolute inset-0" />
 
       {/* Info panel */}
-      <div className="absolute top-6 left-6 bg-[rgba(15,18,30,0.78)] backdrop-blur-md border border-white/10 rounded-2xl p-5 max-w-xs">
-        <span className="inline-block text-xs px-3 py-1 rounded-full bg-blue-600 mb-2">AI Predicted</span>
-        <h1 className="text-lg font-semibold">{data.stone_id || "Gem"}</h1>
-        <p className="text-sm opacity-60 mb-4">
+      <div className="absolute top-3 left-3 sm:top-6 sm:left-6 bg-[rgba(15,18,30,0.82)] backdrop-blur-md border border-white/10 rounded-xl sm:rounded-2xl p-3 sm:p-5 max-w-[11rem] sm:max-w-xs z-10">
+        <span className="inline-block text-[10px] sm:text-xs px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-blue-600 mb-1.5 sm:mb-2">AI Predicted</span>
+        <h1 className="text-sm sm:text-lg font-semibold leading-tight truncate">{data.stone_id || "Gem"}</h1>
+        <p className="text-[11px] sm:text-sm opacity-60 mb-2 sm:mb-4 truncate">
           {preset.name} · {data.prediction.cut} Cut
         </p>
-        <div className="grid grid-cols-2 gap-3 text-sm border-t border-white/10 pt-3">
-          <div><div className="text-xs opacity-50 uppercase">Length</div><div>{L.toFixed(2)} mm</div></div>
-          <div><div className="text-xs opacity-50 uppercase">Width</div><div>{W.toFixed(2)} mm</div></div>
-          <div><div className="text-xs opacity-50 uppercase">Depth</div><div>{D.toFixed(2)} mm</div></div>
-          <div><div className="text-xs opacity-50 uppercase">L/W Ratio</div><div>{lw}</div></div>
-          <div><div className="text-xs opacity-50 uppercase">Yield</div><div>{data.prediction.yield_pct.toFixed(1)}%</div></div>
+        <div className="grid grid-cols-2 gap-1.5 sm:gap-3 text-[11px] sm:text-sm border-t border-white/10 pt-2 sm:pt-3">
+          <div><div className="text-[9px] sm:text-xs opacity-50 uppercase">Length</div><div>{L.toFixed(2)} mm</div></div>
+          <div><div className="text-[9px] sm:text-xs opacity-50 uppercase">Width</div><div>{W.toFixed(2)} mm</div></div>
+          <div><div className="text-[9px] sm:text-xs opacity-50 uppercase">Depth</div><div>{D.toFixed(2)} mm</div></div>
+          <div><div className="text-[9px] sm:text-xs opacity-50 uppercase">L/W</div><div>{lw}</div></div>
+          <div><div className="text-[9px] sm:text-xs opacity-50 uppercase">Yield</div><div>{data.prediction.yield_pct.toFixed(1)}%</div></div>
           {data.prediction.confidence !== undefined && (
-            <div><div className="text-xs opacity-50 uppercase">Confidence</div><div>{data.prediction.confidence.toFixed(0)}%</div></div>
+            <div><div className="text-[9px] sm:text-xs opacity-50 uppercase">Conf.</div><div>{data.prediction.confidence.toFixed(0)}%</div></div>
           )}
         </div>
       </div>
@@ -465,42 +536,52 @@ export default function GemViewer3D({
       {onClose && (
         <button
           onClick={onClose}
-          className="absolute top-6 right-6 bg-[rgba(15,18,30,0.78)] backdrop-blur-md border border-white/10 rounded-lg px-4 py-2 text-sm"
+          className="absolute top-3 right-3 sm:top-6 sm:right-6 bg-[rgba(15,18,30,0.82)] backdrop-blur-md border border-white/10 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm z-10"
         >
           ✕ Close
         </button>
       )}
 
       {/* Controls bar */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-[rgba(15,18,30,0.78)] backdrop-blur-md border border-white/10 rounded-xl px-4 py-3 flex gap-3 items-center text-sm">
-        <span className="opacity-60 text-xs">View:</span>
-        {(["cut", "overlay", "rough"] as ViewMode[]).map(v => (
-          <button
-            key={v}
-            onClick={() => setView(v)}
-            className={`px-3 py-1.5 rounded-lg ${
-              view === v ? "bg-blue-700" : "border border-white/15 hover:bg-white/5"
-            }`}
-          >{v === "cut" ? "Cut Only" : v === "overlay" ? "Rough + Cut" : "Rough Only"}</button>
-        ))}
+      <div className="absolute bottom-3 sm:bottom-8 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] sm:w-auto bg-[rgba(15,18,30,0.82)] backdrop-blur-md border border-white/10 rounded-xl px-3 sm:px-6 py-2.5 sm:py-4 z-10">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-5">
+          {/* View controls */}
+          <div className="flex gap-1.5 sm:gap-3 items-center justify-center text-[11px] sm:text-base">
+            <span className="opacity-60 text-[10px] sm:text-sm font-medium">View:</span>
+            {(["cut", "overlay", "rough"] as ViewMode[]).map(v => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className={`px-2 sm:px-5 py-1 sm:py-2 rounded-lg whitespace-nowrap transition ${
+                  view === v ? "bg-blue-700" : "border border-white/15 hover:bg-white/5"
+                }`}
+              >{v === "cut" ? "Cut" : v === "overlay" ? "R+Cut" : "Rough"}<span className="hidden sm:inline">{v === "cut" ? " Only" : v === "overlay" ? "" : " Only"}</span></button>
+            ))}
+          </div>
 
-        <span className="opacity-60 text-xs ml-2">Look:</span>
-        {(["clean", "natural"] as LookMode[]).map(l => (
-          <button
-            key={l}
-            onClick={() => setLook(l)}
-            className={`px-3 py-1.5 rounded-lg ${
-              look === l ? "bg-blue-700" : "border border-white/15 hover:bg-white/5"
-            }`}
-          >{l === "clean" ? "Clean" : "Natural"}</button>
-        ))}
+          {/* Divider */}
+          <div className="hidden sm:block w-px h-7 bg-white/10" />
 
-        <button
-          onClick={() => setAutoRotate(!autoRotate)}
-          className={`ml-2 px-3 py-1.5 rounded-lg ${
-            autoRotate ? "bg-blue-700" : "border border-white/15 hover:bg-white/5"
-          }`}
-        >{autoRotate ? "Auto" : "Manual"}</button>
+          {/* Look + Rotate */}
+          <div className="flex gap-1.5 sm:gap-3 items-center justify-center mt-1.5 sm:mt-0 text-[11px] sm:text-base">
+            <span className="opacity-60 text-[10px] sm:text-sm font-medium">Look:</span>
+            {(["clean", "natural"] as LookMode[]).map(l => (
+              <button
+                key={l}
+                onClick={() => setLook(l)}
+                className={`px-2 sm:px-5 py-1 sm:py-2 rounded-lg transition ${
+                  look === l ? "bg-blue-700" : "border border-white/15 hover:bg-white/5"
+                }`}
+              >{l === "clean" ? "Clean" : "Natural"}</button>
+            ))}
+            <button
+              onClick={() => setAutoRotate(!autoRotate)}
+              className={`px-2 sm:px-5 py-1 sm:py-2 rounded-lg transition ${
+                autoRotate ? "bg-blue-700" : "border border-white/15 hover:bg-white/5"
+              }`}
+            >{autoRotate ? "Auto" : "Manual"}</button>
+          </div>
+        </div>
       </div>
     </div>
   );

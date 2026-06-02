@@ -449,7 +449,7 @@ export default function CutPredictionPage() {
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto px-6 py-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
         <button
           onClick={() => history.back()}
           className="text-sm opacity-70 hover:opacity-100 mb-6"
@@ -457,13 +457,13 @@ export default function CutPredictionPage() {
           ← Back to Workspace
         </button>
 
-        <h1 className="text-5xl font-bold text-center mb-2">
+        <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-center mb-2">
           Gem Cut Prediction &{" "}
           <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
             3D Visualizer
           </span>
         </h1>
-        <p className="text-center opacity-60 mb-12">
+        <p className="text-center text-sm sm:text-base opacity-60 mb-8 sm:mb-12">
           Let&apos;s find optimal cut shape and material yield.
         </p>
 
@@ -737,7 +737,7 @@ export default function CutPredictionPage() {
                   </div>
                 </>
               ) : (
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                   {images.map((img, i) => (
                     <div
                       key={img.previewUrl}
@@ -779,7 +779,7 @@ export default function CutPredictionPage() {
                 : "from-blue-500 via-purple-500 to-cyan-500 animate-pulse"
             }`} />
 
-            <h3 className="text-xs font-semibold uppercase tracking-widest mb-4 flex items-center gap-2">
+            <h3 className="text-xs font-semibold uppercase tracking-widest pb-4 mb-3 border-b border-white/5 flex items-center gap-2">
               {status === "error" ? (
                 <span className="relative flex h-2 w-2">
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
@@ -803,7 +803,7 @@ export default function CutPredictionPage() {
               </span>
             </h3>
 
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col divide-y divide-white/5">
               {[
                 {
                   id: 1,
@@ -863,17 +863,17 @@ export default function CutPredictionPage() {
                 return (
                   <div
                     key={step.id}
-                    className={`flex items-center justify-between py-2 transition-all duration-300 ${
-                      step.id > 1 ? "border-t border-white/5 pt-3" : ""
-                    } ${isStepActive ? "bg-white/[0.01] -mx-2 px-2 rounded-lg" : ""}`}
+                    className={`flex items-center justify-between py-3.5 transition-all duration-300 ${
+                      isStepActive ? "bg-white/[0.01] -mx-2 px-2 rounded-lg" : ""
+                    }`}
                   >
                     <span className="flex items-center gap-3">
                       <StepIcon state={stepState} type={step.type} />
-                      <span className={`text-xs transition-colors duration-300 ${textClass}`}>
+                      <span className={`text-[10px] sm:text-xs transition-colors duration-300 ${textClass}`}>
                         {isStepCompleted ? step.completedLabel : isStepActive ? step.activeLabel : step.label}
                       </span>
                     </span>
-                    <span className={`text-[10px] font-mono uppercase tracking-wider transition-colors duration-300 ${
+                    <span className={`text-[9px] sm:text-[10px] font-mono uppercase tracking-wider transition-colors duration-300 hidden sm:inline ${
                       isStepActive 
                         ? "text-blue-400 animate-pulse font-bold" 
                         : isStepCompleted 
