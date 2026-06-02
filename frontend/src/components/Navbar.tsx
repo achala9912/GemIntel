@@ -30,15 +30,15 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-6">
+          <div className="hidden lg:flex items-center gap-6 h-16">
             {navItems.map((item) => (
               <Link
                 key={item.path}
                 href={item.path}
-                className={`transition-colors duration-200 hover:text-cyan-400 ${
+                className={`flex items-center h-full text-sm font-medium transition-colors duration-200 hover:text-cyan-400 ${
                   pathname === item.path
                     ? 'text-cyan-400'
-                    : 'text-gray-300'
+                    : 'text-gray-400'
                 }`}
               >
                 {item.name}
