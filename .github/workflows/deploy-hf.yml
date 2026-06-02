@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           lfs: true # Download LFS files if any exist on GitHub
@@ -24,6 +24,10 @@ jobs:
           git config --global user.email "deploy-action@github.com"
           git config --global user.name "GitHub Deploy Action"
           
+          # Configure credential helper for Hugging Face (so Git LFS can authenticate)
+          git config --global credential.helper store
+          echo "https://AcHa99:$HF_TOKEN@huggingface.co" > ~/.git-credentials
+          
           # Navigate to backend directory and initialize temporary git repository
           cd backend
           git init
@@ -31,9 +35,9 @@ jobs:
           
           # Configure Git LFS in the temporary repo so Hugging Face accepts large models
           git lfs install
-          git lfs track "models/*.pth"
-          git lfs track "models/*.pt"
-          git lfs track "models/*.pkl"
+          git lfs track "*.pth"
+          git lfs track "*.pt"
+          git lfs track "*.pkl"
           git add .gitattributes
           
           # Add and commit backend files
