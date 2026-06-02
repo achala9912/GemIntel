@@ -37,8 +37,14 @@ router = APIRouter()
 # CONFIGURATION
 # =========================================================
 # Where uploaded images and generated masks live (per session)
-BASE_DATA_DIR = Path(__file__).parent.parent.parent / "data" / "sessions"
-BASE_DATA_DIR.mkdir(parents=True, exist_ok=True)
+DEFAULT_DIR = Path(__file__).parent.parent.parent / "data" / "sessions"
+try:
+    DEFAULT_DIR.mkdir(parents=True, exist_ok=True)
+    BASE_DATA_DIR = DEFAULT_DIR
+except (PermissionError, OSError):
+    # Fallback for read-only environments (like Hugging Face Spaces)
+    BASE_DATA_DIR = Path("/tmp") / "gemintel" / "sessions"
+    BASE_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 VALID_GEM_TYPES = {"blue_sapphire", "spinel", "topaz"}
 MIN_IMAGES = 8
