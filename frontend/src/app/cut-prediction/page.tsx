@@ -471,7 +471,7 @@ export default function CutPredictionPage() {
 
             <div className="relative mb-5" ref={dropdownRef}>
               <label className="block text-xs uppercase tracking-wide opacity-50 mt-2 mb-3 sm:my-4">
-                Gemstone mineral type
+                Gemstone type
               </label>
               
               <button
@@ -496,7 +496,7 @@ export default function CutPredictionPage() {
                     </span>
                   </div>
                 ) : (
-                  <span className="text-white/40 font-medium truncate">Select mineral type...</span>
+                  <span className="text-white/40 font-medium truncate">Select type...</span>
                 )}
                 
                 <svg
