@@ -1,10 +1,5 @@
 @import "tailwindcss";
 
-@font-face {
-  font-family: 'Outfit';
-  src: url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700&display=swap');
-}
-
 :root {
   --bg-primary: #0a0a0f;
   --bg-secondary: #13141f;
