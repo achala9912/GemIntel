@@ -204,9 +204,9 @@ export default function ReconstructionModal({
             {
               id: 3,
               type: "reconstruct" as const,
-              label: "Extracting Features & Reconstructing 3D digital twin...",
-              activeLabel: "Extracting Features & Reconstructing 3D digital twin...",
-              completedLabel: "Features Extracted & 3D digital twin reconstructed",
+              label: "Reconstructing 3D digital twin & Extracting Features...",
+              activeLabel: "Reconstructing 3D digital twin & Extracting Features...",
+              completedLabel: "3D digital twin reconstructed & Features Extracted",
             },
             {
               id: 4,
