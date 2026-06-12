@@ -5,6 +5,8 @@ import type { ChangeEvent, DragEvent } from "react";
 import Image from "next/image";
 import toast, { Toaster } from "react-hot-toast";
 import GemViewer3D from "@/components/GemViewer3D";
+import ReconstructionModal from "@/components/ReconstructionModal";
+import { X, ChevronDown, Trash2 } from "lucide-react";
 
 
 import {
@@ -41,90 +43,11 @@ const dataURLtoFile = (dataurl: string, filename: string): File => {
   return new File([u8arr], filename, { type: mime });
 };
 
-interface StepIconProps {
-  state: "pending" | "active" | "completed" | "error";
-  type: "upload" | "mask" | "reconstruct" | "predict" | "preview";
-}
-
-const StepIcon = ({ state, type }: StepIconProps) => {
-  if (state === "completed") {
-    return (
-      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 scale-100 transition-all duration-300 shrink-0">
-        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-      </div>
-    );
-  }
-
-  if (state === "error") {
-    return (
-      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse shrink-0">
-        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </div>
-    );
-  }
-
-  if (state === "pending") {
-    return (
-      <div className="flex items-center justify-center w-6 h-6 rounded-full border border-white/10 text-white/20 shrink-0">
-        <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
-      </div>
-    );
-  }
-
-  switch (type) {
-    case "upload":
-      return (
-        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-[0_0_12px_rgba(59,130,246,0.2)] shrink-0">
-          <svg className="w-3.5 h-3.5 animate-[bounce_1s_infinite]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-          </svg>
-        </div>
-      );
-    case "mask":
-      return (
-        <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30 shadow-[0_0_12px_rgba(168,85,247,0.2)] overflow-hidden shrink-0">
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          <div className="absolute inset-x-0 h-[1.5px] bg-purple-400 shadow-[0_0_4px_#c084fc] top-0 animate-scan" />
-        </div>
-      );
-    case "reconstruct":
-      return (
-        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 shadow-[0_0_12px_rgba(99,102,241,0.2)] shrink-0">
-          <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-          </svg>
-        </div>
-      );
-    case "predict":
-      return (
-        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-pink-500/20 text-pink-400 border border-pink-500/30 shadow-[0_0_12px_rgba(236,72,153,0.2)] shrink-0">
-          <svg className="w-3.5 h-3.5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-          </svg>
-        </div>
-      );
-    case "preview":
-      return (
-        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 shadow-[0_0_12px_rgba(6,182,212,0.2)] shrink-0">
-          <svg className="w-3.5 h-3.5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-          </svg>
-        </div>
-      );
-    default:
-      return null;
-  }
-};
+// StepIcon helper has been extracted to components/ReconstructionModal
 
 export default function CutPredictionPage() {
   const [gemType, setGemType] = useState<string>("");
-  const [weight, setWeight] = useState<number>(0);
+  const [weight, setWeight] = useState<string | number>("");
   const [images, setImages] = useState<ImageFile[]>([]);
   const [status, setStatus] = useState<PipelineStatus>("idle");
   const [session, setSession] = useState<string | null>(null);
@@ -137,6 +60,7 @@ export default function CutPredictionPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imagesRef = useRef<ImageFile[]>([]);
+  const isCancelledRef = useRef<boolean>(false);
 
   // Webcam states
   const [isCapturing, setIsCapturing] = useState(false);
@@ -290,7 +214,7 @@ export default function CutPredictionPage() {
     },
     {
       label: "Carat weight specified",
-      done: weight > 0,
+      done: (parseFloat(String(weight)) || 0) > 0,
     },
     {
       label: `${MIN_IMAGES}–${MAX_IMAGES} side-view images`,
@@ -302,6 +226,7 @@ export default function CutPredictionPage() {
 
   // ---- Pipeline Action ----
   const runPipeline = async () => {
+    isCancelledRef.current = false;
     setError(null);
     setResult(null);
     setStatus("uploading");
@@ -311,9 +236,13 @@ export default function CutPredictionPage() {
       // 1. Upload
       const session_id = await uploadGemImages(
         gemType,
-        weight,
+        parseFloat(String(weight)) || 0,
         images.map((img) => img.file)
       );
+      
+      if (isCancelledRef.current) {
+        return;
+      }
       setSession(session_id);
 
       // 2. Start processing
@@ -327,7 +256,14 @@ export default function CutPredictionPage() {
 
       while (Date.now() - startedAt < maxWait) {
         await new Promise((r) => setTimeout(r, pollInterval));
+        if (isCancelledRef.current) {
+          return;
+        }
+
         const sData = await checkPipelineStatus(session_id);
+        if (isCancelledRef.current) {
+          return;
+        }
 
         if (sData.status === "idle") {
           toast("Processing stopped by user.", { icon: "🛑" });
@@ -342,6 +278,11 @@ export default function CutPredictionPage() {
           // 4. Fetch result
           const rData = await getPredictionResult(session_id);
           setResult(rData);
+          
+          // Wait 1 second to show the completed/success state in the modal, then close it automatically
+          await new Promise((r) => setTimeout(r, 1000));
+          setStatus("idle");
+          setSession(null);
           return;
         }
         if (sData.status === "error") {
@@ -369,15 +310,20 @@ export default function CutPredictionPage() {
   };
 
   const handleStop = async () => {
-    if (!session) return;
-    try {
-      setStatus("idle");
-      setFailedStep(null);
-      await cancelProcessingPipeline(session);
-      setSession(null);
-    } catch (err) {
-      console.error("Error stopping pipeline:", err);
-      toast.error("Failed to cancel processing pipeline on server.");
+    isCancelledRef.current = true;
+    setStatus("idle");
+    setFailedStep(null);
+    
+    const activeSession = session;
+    setSession(null);
+
+    if (activeSession) {
+      try {
+        await cancelProcessingPipeline(activeSession);
+      } catch (err) {
+        console.error("Error stopping pipeline:", err);
+        toast.error("Failed to cancel processing pipeline on server.");
+      }
     }
   };
 
@@ -385,7 +331,7 @@ export default function CutPredictionPage() {
     images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
     setImages([]);
     setGemType("");
-    setWeight(0);
+    setWeight("");
     setSession(null);
     setResult(null);
     setError(null);
@@ -394,52 +340,11 @@ export default function CutPredictionPage() {
     stopCamera();
   };
 
-  // ---- Status Display Labels ----
-  const statusLabel: Record<PipelineStatus, string> = {
-    idle: "Ready",
-    uploading: "Uploading images...",
-    uploaded: "Images received",
-    processing: "Starting...",
-    generating_masks: "Removing backgrounds...",
-    reconstructing: "Building 3D digital twin...",
-    predicting: "AI predicting optimal cut...",
-    done: "Complete",
-    error: "Error",
-  };
+
   const isProcessing = !["idle", "done", "error"].includes(status);
   const showPipelineHUD = status !== "idle";
 
-  const getStepStatus = (stepIndex: number): "pending" | "active" | "completed" | "error" => {
-    if (status === "idle") return "pending";
-    
-    if (status === "error") {
-      if (failedStep === stepIndex) return "error";
-      return failedStep !== null && failedStep > stepIndex ? "completed" : "pending";
-    }
-    
-    switch (stepIndex) {
-      case 1:
-        if (status === "uploading") return "active";
-        return "completed";
-      case 2:
-        if (["uploading"].includes(status)) return "pending";
-        if (["processing", "generating_masks"].includes(status)) return "active";
-        return "completed";
-      case 3:
-        if (["uploading", "processing", "generating_masks"].includes(status)) return "pending";
-        if (status === "reconstructing") return "active";
-        return "completed";
-      case 4:
-        if (["uploading", "processing", "generating_masks", "reconstructing"].includes(status)) return "pending";
-        if (status === "predicting") return "active";
-        return "completed";
-      case 5:
-        if (status === "done") return "completed";
-        return "pending";
-      default:
-        return "pending";
-    }
-  };
+// getStepStatus helper has been extracted to components/ReconstructionModal
 
   return (
     <div className="min-h-screen text-white">
@@ -499,16 +404,29 @@ export default function CutPredictionPage() {
                   <span className="text-white/40 font-medium truncate">Select type...</span>
                 )}
                 
-                <svg
-                  className={`w-4 h-4 text-white/50 transition-transform duration-200 shrink-0 ${
-                    isDropdownOpen ? "rotate-180" : ""
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
-                </svg>
+                <div className="flex items-center gap-2 shrink-0">
+
+                  {gemType && !isProcessing ? (
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setGemType("");
+                      }}
+                      className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/10 text-white/40 hover:text-white/80 transition cursor-pointer"
+                      title="Clear selection"
+                      role="button"
+                      tabIndex={0}
+                    >
+                      <X className="w-3.5 h-3.5 hover:text-red-600" strokeWidth={3} />
+                    </span>
+                  ) : (
+                    <ChevronDown
+                      className={`w-4 h-4 text-white/50 transition-transform duration-200 ${
+                        isDropdownOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  )}
+                </div>
               </button>
 
               {isDropdownOpen && (
@@ -552,7 +470,10 @@ export default function CutPredictionPage() {
             </label>
             <div className="flex items-center gap-2 mb-6">
               <button
-                onClick={() => setWeight((w) => Math.max(0, +(w - 0.1).toFixed(2)))}
+                onClick={() => {
+                  const currentWeight = parseFloat(String(weight)) || 0;
+                  setWeight(Math.max(0, +(currentWeight - 0.1).toFixed(2)));
+                }}
                 className="w-10 h-10 shrink-0 rounded-lg border border-white/10 hover:bg-white/5 active:scale-95 transition"
                 disabled={isProcessing}
               >
@@ -561,15 +482,20 @@ export default function CutPredictionPage() {
               <input
                 type="number"
                 value={weight}
-                onChange={(e) => setWeight(parseFloat(e.target.value) || 0)}
+                onChange={(e) => setWeight(e.target.value)}
+                onWheel={(e) => e.currentTarget.blur()}
                 step="0.01"
                 min="0"
+                placeholder="0.00"
                 className="flex-1 min-w-0 text-center bg-[rgba(0,0,0,0.4)] border border-white/10 rounded-lg px-3 py-2 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 disabled={isProcessing}
               />
               <span className="text-xs opacity-50 px-2 py-1 border border-white/10 rounded shrink-0">ct</span>
               <button
-                onClick={() => setWeight((w) => +(w + 0.1).toFixed(2))}
+                onClick={() => {
+                  const currentWeight = parseFloat(String(weight)) || 0;
+                  setWeight(+(currentWeight + 0.1).toFixed(2));
+                }}
                 className="w-10 h-10 shrink-0 rounded-lg border border-white/10 hover:bg-white/5 active:scale-95 transition"
                 disabled={isProcessing}
               >
@@ -616,7 +542,7 @@ export default function CutPredictionPage() {
                 <span className="opacity-50 mr-2">02</span> Angle Image Capture
               </h2>
               <span className="text-xs opacity-50 shrink-0 text-right">
-                {MIN_IMAGES} to {MAX_IMAGES} pictures
+                {images.length} uploaded ({MIN_IMAGES}–{MAX_IMAGES} required)
               </span>
             </div>
 
@@ -798,132 +724,40 @@ export default function CutPredictionPage() {
               )}
             </div>
             )}
+
+            {/* Clear All button at the bottom-right of the card */}
+            {images.length > 0 && !isProcessing && (
+              <div className="flex justify-end mt-3">
+                <button
+                  onClick={() => {
+                    images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
+                    setImages([]);
+                    toast.success("All uploaded images cleared!");
+                  }}
+                  className="text-xs bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-rose-400 font-semibold py-1.5 px-4 rounded-lg transition cursor-pointer flex items-center gap-1.5 active:scale-95 shadow-lg"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Clear All Images</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Pipeline Progress HUD */}
-        {showPipelineHUD && (
-          <div className="mt-4 sm:mt-6 bg-white/[0.02] border border-white/5 rounded-2xl p-4 sm:p-6 relative overflow-hidden shadow-2xl animate-fade-in">
-            {/* Glowing top line */}
-            <div className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r ${
-              status === "error" 
-                ? "from-rose-500 via-red-500 to-amber-500" 
-                : status === "done" 
-                ? "from-emerald-500 via-teal-500 to-cyan-500"
-                : "from-blue-500 via-purple-500 to-cyan-500 animate-pulse"
-            }`} />
-
-            <h3 className="text-xs font-semibold uppercase tracking-widest pb-4 mb-3 border-b border-white/5 flex items-center gap-2">
-              {status === "error" ? (
-                <span className="relative flex h-2 w-2 shrink-0">
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
-                </span>
-              ) : status === "done" ? (
-                <span className="relative flex h-2 w-2 shrink-0">
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                </span>
-              ) : (
-                <span className="relative flex h-2 w-2 shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
-                </span>
-              )}
-              <span className={status === "error" ? "text-rose-400" : status === "done" ? "text-emerald-400" : "text-blue-400"}>
-                {status === "error" 
-                  ? "Visual Hull Reconstruction Failed" 
-                  : status === "done" 
-                  ? "Visual Hull Reconstruction Complete" 
-                  : "Visual Hull Reconstruction Pipeline"}
-              </span>
-            </h3>
-
-            <div className="flex flex-col divide-y divide-white/5">
-              {[
-                {
-                  id: 1,
-                  type: "upload" as const,
-                  label: "Uploading side-view snaps...",
-                  activeLabel: "Uploading side-view snaps...",
-                  completedLabel: "Side-view snaps uploaded",
-                },
-                {
-                  id: 2,
-                  type: "mask" as const,
-                  label: "Removing backgrounds & creating masks...",
-                  activeLabel: "Removing backgrounds & creating masks...",
-                  completedLabel: "Backgrounds removed & masks created",
-                },
-                {
-                  id: 3,
-                  type: "reconstruct" as const,
-                  label: "Reconstructing 3D digital twin...",
-                  activeLabel: "Reconstructing 3D digital twin...",
-                  completedLabel: "3D digital twin reconstructed",
-                },
-                {
-                  id: 4,
-                  type: "predict" as const,
-                  label: "Predicting optimal cut shape & yield estimation...",
-                  activeLabel: "Predicting optimal cut shape & yield estimation...",
-                  completedLabel: "Optimal cut shape & yield estimated",
-                },
-                {
-                  id: 5,
-                  type: "preview" as const,
-                  label: "Previewing live 3D cut...",
-                  activeLabel: "Generating live 3D cut preview...",
-                  completedLabel: "Live 3D cut ready",
-                },
-              ].map((step) => {
-                const stepState = getStepStatus(step.id);
-                const isStepActive = stepState === "active";
-                const isStepCompleted = stepState === "completed";
-                const isStepError = stepState === "error";
-
-                let textClass = "text-white/20";
-                let statusLabelText = "Pending";
-
-                if (isStepActive) {
-                  textClass = "text-blue-400 font-semibold drop-shadow-[0_0_8px_rgba(96,165,250,0.3)]";
-                  statusLabelText = "Active";
-                } else if (isStepCompleted) {
-                  textClass = "text-white/70";
-                  statusLabelText = "Completed";
-                } else if (isStepError) {
-                  textClass = "text-rose-400 font-semibold";
-                  statusLabelText = "Failed";
-                }
-
-                return (
-                  <div
-                    key={step.id}
-                    className={`flex items-center justify-between gap-2 py-3 sm:py-3.5 transition-all duration-300 ${
-                      isStepActive ? "bg-white/[0.01] -mx-2 px-2 rounded-lg" : ""
-                    }`}
-                  >
-                    <span className="flex items-center gap-3 min-w-0">
-                      <StepIcon state={stepState} type={step.type} />
-                      <span className={`text-[10px] sm:text-xs transition-colors duration-300 break-words ${textClass}`}>
-                        {isStepCompleted ? step.completedLabel : isStepActive ? step.activeLabel : step.label}
-                      </span>
-                    </span>
-                    <span className={`text-[9px] sm:text-[10px] font-mono uppercase tracking-wider transition-colors duration-300 hidden sm:inline shrink-0 ${
-                      isStepActive 
-                        ? "text-blue-400 animate-pulse font-bold" 
-                        : isStepCompleted 
-                        ? "text-emerald-400" 
-                        : isStepError 
-                        ? "text-rose-400" 
-                        : "text-white/10"
-                    }`}>
-                      {statusLabelText}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {/* Pipeline Progress Overlay Modal */}
+        <ReconstructionModal
+          isOpen={showPipelineHUD}
+          status={status}
+          error={error}
+          failedStep={failedStep}
+          isProcessing={isProcessing}
+          onStop={handleStop}
+          onClose={() => {
+            setStatus("idle");
+            setError(null);
+            setFailedStep(null);
+          }}
+        />
 
         {/* ===== Action Buttons ===== */}
         <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3">
@@ -933,47 +767,15 @@ export default function CutPredictionPage() {
             className={`flex-1 py-3.5 sm:py-4 rounded-xl font-medium transition flex items-center justify-center gap-2 text-sm sm:text-base ${
               canSubmit && !isProcessing
                 ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-90 cursor-pointer"
-                : isProcessing
-                ? "bg-white/5 text-white/50 cursor-not-allowed"
                 : "bg-white/5 opacity-40 cursor-not-allowed"
             }`}
           >
-            {isProcessing ? (
-              <>
-                <svg className="w-5 h-5 animate-spin text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                <span>{statusLabel[status]}</span>
-              </>
-            ) : (
-              <>
-                <svg className="w-5 h-5 text-white/80 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                </svg>
-                <span>Compute &amp; Generate 3D Cut Model</span>
-              </>
-            )}
+            <svg className="w-5 h-5 text-white/80 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+            </svg>
+            <span>Compute &amp; Generate 3D Cut Model</span>
           </button>
-
-          {isProcessing && (
-            <button
-              onClick={handleStop}
-              className="px-6 py-3.5 sm:py-4 rounded-xl border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 active:scale-[0.98] transition font-medium flex items-center justify-center gap-2 cursor-pointer text-sm sm:text-base"
-            >
-              <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">
-                <rect x="4" y="4" width="16" height="16" rx="2" />
-              </svg>
-              <span>Stop Process</span>
-            </button>
-          )}
         </div>
-
-        {error && (
-          <div className="mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-300 break-words">
-            {error}
-          </div>
-        )}
       </div>
 
       {/* Toast Container */}

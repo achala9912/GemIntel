@@ -17,11 +17,12 @@ app = FastAPI(title="Dual-Branch Gem Authentication API")
 def read_root():
     return RedirectResponse(url="/docs")
 
-# Setup CORS - Allow local development by default and custom origins via env variable
-origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
 env_origins = os.getenv("ALLOWED_ORIGINS")
 if env_origins:
-    origins.extend([o.strip() for o in env_origins.split(",") if o.strip()])
+    origins = [o.strip() for o in env_origins.split(",") if o.strip()]
+else:
+    # Default fallback for local development if env/dotenv is not configured
+    origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
 app.add_middleware(
     CORSMiddleware,
