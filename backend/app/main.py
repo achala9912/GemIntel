@@ -6,6 +6,10 @@ from app.services.model_service import load_all_models
 from app.api.cut import router as cut_router
 
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = FastAPI(title="Dual-Branch Gem Authentication API")
 
