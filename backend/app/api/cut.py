@@ -99,27 +99,41 @@ async def upload_images(
         )
 
     session_id = uuid.uuid4().hex[:12]
-    upload_dir, masks_dir = _get_session_dirs(session_id)
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    masks_dir.mkdir(parents=True, exist_ok=True)
-
-    # Save uploaded images
     valid_exts = {".png", ".jpg", ".jpeg", ".webp"}
     saved = []
-    for idx, img in enumerate(images):
-        ext = Path(img.filename).suffix.lower()
-        if ext not in valid_exts:
-            raise HTTPException(400, f"Invalid image type: {img.filename}")
-        out_path = upload_dir / f"img_{idx:02d}{ext}"
-        with open(out_path, "wb") as f:
-            shutil.copyfileobj(img.file, f)
-        saved.append(str(out_path))
+
+    from app.services.cloudinary_service import is_cloudinary_enabled, upload_image
+
+    if is_cloudinary_enabled():
+        for idx, img in enumerate(images):
+            ext = Path(img.filename).suffix.lower()
+            if ext not in valid_exts:
+                raise HTTPException(400, f"Invalid image type: {img.filename}")
+            public_id = f"gemintel/sessions/{session_id}/uploads/img_{idx:02d}"
+            try:
+                img.file.seek(0)
+                secure_url = upload_image(img.file, public_id)
+                saved.append(secure_url)
+            except Exception as e:
+                raise HTTPException(500, f"Cloudinary upload failed: {str(e)}")
+    else:
+        upload_dir, _ = _get_session_dirs(session_id)
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        for idx, img in enumerate(images):
+            ext = Path(img.filename).suffix.lower()
+            if ext not in valid_exts:
+                raise HTTPException(400, f"Invalid image type: {img.filename}")
+            out_path = upload_dir / f"img_{idx:02d}{ext}"
+            with open(out_path, "wb") as f:
+                shutil.copyfileobj(img.file, f)
+            saved.append(str(out_path))
 
     SESSIONS[session_id] = {
         "status":    "uploaded",
         "gem_type":  gem_type,
         "weight_ct": weight_ct,
         "n_images":  len(saved),
+        "images":    saved,
         "result":    None,
         "error":     None,
     }
@@ -173,7 +187,24 @@ def _run_pipeline(session_id: str):
         if session_id in SESSIONS and SESSIONS[session_id].get("status") != "idle":
             SESSIONS[session_id]["status"] = new_status
 
+    from app.services.cloudinary_service import is_cloudinary_enabled, download_image, upload_image
+    use_cloudinary = is_cloudinary_enabled()
+
     try:
+        if use_cloudinary:
+            upload_dir.mkdir(parents=True, exist_ok=True)
+            masks_dir.mkdir(parents=True, exist_ok=True)
+            images_list = session.get("images", [])
+            for idx, url in enumerate(images_list):
+                ext = ".png"
+                if ".jpg" in url.lower() or ".jpeg" in url.lower():
+                    ext = ".jpg"
+                elif ".webp" in url.lower():
+                    ext = ".webp"
+                out_path = upload_dir / f"img_{idx:02d}{ext}"
+                if not download_image(url, out_path):
+                    raise Exception(f"Failed to download image from Cloudinary: {url}")
+
         # Steps 1-3: masks + hull + dimensions + mesh
         reconstruction = reconstruct_full(
             upload_dir     = str(upload_dir),
@@ -186,6 +217,17 @@ def _run_pipeline(session_id: str):
 
         if check_cancelled():
             return
+
+        if use_cloudinary:
+            valid_exts = {".png", ".jpg", ".jpeg", ".webp"}
+            mask_files = sorted([
+                f for f in os.listdir(masks_dir)
+                if Path(f).suffix.lower() in valid_exts
+            ])
+            for mask_file in mask_files:
+                local_mask_path = masks_dir / mask_file
+                public_id = f"gemintel/sessions/{session_id}/masks/{local_mask_path.stem}"
+                upload_image(str(local_mask_path), public_id)
 
         metrics = reconstruction["metrics"]
         mesh    = reconstruction["mesh"]
@@ -233,6 +275,11 @@ def _run_pipeline(session_id: str):
         if session_id in SESSIONS and SESSIONS[session_id].get("status") not in {"idle", "done"}:
             SESSIONS[session_id]["status"] = "error"
             SESSIONS[session_id]["error"]  = str(e)
+    finally:
+        if use_cloudinary:
+            session_path = BASE_DATA_DIR / session_id
+            if session_path.exists():
+                shutil.rmtree(session_path)
 
 
 @router.post("/cancel/{session_id}")
@@ -283,6 +330,11 @@ async def delete_session(session_id: str):
     """Clean up uploaded files + session state."""
     if session_id not in SESSIONS:
         raise HTTPException(404, "Session not found")
+
+    from app.services.cloudinary_service import is_cloudinary_enabled, delete_session_folder
+
+    if is_cloudinary_enabled():
+        delete_session_folder(session_id)
 
     session_path = BASE_DATA_DIR / session_id
     if session_path.exists():
