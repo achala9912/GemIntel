@@ -515,10 +515,16 @@ export default function GemViewer3D({
 
       {/* Info panel */}
       <div className="absolute top-3 left-3 sm:top-6 sm:left-6 bg-[rgba(15,18,30,0.82)] backdrop-blur-md border border-white/10 rounded-xl sm:rounded-2xl p-3 sm:p-5 max-w-[11rem] sm:max-w-xs z-10">
+
         <span className="inline-block text-[10px] sm:text-xs px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-blue-600 mb-1.5 sm:mb-2">AI Predicted</span>
-        <h1 className="text-sm sm:text-lg font-semibold leading-tight truncate">{data.stone_id || "Gem"}</h1>
-        <p className="text-[11px] sm:text-sm opacity-60 mb-2 sm:mb-4 truncate">
-          {preset.name} · {data.prediction.cut} Cut
+    
+           <p className="font-semibold text-sm opacity-60">Gem Type:</p>
+          <p className="text-[11px] sm:text-sm  mb-1 sm:mb-3 truncate">
+           {preset.name}
+        </p>
+        <p className="font-semibold text-sm opacity-60">Suggested Optimal Cut:</p>
+          <p className="text-[11px] sm:text-sm  mb-2 sm:mb-4 truncate">
+         {data.prediction.cut} 
         </p>
         <div className="grid grid-cols-2 gap-1.5 sm:gap-3 text-[11px] sm:text-sm border-t border-white/10 pt-2 sm:pt-3">
           <div><div className="text-[9px] sm:text-xs opacity-50 uppercase">Length</div><div>{L.toFixed(2)} mm</div></div>
@@ -534,12 +540,13 @@ export default function GemViewer3D({
 
       {/* Close button */}
       {onClose && (
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-3 sm:top-6 sm:right-6 bg-[rgba(15,18,30,0.82)] backdrop-blur-md border border-white/10 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm z-10"
-        >
-          ✕ Close
-        </button>
+    <button
+  onClick={onClose}
+  aria-label="Close"
+  className="absolute top-4 right-4 sm:top-6 sm:right-6 bg-black/20 hover:bg-red-500 backdrop-blur-md border border-white/20 text-white rounded-full w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center text-sm sm:text-base transition-all z-10 cursor-pointer"
+>
+  ✕ 
+</button>
       )}
 
       {/* Controls bar */}
