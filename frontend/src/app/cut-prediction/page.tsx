@@ -349,7 +349,7 @@ export default function CutPredictionPage() {
   return (
     <div className="min-h-screen text-white">
       {result && (
-        <div className="fixed inset-0 z-50 bg-[#0a0c1a]">
+        <div className="fixed inset-0 z-[100] bg-[#0a0c1a]">
           <GemViewer3D data={result} onClose={reset} />
         </div>
       )}
