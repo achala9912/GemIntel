@@ -44,6 +44,13 @@ def load_all_models():
     except Exception as e:
         print(f"[Error] Failed to load Cut Predictor: {e}")
     
+    # Load Valuation models (XGBoost and LightGBM for price prediction)
+    from app.services.valuation_service import load_valuation_models
+    try:
+        load_valuation_models()
+    except Exception as e:
+        print(f"[Error] Failed to load Valuation models: {e}")
+    
     print("[Assets] All application ML models loaded successfully.")
 
 def run_inference(base_image: Image.Image):

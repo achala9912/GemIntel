@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from app.api.routes import router
+from app.api.valuation import router as valuation_router
 from app.services.model_service import load_all_models
 from app.api.cut import router as cut_router
 
@@ -43,3 +44,4 @@ async def startup_event():
 # Include all routes
 app.include_router(router)
 app.include_router(cut_router, prefix="/api/cut", tags=["cut-prediction"])
+app.include_router(valuation_router, prefix="/api/valuation", tags=["valuation"])
