@@ -12,7 +12,7 @@ router = APIRouter()
 class GemFactorsInput(BaseModel):
     """Gem characteristics for price prediction"""
     weight_ct: float = Field(..., gt=0, le=10, description="Weight in carats")
-    gem_type: str = Field(..., description="Type of gem (Ceylon Blue Spinel or Ceylon Blue Topaz)")
+    gem_type: str = Field(..., description="Type of gem (Ceylon Blue Sapphire, Ceylon Blue Spinel, or Ceylon Blue Topaz)")
     colour_intensity: str = Field(..., description="Color intensity (Intense, Royal Blue, or Vivid)")
     clarity: str = Field(..., description="Clarity grade (IF, VS1, VS2, VVS1, or VVS2)")
     shape: str = Field(..., description="Cut shape")

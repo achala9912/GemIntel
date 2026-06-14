@@ -183,7 +183,7 @@ def get_factor_options() -> Dict:
     """
     return {
         "gem_factors": {
-            "gem_type": ["Ceylon Blue Spinel", "Ceylon Blue Topaz"],
+            "gem_type": ["Ceylon Blue Sapphire", "Ceylon Blue Spinel", "Ceylon Blue Topaz"],
             "colour_intensity": ["Intense", "Royal Blue", "Vivid"],
             "clarity": ["IF", "VS1", "VS2", "VVS1", "VVS2"],
             "shape": ["Cushion", "Emerald Cut", "Heart", "Marquise", "Oval", "Pear", "Radiant", "Round"],
