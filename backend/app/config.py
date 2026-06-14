@@ -5,13 +5,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Model Paths
 MODELS_DIR = os.path.join(BASE_DIR, "models")
-EFF_MODEL_PATH = os.path.join(MODELS_DIR, "efficientnet_b4.pth")
+VALUE_MODELS_DIR = os.path.join(MODELS_DIR, "value")
+EFF_MODEL_PATH = os.path.join(VALUE_MODELS_DIR, "efficientnet_b4.pth")
 GEM_PIPELINE_PATH = os.path.join(MODELS_DIR, "xgboost_model.pkl")
 
 # Valuation Model Paths
-XGB_VALUATION_MODEL_PATH = os.path.join(MODELS_DIR, "xgb_model.pkl")
-LGBM_VALUATION_MODEL_PATH = os.path.join(MODELS_DIR, "lgbm_model.pkl")
-FEATURE_NAMES_PATH = os.path.join(MODELS_DIR, "feature_names.pkl")
+XGB_VALUATION_MODEL_PATH = os.path.join(VALUE_MODELS_DIR, "xgb_model.pkl")
+LGBM_VALUATION_MODEL_PATH = os.path.join(VALUE_MODELS_DIR, "lgbm_model.pkl")
+FEATURE_NAMES_PATH = os.path.join(VALUE_MODELS_DIR, "feature_names.pkl")
 
 # Ensemble Weights
 W_EFF = 0.6

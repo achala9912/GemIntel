@@ -2,47 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import {
+  fetchFactorOptions,
+  predictPrice,
+  type FactorOptions,
+  type PredictionResult,
+} from '@/services/valuesApi';
 
-interface FactorOptions {
-  gem_factors: {
-    gem_type: string[];
-    colour_intensity: string[];
-    clarity: string[];
-    shape: string[];
-    cut: string[];
-    enhancement: string[];
-    weight_ct: { min: number; max: number; unit: string };
-  };
-  economic_factors: {
-    [key: string]: {
-      min: number;
-      max: number;
-      unit: string;
-      description: string;
-    };
-  };
-}
-
-interface PredictionResult {
-  status: string;
-  predicted_price_lkr: number;
-  predicted_log_price: number;
-  confidence: number;
-  breakdown: {
-    xgboost: {
-      predicted_price_lkr: number;
-      predicted_log_price: number;
-    };
-    lightgbm: {
-      predicted_price_lkr: number;
-      predicted_log_price: number;
-    };
-  };
-  input_factors: {
-    gem_factors: Record<string, any>;
-    economic_factors: Record<string, any>;
-  };
-}
 
 export default function Valuation() {
   const [factorOptions, setFactorOptions] = useState<FactorOptions | null>(null);
@@ -50,8 +16,6 @@ export default function Valuation() {
   const [predicting, setPredicting] = useState(false);
   const [result, setResult] = useState<PredictionResult | null>(null);
   const [showResult, setShowResult] = useState(false);
-
-  // Gem Factors Form State
   const [gemFactors, setGemFactors] = useState({
     weight_ct: 1.5,
     gem_type: 'Ceylon Blue Spinel',
@@ -62,7 +26,6 @@ export default function Valuation() {
     enhancement: 'Unheated',
   });
 
-  // Economic Factors Form State
   const [economicFactors, setEconomicFactors] = useState({
     ccpi: 95.0,
     ccpi_yoy: 4.5,
@@ -72,15 +35,12 @@ export default function Valuation() {
     exchange_rate: 155.0,
   });
 
-  // Fetch factor options on component mount
+
   useEffect(() => {
-    const fetchFactorOptions = async () => {
+    const loadOptions = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-        const response = await fetch(`${apiUrl}/api/valuation/factor-options`);
-        if (!response.ok) throw new Error('Failed to fetch factor options');
-        const data = await response.json();
-        setFactorOptions(data.factor_options);
+        const options = await fetchFactorOptions();
+        setFactorOptions(options);
       } catch (error) {
         console.error('Error fetching factor options:', error);
         toast.error('Failed to load dropdown options');
@@ -89,36 +49,21 @@ export default function Valuation() {
       }
     };
 
-    fetchFactorOptions();
+    loadOptions();
   }, []);
 
-  const handleGemFactorChange = (field: string, value: any) => {
+  const handleGemFactorChange = (field: keyof typeof gemFactors, value: string | number) => {
     setGemFactors((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleEconomicFactorChange = (field: string, value: any) => {
+  const handleEconomicFactorChange = (field: keyof typeof economicFactors, value: number) => {
     setEconomicFactors((prev) => ({ ...prev, [field]: value }));
   };
 
   const handlePredict = async () => {
     setPredicting(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const response = await fetch(`${apiUrl}/api/valuation/predict-price`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          gem_factors: gemFactors,
-          economic_factors: economicFactors,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Prediction failed');
-      }
-
-      const data = await response.json();
+      const data = await predictPrice(gemFactors, economicFactors);
       setResult(data);
       setShowResult(true);
       toast.success('Price prediction successful!');
@@ -129,6 +74,7 @@ export default function Valuation() {
       setPredicting(false);
     }
   };
+
 
   const handleReset = () => {
     setShowResult(false);
@@ -502,9 +448,7 @@ export default function Valuation() {
                     <li>Economic indicators (CCPI, gold price, GDP, etc.)</li>
                   </ul>
                 </div>
-                <p className="text-xs text-gray-500 pt-4 border-t border-gray-700">
-                  * Disclaimer: Values are estimates based on historical data. Not certified for insurance purposes.
-                </p>
+            
               </div>
             </div>
           </div>

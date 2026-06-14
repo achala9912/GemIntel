@@ -70,24 +70,24 @@ def predict_price(gem_factors: Dict, economic_factors: Dict) -> Dict:
     X = X.reindex(columns=feature_names, fill_value=0)
     
     # Make predictions
-    xgb_log_price = xgb_valuation_model.predict(X)[0]
-    lgbm_log_price = lgbm_valuation_model.predict(X)[0]
+    xgb_log_price = float(xgb_valuation_model.predict(X)[0])
+    lgbm_log_price = float(lgbm_valuation_model.predict(X)[0])
     
     # Ensemble prediction (weighted average)
-    ensemble_log_price = (W_VALUATION_XGB * xgb_log_price) + (W_VALUATION_LGBM * lgbm_log_price)
+    ensemble_log_price = float((W_VALUATION_XGB * xgb_log_price) + (W_VALUATION_LGBM * lgbm_log_price))
     
     # Convert from log space back to actual price
-    predicted_price = math.exp(ensemble_log_price)
-    xgb_price = math.exp(xgb_log_price)
-    lgbm_price = math.exp(lgbm_log_price)
+    predicted_price = float(math.exp(ensemble_log_price))
+    xgb_price = float(math.exp(xgb_log_price))
+    lgbm_price = float(math.exp(lgbm_log_price))
     
     # Calculate confidence (normalized probability)
     # Using the inverse of the coefficient of variation as a confidence measure
     predictions = [xgb_price, lgbm_price]
-    mean_pred = np.mean(predictions)
-    std_pred = np.std(predictions)
-    confidence = 1 - (std_pred / mean_pred) if mean_pred > 0 else 0.5
-    confidence = max(0, min(1, confidence))  # Clamp between 0 and 1
+    mean_pred = float(np.mean(predictions))
+    std_pred = float(np.std(predictions))
+    confidence = float(1 - (std_pred / mean_pred) if mean_pred > 0 else 0.5)
+    confidence = float(max(0, min(1, confidence)))  # Clamp between 0 and 1
     
     return {
         "status": "success",
