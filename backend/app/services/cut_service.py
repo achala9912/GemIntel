@@ -68,7 +68,7 @@ def load_cut_model() -> None:
 
 def predict_cut_one(image: Image.Image) -> dict:
     if _cut_model is None:
-        raise RuntimeError("Cut model is not loaded.")
+        load_cut_model()
     x = _cut_transform(image).unsqueeze(0).to(_device)
     with torch.no_grad():
         shape_logits, cut_logits = _cut_model(x)

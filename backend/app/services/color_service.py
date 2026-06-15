@@ -68,7 +68,7 @@ def load_color_model() -> None:
 
 def predict_color_one(image: Image.Image) -> dict:
     if _color_model is None:
-        raise RuntimeError("Color model is not loaded.")
+        load_color_model()
     x = _color_transform(image).unsqueeze(0).to(_device)
     with torch.no_grad():
         hue_logits, sat_logits = _color_model(x)
