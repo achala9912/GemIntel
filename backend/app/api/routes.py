@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 from app.services.model_service import run_inference
 from collections import defaultdict
-from app.config import GEM_TYPES
+from app.config import GEM_TYPES, GEM_TYPE_HUES
 from app.services.cut_service import predict_cut_one, cut_classes
 from app.services.color_service import predict_color_one, color_classes
 
@@ -108,6 +108,25 @@ def identify_class_labels():
     return {"cut": cut_classes(), "color": color_classes()}
 
 
+
+def _norm_hue(label: str) -> str:
+    return label.lower().replace("_", " ").replace("-", " ").strip()
+
+
+def _filter_hues_by_gem_type(hue_probs: dict, gem_type: str) -> dict:
+    allowed = GEM_TYPE_HUES.get(gem_type)
+    if not allowed:
+        return hue_probs
+    allowed_norm = {_norm_hue(h) for h in allowed}
+    kept = {k: v for k, v in hue_probs.items() if _norm_hue(k) in allowed_norm}
+    if not kept:
+        return hue_probs
+    total = sum(kept.values())
+    if total <= 0:
+        return kept
+    return {k: v / total for k, v in kept.items()}
+
+
 def _top(d: dict) -> tuple[str, float]:
     label, prob = max(d.items(), key=lambda kv: kv[1])
     return label, float(prob)
@@ -144,6 +163,8 @@ async def identify_gem(
             color_res = predict_color_one(image)
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
+
+        color_res["hue_probs"] = _filter_hues_by_gem_type(color_res["hue_probs"], gem_type)
 
         shape_top, shape_p = _top(cut_res["shape_probs"])
         cut_top, cut_p = _top(cut_res["cut_style_probs"])

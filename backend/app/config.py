@@ -40,3 +40,14 @@ GEM_TYPES = [
     "Blue Spinel",
     "Blue Topaz",
 ]
+
+# Domain-allowed hue labels per gem type.
+# The DINOv2 color model is trained on the union of these; at inference time
+# we restrict the hue distribution to the labels valid for the selected gem
+# variety and renormalize. Labels are matched case-insensitively, with
+# spaces / hyphens / underscores treated as equivalent.
+GEM_TYPE_HUES = {
+    "Blue Sapphire": ["royal blue", "cornflower blue"],
+    "Blue Spinel":   ["cobalt blue"],
+    "Blue Topaz":    ["London blue", "Swiss blue", "sky blue"],
+}
