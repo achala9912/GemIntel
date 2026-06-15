@@ -1,11 +1,23 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { X, ChevronDown } from 'lucide-react';
 import styles from './identification.module.css';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
 
 const FALLBACK_GEM_TYPES = ['Blue Sapphire', 'Blue Spinel', 'Blue Topaz'];
+
+const getGemColor = (type: string): string => {
+  const normalized = type.toLowerCase().trim();
+  if (normalized.includes('sapphire')) return '#3b82f6'; // blue
+  if (normalized.includes('spinel')) return '#ec4899';   // pink
+  if (normalized.includes('topaz')) return '#eab308';    // yellow
+  if (normalized.includes('ruby')) return '#ef4444';     // red
+  if (normalized.includes('emerald')) return '#10b981';  // green
+  if (normalized.includes('diamond')) return '#f3f4f6';  // white/gray
+  return '#8b5cf6'; // default purple
+};
 
 interface UploadedImage {
   id: string;
@@ -73,6 +85,9 @@ export default function FeatureIdentification() {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     fetch(`${API_BASE}/gem-types`)
       .then((r) => (r.ok ? r.json() : null))
@@ -88,6 +103,16 @@ export default function FeatureIdentification() {
   useEffect(() => () => {
     images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
   }, [images]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const addFiles = (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
@@ -118,6 +143,7 @@ export default function FeatureIdentification() {
   const clearAll = () => {
     images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
     setImages([]);
+    setGemType(gemTypes[0] || '');
     setResult(null);
     setError(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -158,9 +184,14 @@ export default function FeatureIdentification() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>Feature Identification</h1>
-        <p className={styles.subtitle}>
+      <header className="text-center mb-8 sm:mb-12">
+        <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-center mb-2 leading-tight px-2">
+          Feature{' '}
+          <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+            Identification
+          </span>
+        </h1>
+        <p className="text-center text-sm sm:text-base opacity-60 max-w-2xl mx-auto px-4">
           Choose a gem type, upload one or more gemstone images, and run our AI models to
           identify the <strong>cut</strong> (shape and style) and <strong>color</strong>{' '}
           (hue and saturation).
@@ -171,18 +202,112 @@ export default function FeatureIdentification() {
         <div className={styles.step}>
           <span className={styles.stepBadge}>1</span>
           <div className={styles.stepBody}>
-            <label htmlFor="gem-type" className={styles.stepLabel}>Gem type</label>
-            <select
-              id="gem-type"
-              className={styles.select}
-              value={gemType}
-              onChange={(e) => setGemType(e.target.value)}
-              disabled={processing}
-            >
-              {gemTypes.map((g) => (
-                <option key={g} value={g}>{g}</option>
-              ))}
-            </select>
+            <label className={styles.stepLabel}>Gem type</label>
+            <div className="relative w-full max-w-xs" ref={dropdownRef}>
+              <div
+                onClick={() => !processing && setIsDropdownOpen(!isDropdownOpen)}
+                className={`w-full bg-[rgba(0,0,0,0.4)] border border-white/10 rounded-xl px-4 py-3 text-sm flex justify-between items-center text-left transition ${
+                  processing
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:bg-white/[0.02] active:scale-[0.99] cursor-pointer'
+                }`}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (!processing) setIsDropdownOpen(!isDropdownOpen);
+                  }
+                }}
+              >
+                {gemType ? (
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_currentColor] shrink-0"
+                      style={{
+                        backgroundColor: getGemColor(gemType),
+                        color: getGemColor(gemType),
+                      }}
+                    />
+                    <span className="font-semibold text-white truncate">{gemType}</span>
+                  </div>
+                ) : (
+                  <span className="text-white/40 font-medium truncate">Select type...</span>
+                )}
+
+                <div className="flex items-center gap-2 shrink-0">
+                  {gemType && !processing ? (
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setGemType('');
+                      }}
+                      className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/10 text-white/40 hover:text-white/80 transition cursor-pointer"
+                      title="Clear selection"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setGemType('');
+                        }
+                      }}
+                    >
+                      <X className="w-3.5 h-3.5 hover:text-red-600" strokeWidth={3} />
+                    </span>
+                  ) : (
+                    <ChevronDown
+                      className={`w-4 h-4 text-white/50 transition-transform duration-200 ${
+                        isDropdownOpen ? 'rotate-180' : ''
+                      }`}
+                    />
+                  )}
+                </div>
+              </div>
+
+              {isDropdownOpen && (
+                <div className="absolute top-[calc(100%+6px)] left-0 w-full bg-[#0a0c1a]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden py-1.5 animate-fade-in-pure">
+                  {gemTypes.map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => {
+                        setGemType(g);
+                        setIsDropdownOpen(false);
+                      }}
+                      className={`w-full px-4 py-2.5 text-left hover:bg-white/5 transition flex items-center justify-between group cursor-pointer ${
+                        gemType === g ? 'bg-white/[0.03]' : ''
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span
+                          className="w-2.5 h-2.5 rounded-full transition-transform group-hover:scale-110 shrink-0"
+                          style={{ backgroundColor: getGemColor(g) }}
+                        />
+                        <span className="font-semibold text-white text-sm truncate">{g}</span>
+                      </div>
+
+                      {gemType === g && (
+                        <svg
+                          className="w-4 h-4 text-blue-400 shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2.5"
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -248,7 +373,7 @@ export default function FeatureIdentification() {
             type="button"
             className="btn-secondary"
             onClick={clearAll}
-            disabled={processing || images.length === 0}
+            disabled={processing}
           >
             Clear
           </button>
