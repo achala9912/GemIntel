@@ -3,8 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { X, ChevronDown } from 'lucide-react';
 import styles from './identification.module.css';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+import {
+  fetchGemTypes,
+  identifyGem,
+  type IdentifyResponse,
+} from '@/services/identificationApi';
 
 const FALLBACK_GEM_TYPES = ['Blue Sapphire', 'Blue Spinel', 'Blue Topaz'];
 
@@ -23,33 +26,6 @@ interface UploadedImage {
   id: string;
   file: File;
   previewUrl: string;
-}
-
-interface LabelResult {
-  label: string;
-  confidence: number;
-}
-
-interface CutBlock {
-  shape: LabelResult;
-  cut_style: LabelResult;
-  shape_probs: Record<string, number>;
-  cut_style_probs: Record<string, number>;
-}
-
-interface ColorBlock {
-  hue: LabelResult;
-  saturation: LabelResult;
-  hue_probs: Record<string, number>;
-  saturation_probs: Record<string, number>;
-}
-
-interface IdentifyResponse {
-  status: string;
-  gem_type: string;
-  image_count: number;
-  aggregate: { cut: CutBlock; color: ColorBlock };
-  per_image: Array<{ filename: string; cut: CutBlock; color: ColorBlock }>;
 }
 
 function pct(v: number): string {
@@ -89,12 +65,11 @@ export default function FeatureIdentification() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch(`${API_BASE}/gem-types`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (d?.gem_types?.length) {
-          setGemTypes(d.gem_types);
-          setGemType(d.gem_types[0]);
+    fetchGemTypes()
+      .then((types) => {
+        if (types?.length) {
+          setGemTypes(types);
+          setGemType(types[0]);
         }
       })
       .catch(() => {});
@@ -162,15 +137,10 @@ export default function FeatureIdentification() {
     setError(null);
     setResult(null);
     try {
-      const fd = new FormData();
-      fd.append('gem_type', gemType);
-      images.forEach((img) => fd.append('files', img.file, img.file.name));
-      const res = await fetch(`${API_BASE}/identify`, { method: 'POST', body: fd });
-      if (!res.ok) {
-        const body = await res.json().catch(() => null);
-        throw new Error(body?.detail || res.statusText || 'Request failed.');
-      }
-      const data = (await res.json()) as IdentifyResponse;
+      const data: IdentifyResponse = await identifyGem(
+        gemType,
+        images.map((img) => img.file),
+      );
       setResult(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
