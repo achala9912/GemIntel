@@ -1,3 +1,12 @@
+---
+title: GemIntel API
+emoji: 💎
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+---
+
 # How to run the backend locally
 
 1. Set Up a Virtual Environment

@@ -14,28 +14,44 @@ label_encoder = None
 def load_all_models():
     """Triggered on app startup to load models into memory."""
     global eff_model, gem_model, scaler, label_encoder
-
+    
+    print("[BranchPredictor] Initializing dual-branch authentication pipeline...")
+    
     print("Building timm EfficientNet-B4 Skeleton...")
     eff_model = timm.create_model("efficientnet_b4", pretrained=False, num_classes=2)
-
-    print("Loading .pth Weights into Skeleton...")
+    
+    print(f"Loading .pth weights from: {EFF_MODEL_PATH}")
     state_dict = torch.load(EFF_MODEL_PATH, map_location=torch.device('cpu'))
     eff_model.load_state_dict(state_dict)
-    eff_model.eval()
-
-    print("Loading ML Pipeline Bundle...")
+    eff_model.eval() 
+    print("[BranchPredictor] EfficientNet-B4 loaded successfully on CPU.")
+    
+    print(f"Loading XGBoost ML Pipeline Bundle from: {GEM_PIPELINE_PATH}")
     pipeline_bundle = joblib.load(GEM_PIPELINE_PATH)
     gem_model = pipeline_bundle["model"]
     scaler = pipeline_bundle["scaler"]
     label_encoder = pipeline_bundle["label_encoder"]
+    print("[BranchPredictor] XGBoost classifier and scaler loaded successfully.")
+    
+    # Load AI filter model
+    from app.services.ai_filter_service import load_ai_filter_model
+    load_ai_filter_model()
 
-    # Identification models (cut + color)
-    from app.services.cut_service import load_cut_model
-    from app.services.color_service import load_color_model
-    load_cut_model()
-    load_color_model()
-
-    print("✅ All assets loaded successfully.")
+    # Load Cut Predictor model
+    from app.services.cut_model_service import get_predictor
+    try:
+        get_predictor().load()
+    except Exception as e:
+        print(f"[Error] Failed to load Cut Predictor: {e}")
+    
+    # Load Valuation models (XGBoost and LightGBM for price prediction)
+    from app.services.valuation_service import load_valuation_models
+    try:
+        load_valuation_models()
+    except Exception as e:
+        print(f"[Error] Failed to load Valuation models: {e}")
+    
+    print("[Assets] All application ML models loaded successfully.")
 
 def run_inference(base_image: Image.Image):
     """Executes both models, calculates weighted ensemble, and returns payload."""
@@ -59,17 +75,22 @@ def run_inference(base_image: Image.Image):
     xgb_raw_features = prepare_for_xgboost(base_image)
     scaled_features = scaler.transform(xgb_raw_features)
     
-    # CRITICAL CHANGE: Use predict_proba instead of predict
     xgb_probs = gem_model.predict_proba(scaled_features)[0] 
     
     xgb_pred_idx = int(np.argmax(xgb_probs))
     xgb_label = label_encoder.inverse_transform([xgb_pred_idx])[0]
 
     # --- THE ENSEMBLE ---
-    # Calculate the weighted average of probabilities for both classes [Class 0, Class 1]
-    ensemble_probs = (W_EFF * eff_probs) + (W_XGB * xgb_probs)
     
-    # Find the winning class from the combined probabilities
+    # Calculate the weighted average of probabilities for both classes [Class 0, Class 1]
+    # Weighted probabilities for each class
+    final_natural = (W_EFF * eff_probs[0]) + (W_XGB * xgb_probs[0])
+    final_synthetic = (W_EFF * eff_probs[1]) + (W_XGB * xgb_probs[1])
+
+    # Combined probability array
+    ensemble_probs = np.array([final_natural, final_synthetic])
+
+    # Final prediction
     final_pred_idx = int(np.argmax(ensemble_probs))
     final_label = label_encoder.inverse_transform([final_pred_idx])[0]
     final_confidence = float(ensemble_probs[final_pred_idx])
