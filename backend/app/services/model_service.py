@@ -14,20 +14,27 @@ label_encoder = None
 def load_all_models():
     """Triggered on app startup to load models into memory."""
     global eff_model, gem_model, scaler, label_encoder
-    
+
     print("Building timm EfficientNet-B4 Skeleton...")
     eff_model = timm.create_model("efficientnet_b4", pretrained=False, num_classes=2)
-    
+
     print("Loading .pth Weights into Skeleton...")
     state_dict = torch.load(EFF_MODEL_PATH, map_location=torch.device('cpu'))
     eff_model.load_state_dict(state_dict)
-    eff_model.eval() 
-    
+    eff_model.eval()
+
     print("Loading ML Pipeline Bundle...")
     pipeline_bundle = joblib.load(GEM_PIPELINE_PATH)
     gem_model = pipeline_bundle["model"]
     scaler = pipeline_bundle["scaler"]
     label_encoder = pipeline_bundle["label_encoder"]
+
+    # Identification models (cut + color)
+    from app.services.cut_service import load_cut_model
+    from app.services.color_service import load_color_model
+    load_cut_model()
+    load_color_model()
+
     print("✅ All assets loaded successfully.")
 
 def run_inference(base_image: Image.Image):
