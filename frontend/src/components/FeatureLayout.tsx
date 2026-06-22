@@ -133,14 +133,16 @@ export default function FeatureLayout<T = unknown>({
         </p>
       </header>
 
-      <main className="flex flex-col gap-8 sm:gap-12 items-center">
-        <ImageUploader 
-          key={resetKey}
-          onAnalyze={handleAnalyze} 
-          isAnalyzing={isAnalyzing} 
-          analysisStatus={analysisStatus}
-          buttonText={buttonText} 
-        />
+      <main className="flex flex-col gap-8 sm:gap-12 items-center w-full">
+        {!showResult && (
+          <ImageUploader 
+            key={resetKey}
+            onAnalyze={handleAnalyze} 
+            isAnalyzing={isAnalyzing} 
+            analysisStatus={analysisStatus}
+            buttonText={buttonText} 
+          />
+        )}
 
         {errorMessage && (
           <div className="mt-6 p-4 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 flex flex-col items-center gap-4 text-center max-w-md">
@@ -155,16 +157,14 @@ export default function FeatureLayout<T = unknown>({
         )}
 
         {showResult && (
-          <div className="w-full glass-panel animate-fade-in max-w-3xl">
+          <div className="w-full glass-panel p-5 sm:p-8 flex flex-col gap-6 sm:gap-7 animate-fade-in max-w-3xl">
             {renderResult ? renderResult(analysisResult as T) : children}
-            <div className="flex justify-center my-8">
-              <button 
-                onClick={handleReset}
-                className="px-8 py-3.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white font-semibold text-sm transition cursor-pointer active:scale-95 flex items-center justify-center"
-              >
-                Reset
-              </button>
-            </div>
+            <button 
+              onClick={handleReset}
+              className="btn-secondary w-full py-3.5 sm:py-4 text-sm sm:text-base mt-2"
+            >
+              Reset / Authenticate Another Gem
+            </button>
           </div>
         )}
       </main>
