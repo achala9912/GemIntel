@@ -28,7 +28,7 @@ from fastapi.responses import JSONResponse
 
 # Your services (self-contained, no external dependencies)
 from app.services.reconstruction_service import reconstruct_full
-from app.services.cut_model_service import get_predictor
+from app.services.cut_prediction_service import get_predictor
 
 
 router = APIRouter()
