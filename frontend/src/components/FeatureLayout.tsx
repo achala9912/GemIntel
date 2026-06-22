@@ -4,7 +4,7 @@ import { useState } from 'react';
 import ImageUploader from '@/components/ImageUploader';
 
 interface FeatureLayoutProps<T = unknown> {
-  title: string;
+  title: React.ReactNode;
   description: string;
   buttonText: string;
   mockDelay?: number;
@@ -123,13 +123,17 @@ export default function FeatureLayout<T = unknown>({
   };
 
   return (
-    <div className="py-16 px-4 max-w-[1000px] mx-auto">
-      <header className="text-center mb-12">
-        <h1 className="text-4xl font-extrabold mb-4 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">{title}</h1>
-        <p className="text-gray-400 text-lg max-w-[600px] mx-auto leading-relaxed">{description}</p>
+    <div className="max-w-[1100px] mx-auto px-4 sm:px-6 pt-6 sm:pt-12 pb-16 sm:pb-20">
+      <header className="text-center mb-8 sm:mb-12">
+        <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-center mb-2 leading-tight px-2 text-white">
+          {title}
+        </h1>
+        <p className="text-center text-sm sm:text-base opacity-60 max-w-2xl mx-auto px-4 text-gray-300">
+          {description}
+        </p>
       </header>
 
-      <main className="flex flex-col gap-12 items-center">
+      <main className="flex flex-col gap-8 sm:gap-12 items-center">
         <ImageUploader 
           key={resetKey}
           onAnalyze={handleAnalyze} 
@@ -151,12 +155,12 @@ export default function FeatureLayout<T = unknown>({
         )}
 
         {showResult && (
-          <div className="w-full glass-panel animate-fade-in">
+          <div className="w-full glass-panel animate-fade-in max-w-3xl">
             {renderResult ? renderResult(analysisResult as T) : children}
             <div className="flex justify-center my-8">
               <button 
                 onClick={handleReset}
-                className="btn-primary bg-white/5 border border-white/10 text-white hover:bg-white/10 py-3 px-8 rounded-xl cursor-pointer font-semibold text-sm transition"
+                className="px-8 py-3.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white font-semibold text-sm transition cursor-pointer active:scale-95 flex items-center justify-center"
               >
                 Reset
               </button>

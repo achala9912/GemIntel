@@ -29,59 +29,57 @@ const features = [
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="max-w-[1100px] mx-auto px-4 sm:px-6 pt-12 sm:pt-20 pb-16 sm:pb-24 relative">
       {/* Background Decor */}
-      <div className="fixed -top-40 -right-40 h-96 w-96 rounded-full bg-purple-600/20 blur-[100px]" />
-      <div className="fixed -bottom-40 -left-40 h-96 w-96 rounded-full bg-blue-600/20 blur-[100px]" />
+      <div className="fixed -top-40 -right-40 h-96 w-96 rounded-full bg-purple-600/10 blur-[100px] pointer-events-none" />
+      <div className="fixed -bottom-40 -left-40 h-96 w-96 rounded-full bg-blue-600/10 blur-[100px] pointer-events-none" />
 
-      <div className="relative mx-auto max-w-6xl px-4 py-20">
-        
-        {/* Hero Section */}
-        <div className="mb-20 text-center">
-          <h1 className="mb-6 text-5xl font-bold sm:text-6xl">
-            Unlock the True Value of{' '}
-            <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-              Gemstones
-            </span>
-          </h1>
-          <p className="mx-auto mb-8 max-w-2xl text-lg text-gray-400">
-            State-of-the-art AI for classification, authentication, and valuation.
-            Upload an image and let GemIntel reveal its secrets.
-          </p>
-          <div className="flex justify-center gap-4">
-            <Link
-              href="/identification"
-              className="rounded-lg bg-gradient-to-r from-purple-500 to-blue-500 px-6 py-3 font-semibold transition hover:opacity-90"
-            >
-              Start Analysis →
-            </Link>
-            <Link
-              href="/how-it-works"
-              className="rounded-lg border border-gray-700 px-6 py-3 font-semibold text-gray-300 transition hover:bg-gray-800"
-            >
-              How It Works
-            </Link>
-          </div>
+      {/* Hero Section */}
+      <section className="mb-16 sm:mb-24 text-center">
+        <h1 className="mb-6 text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight text-white">
+          Unlock the True Value of{' '}
+          <span className="gradient-text">
+            Gemstones
+          </span>
+        </h1>
+        <p className="mx-auto mb-10 max-w-2xl text-base sm:text-lg text-gray-400 leading-relaxed">
+          State-of-the-art AI for classification, authentication, and valuation.
+          Upload gemstone photographs or input attributes to reveal their secrets.
+        </p>
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+          <Link
+            href="/identification"
+            className="btn-primary px-8 py-3.5 text-sm sm:text-base w-full sm:w-auto shadow-lg"
+          >
+            Start Analysis →
+          </Link>
+          <Link
+            href="/identification"
+            className="btn-secondary px-8 py-3.5 text-sm sm:text-base w-full sm:w-auto shadow-lg"
+          >
+            How It Works
+          </Link>
         </div>
+      </section>
 
-        {/* Features Grid - New Card Styles */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {features.map((feature, i) => (
-            <Link
-              key={i}
-              href={feature.path}
-              className="group flex flex-col items-center rounded-2xl bg-gradient-to-b from-gray-800 to-gray-900 p-8 text-center transition hover:from-gray-700 hover:to-gray-800 hover:-translate-y-1"
-            >
-              <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-gray-700 text-3xl group-hover:bg-gray-600">
-                {feature.icon}
-              </div>
-              <h3 className="mb-2 text-lg font-semibold">{feature.title}</h3>
-              <p className="text-sm leading-relaxed text-gray-400">{feature.description}</p>
-            </Link>
-          ))}
-        </div>
-
-      </div>
+      {/* Features Grid - Glassmorphic Card Styles */}
+      <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {features.map((feature, i) => (
+          <Link
+            key={i}
+            href={feature.path}
+            className="glass-panel group flex flex-col items-center p-6 sm:p-8 text-center transition hover:-translate-y-1.5 duration-300"
+          >
+            <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-white/5 border border-white/10 text-2xl group-hover:bg-white/10 transition-colors">
+              {feature.icon}
+            </div>
+            <h3 className="mb-2 text-base sm:text-lg font-bold text-white group-hover:text-cyan-400 transition-colors">
+              {feature.title}
+            </h3>
+            <p className="text-xs sm:text-sm leading-relaxed text-gray-400">{feature.description}</p>
+          </Link>
+        ))}
+      </section>
     </div>
   );
 }

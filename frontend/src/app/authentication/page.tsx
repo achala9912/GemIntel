@@ -38,11 +38,11 @@ const renderAuthenticationResult = (result: AuthenticationResult) => {
     <div className="flex flex-col gap-6">
       {/* AI-Generated Block Notice */}
       {isAi && (
-        <div className="p-8 pb-0">
-          <div className="p-8 text-center border border-red-500/30 bg-red-500/5 rounded-2xl flex flex-col items-center gap-3">
+        <div className="p-4 sm:p-8 pb-0">
+          <div className="p-6 sm:p-8 text-center border border-red-500/30 bg-red-500/5 rounded-2xl flex flex-col items-center gap-3">
             <ShieldAlert className="w-10 h-10 text-red-500 animate-bounce" />
-            <h2 className="text-2xl font-bold text-red-500">AI Image Rejected</h2>
-            <p className="text-sm text-gray-400 max-w-md">
+            <h2 className="text-xl sm:text-2xl font-bold text-red-500">AI Image Rejected</h2>
+            <p className="text-xs sm:text-sm text-gray-400 max-w-md">
               {result.message || 'The image is AI-generated. Please submit a real gemstone photograph.'}
             </p>
           </div>
@@ -51,12 +51,12 @@ const renderAuthenticationResult = (result: AuthenticationResult) => {
 
       {/* AI Origin Results */}
       {filter && isAi && (
-        <div className="px-8 py-4">
-          <div className={`p-6 rounded-2xl bg-white/[0.02] border border-white/5 border-l-4 ${borderLeftColor}`}>
-            <h3 className={`text-base font-bold mb-4 ${scoreColorClass}`}>
+        <div className="px-4 sm:px-8 py-4">
+          <div className={`p-4 sm:p-6 rounded-2xl bg-white/5 border border-white/10 border-l-4 ${borderLeftColor}`}>
+            <h3 className={`text-sm sm:text-base font-bold mb-4 ${scoreColorClass}`}>
               AI Origin Filter - AI Generated Detection
             </h3>
-            <div className="font-mono text-sm leading-relaxed text-gray-300 flex flex-col gap-2">
+            <div className="font-mono text-xs sm:text-sm leading-relaxed text-gray-300 flex flex-col gap-2">
               <div>Frequency Analysis &rarr; {filter.breakdown?.frequency_analysis?.score?.toFixed(4)}</div>
               <div>ML Model &rarr; {filter.breakdown?.detector_model?.score?.toFixed(4)}</div>
               <div>Metadata Check &rarr; {filter.breakdown?.metadata_check?.score?.toFixed(4)}</div>
@@ -72,11 +72,11 @@ const renderAuthenticationResult = (result: AuthenticationResult) => {
       {/* Gemstone Authentication Results (if authentic) */}
       {!isAi && (
         <div>
-          <div className="mx-8 mt-6">
-            <div className="p-8 text-center border border-emerald-500/30 bg-emerald-500/5 rounded-2xl flex flex-col items-center gap-3">
+          <div className="mx-4 sm:mx-8 mt-6">
+            <div className="p-6 sm:p-8 text-center border border-emerald-500/30 bg-emerald-500/5 rounded-2xl flex flex-col items-center gap-3">
               <ShieldCheck className="w-10 h-10 text-emerald-400" />
-              <h2 className="text-2xl font-bold text-emerald-400">Natural Origin Confirmed</h2>
-              <p className="text-sm text-gray-400 max-w-md">
+              <h2 className="text-xl sm:text-2xl font-bold text-emerald-400">Natural Origin Confirmed</h2>
+              <p className="text-xs sm:text-sm text-gray-400 max-w-md">
                 Ensemble model result based on our trained gemstone authentication pipeline.
               </p>
               <div className="inline-block px-3 py-1 bg-emerald-500/10 text-emerald-400 rounded-full text-xs font-semibold mt-4 border border-emerald-500/20">
@@ -85,14 +85,14 @@ const renderAuthenticationResult = (result: AuthenticationResult) => {
             </div>
           </div>
 
-          <div className="p-8">
-            <h3 className="text-lg font-bold mb-4">Ensemble Model Breakdown</h3>
+          <div className="p-4 sm:p-8">
+            <h3 className="text-base sm:text-lg font-bold mb-4 text-white">Ensemble Model Breakdown</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {Object.entries(result.breakdown || {}).map(([modelName, modelData]) => (
-                <div key={modelName} className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col gap-2">
-                  <h4 className="text-xs text-gray-400 font-bold uppercase tracking-wider">{modelName}</h4>
-                  <p className="text-lg font-extrabold text-white my-1 capitalize">{modelData.prediction || 'N/A'}</p>
-                  <div className="text-xs text-gray-400 flex flex-col gap-1 border-t border-white/5 pt-2 mt-1">
+                <div key={modelName} className="p-4 sm:p-5 rounded-2xl bg-white/5 border border-white/10 flex flex-col gap-2">
+                  <h4 className="text-[10px] sm:text-xs text-gray-400 font-bold uppercase tracking-wider">{modelName}</h4>
+                  <p className="text-base sm:text-lg font-extrabold text-white my-1 capitalize">{modelData.prediction || 'N/A'}</p>
+                  <div className="text-xs text-gray-400 flex flex-col gap-1 border-t border-white/10 pt-2 mt-1">
                     <div className="flex justify-between">
                       <span>Confidence:</span>
                       <span className="font-semibold text-gray-300">{modelData.confidence != null ? `${(modelData.confidence * 100).toFixed(1)}%` : 'N/A'}</span>
@@ -115,7 +115,14 @@ const renderAuthenticationResult = (result: AuthenticationResult) => {
 export default function Authentication() {
   return (
     <FeatureLayout
-      title="Gemstone Authentication"
+      title={
+        <>
+          Gemstone{' '}
+          <span className="gradient-text">
+            Authentication
+          </span>
+        </>
+      }
       description="AI-powered authenticity verification. Our model detects microscopic markers, inclusions, and growth patterns to determine natural origin versus synthetic laboratory creation."
       buttonText="Authenticate Gem"
       apiEndpoint="/authenticate"

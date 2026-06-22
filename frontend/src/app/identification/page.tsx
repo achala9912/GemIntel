@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { X, ChevronDown } from 'lucide-react';
+import { X, ChevronDown, Upload } from 'lucide-react';
 import {
   fetchGemTypes,
   identifyGem,
@@ -36,15 +36,15 @@ function ProbBars({ probs, accent }: { probs: Record<string, number>; accent: st
   return (
     <div className="flex flex-col gap-1.5">
       {sorted.map(([k, v]) => (
-        <div key={k} className="grid grid-cols-[110px_1fr_55px] items-center gap-2.5 text-[0.85rem]">
-          <span className="text-gray-400 capitalize whitespace-nowrap overflow-hidden text-ellipsis">{k}</span>
-          <div className="h-2 bg-white/7 rounded overflow-hidden">
+        <div key={k} className="flex items-center gap-3 text-sm">
+          <span className="w-24 text-gray-400 capitalize whitespace-nowrap overflow-hidden text-ellipsis">{k}</span>
+          <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
             <div
-              className="h-full rounded transition-[width] duration-400 ease-out"
+              className="h-full rounded-full transition-[width] duration-400 ease-out"
               style={{ width: `${v * 100}%`, background: accent }}
             />
           </div>
-          <span className="text-right tabular-nums text-white">{pct(v)}</span>
+          <span className="w-12 text-right tabular-nums text-white font-medium">{pct(v)}</span>
         </div>
       ))}
     </div>
@@ -53,7 +53,7 @@ function ProbBars({ probs, accent }: { probs: Record<string, number>; accent: st
 
 export default function FeatureIdentification() {
   const [gemTypes, setGemTypes] = useState<string[]>(FALLBACK_GEM_TYPES);
-  const [gemType, setGemType] = useState<string>(FALLBACK_GEM_TYPES[0]);
+  const [gemType, setGemType] = useState<string>("");
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [processing, setProcessing] = useState(false);
   const [result, setResult] = useState<IdentifyResponse | null>(null);
@@ -68,7 +68,6 @@ export default function FeatureIdentification() {
       .then((types) => {
         if (types?.length) {
           setGemTypes(types);
-          setGemType(types[0]);
         }
       })
       .catch(() => {});
@@ -117,7 +116,7 @@ export default function FeatureIdentification() {
   const clearAll = () => {
     images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
     setImages([]);
-    setGemType(gemTypes[0] || '');
+    setGemType('');
     setResult(null);
     setError(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -151,8 +150,11 @@ export default function FeatureIdentification() {
   const accent1 = 'linear-gradient(135deg, #8b5cf6, #06b6d4)';
   const accent2 = 'linear-gradient(135deg, #f59e0b, #ef4444)';
 
+  const canSubmit = gemType && images.length > 0 && !processing;
+  const showClear = Boolean(gemType || images.length > 0 || result || error);
+
   return (
-    <div className="max-w-[1100px] mx-auto px-6 pt-12 pb-20">
+    <div className="max-w-[1100px] mx-auto px-4 sm:px-6 pt-6 sm:pt-12 pb-16 sm:pb-20">
       <header className="text-center mb-8 sm:mb-12">
         <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-center mb-2 leading-tight px-2">
           Feature{' '}
@@ -167,18 +169,21 @@ export default function FeatureIdentification() {
         </p>
       </header>
 
-      <section className="glass-panel p-8 flex flex-col gap-7">
-        <div className="flex gap-4 items-start">
-          <span className="shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 text-white font-bold inline-flex items-center justify-center text-[0.95rem]">1</span>
-          <div className="flex-1 flex flex-col gap-3">
-            <label className="text-[0.95rem] text-gray-400 uppercase tracking-wider font-semibold">Gem type</label>
-            <div className="relative w-full max-w-xs" ref={dropdownRef}>
+      {/* Single Vertical Card Layout */}
+      <section className="glass-panel p-4 sm:p-8 flex flex-col gap-6 sm:gap-7 max-w-3xl mx-auto w-full">
+        
+        {/* Step 1: Gem Type selection */}
+        <div className="flex gap-3 sm:gap-4 items-start">
+          <span className="shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 text-white font-bold inline-flex items-center justify-center text-sm">1</span>
+          <div className="flex-1 flex flex-col gap-3 min-w-0">
+            <label className="text-sm text-gray-400 uppercase tracking-wider font-semibold">Gem type</label>
+            <div className="relative w-full" ref={dropdownRef}>
               <div
                 onClick={() => !processing && setIsDropdownOpen(!isDropdownOpen)}
-                className={`w-full bg-[rgba(0,0,0,0.4)] border border-white/10 rounded-xl px-4 py-3 text-sm flex justify-between items-center text-left transition ${
+                className={`w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-sm flex justify-between items-center text-left transition ${
                   processing
                     ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:bg-white/[0.02] active:scale-[0.99] cursor-pointer'
+                    : 'hover:bg-white/5 active:scale-95 cursor-pointer'
                 }`}
                 role="button"
                 tabIndex={0}
@@ -190,7 +195,7 @@ export default function FeatureIdentification() {
                 }}
               >
                 {gemType ? (
-                  <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
                     <span
                       className="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_currentColor] shrink-0"
                       style={{
@@ -236,7 +241,7 @@ export default function FeatureIdentification() {
               </div>
 
               {isDropdownOpen && (
-                <div className="absolute top-[calc(100%+6px)] left-0 w-full bg-[#0a0c1a]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden py-1.5 animate-fade-in-pure">
+                <div className="absolute top-full mt-2 left-0 w-full bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden py-1.5 animate-fade-in-pure">
                   {gemTypes.map((g) => (
                     <button
                       key={g}
@@ -246,7 +251,7 @@ export default function FeatureIdentification() {
                         setIsDropdownOpen(false);
                       }}
                       className={`w-full px-4 py-2.5 text-left hover:bg-white/5 transition flex items-center justify-between group cursor-pointer ${
-                        gemType === g ? 'bg-white/[0.03]' : ''
+                        gemType === g ? 'bg-white/5' : ''
                       }`}
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
@@ -280,12 +285,13 @@ export default function FeatureIdentification() {
           </div>
         </div>
 
-        <div className="flex gap-4 items-start">
-          <span className="shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 text-white font-bold inline-flex items-center justify-center text-[0.95rem]">2</span>
-          <div className="flex-1 flex flex-col gap-3">
-            <span className="text-[0.95rem] text-gray-400 uppercase tracking-wider font-semibold">Upload images</span>
+        {/* Step 2: Upload images dropzone */}
+        <div className="flex gap-3 sm:gap-4 items-start">
+          <span className="shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 text-white font-bold inline-flex items-center justify-center text-sm">2</span>
+          <div className="flex-1 flex flex-col gap-3 min-w-0">
+            <span className="text-sm text-gray-400 uppercase tracking-wider font-semibold">Upload images</span>
             <div
-              className="border-2 border-dashed border-purple-500/50 rounded-2xl py-10 px-6 text-center bg-purple-500/5 cursor-pointer transition-all duration-200 ease-in-out hover:bg-purple-500/10 hover:border-purple-500"
+              className="border-2 border-dashed border-purple-500/50 rounded-2xl py-6 px-4 sm:py-10 sm:px-6 text-center bg-purple-500/5 cursor-pointer transition-all duration-200 ease-in-out hover:bg-purple-500/10 hover:border-purple-500"
               onClick={() => !processing && fileInputRef.current?.click()}
               onDragOver={(e) => { e.preventDefault(); }}
               onDrop={(e) => {
@@ -293,9 +299,11 @@ export default function FeatureIdentification() {
                 if (!processing) addFiles(e.dataTransfer.files);
               }}
             >
-              <div className="text-[2.25rem] mb-2">📸</div>
-              <div className="text-[1.1rem] font-semibold mb-1">Drop images here or click to browse</div>
-              <div className="text-[0.85rem] text-gray-400">JPG / PNG / WEBP — multiple files allowed</div>
+          <Upload className="mx-auto mb-3 text-violet-400" />
+          <p className="font-semibold text-base sm:text-lg">Upload Gemstone Image</p>
+          <p className="text-xs sm:text-sm text-gray-400 mt-1">
+            Drag & drop or click to browse
+          </p>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -307,9 +315,9 @@ export default function FeatureIdentification() {
             </div>
 
             {images.length > 0 && (
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-3">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(90px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-3">
                 {images.map((img) => (
-                  <div key={img.id} className="relative rounded-xl overflow-hidden bg-black/30 border border-white/8 aspect-square flex flex-col">
+                  <div key={img.id} className="relative rounded-xl overflow-hidden bg-black/30 border border-white/10 aspect-square flex flex-col">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={img.previewUrl} alt={img.file.name} className="w-full h-full object-cover block" />
                     <button
@@ -321,7 +329,7 @@ export default function FeatureIdentification() {
                     >
                       ×
                     </button>
-                    <div className="absolute left-0 right-0 bottom-0 py-[0.35rem] px-2 bg-gradient-to-t from-black/85 to-transparent text-white text-[0.7rem] whitespace-nowrap overflow-hidden text-ellipsis">{img.file.name}</div>
+                    <div className="absolute left-0 right-0 bottom-0 py-1.5 px-2 bg-gradient-to-t from-black/80 to-transparent text-white text-xs whitespace-nowrap overflow-hidden text-ellipsis">{img.file.name}</div>
                   </div>
                 ))}
               </div>
@@ -329,113 +337,130 @@ export default function FeatureIdentification() {
           </div>
         </div>
 
-        <div className="flex gap-3 flex-wrap">
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-3 border-t border-white/5 pt-6 mt-2">
           <button
             type="button"
-            className="btn-primary"
             onClick={handleProcess}
-            disabled={processing || images.length === 0}
+            disabled={!canSubmit}
+            className={`flex-1 py-3.5 sm:py-4 rounded-xl font-medium transition flex items-center justify-center gap-2 text-sm sm:text-base ${
+              canSubmit
+                ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-90 cursor-pointer text-white"
+                : "bg-white/5 opacity-40 cursor-not-allowed text-white/50"
+            }`}
           >
-            {processing ? (<><span className="spinner" /> Processing…</>) : `Process ${images.length || ''} image${images.length === 1 ? '' : 's'}`.trim()}
+            {processing ? (
+              <>
+                <span className="spinner" /> Processing…
+              </>
+            ) : (
+              `Process ${images.length || ''} image${images.length === 1 ? '' : 's'}`.trim()
+            )}
           </button>
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={clearAll}
-            disabled={processing}
-          >
-            Clear
-          </button>
+          {showClear && (
+            <button
+              type="button"
+              onClick={clearAll}
+              disabled={processing}
+              className="px-6 py-3.5 sm:py-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white font-medium text-sm sm:text-base transition cursor-pointer flex items-center justify-center"
+            >
+              Clear
+            </button>
+          )}
         </div>
-
-        {error && <div className="py-4 px-5 rounded-xl bg-red-500/10 border border-red-500/35 text-red-200 text-[0.95rem]">{error}</div>}
       </section>
 
+      {error && <div className="mt-4 py-4 px-5 rounded-xl bg-red-500/10 border border-red-500/35 text-red-200 text-sm max-w-3xl mx-auto w-full">{error}</div>}
+
       {result && (
-        <section className="glass-panel mt-8 p-8 flex flex-col gap-6 animate-slide-up">
-          <div className="flex justify-between items-baseline gap-4 flex-wrap border-b border-white/8 pb-4">
-            <h2>Identification Result</h2>
-            <div className="flex gap-2 text-gray-400 text-[0.95rem]">
-              <span>Gem: <strong>{result.gem_type}</strong></span>
+        <section className="glass-panel mt-8 p-6 sm:p-8 flex flex-col gap-6 animate-slide-up max-w-3xl mx-auto w-full">
+          <div className="flex justify-between items-baseline gap-4 flex-wrap border-b border-white/10 pb-4">
+            <h2 className="text-xl font-bold text-white">Identification Result</h2>
+            <div className="flex gap-2 text-gray-400 text-sm">
+              <span>Gem: <strong className="text-white">{result.gem_type}</strong></span>
               <span>•</span>
               <span>{result.image_count} image{result.image_count === 1 ? '' : 's'}</span>
             </div>
           </div>
 
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-6">
-            <div className="bg-white/3 border border-white/8 rounded-2xl p-6 flex flex-col gap-4">
+          <div className="flex flex-col gap-6">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-6 flex flex-col gap-4">
               <div className="flex items-center justify-between gap-3">
-                <h3>Cut</h3>
-                <span className="text-[0.7rem] uppercase tracking-wider py-1 px-2.5 rounded-full text-white font-semibold" style={{ background: accent1 }}>DINOv2 multi-task</span>
+                <h3 className="text-lg font-semibold text-white">Cut</h3>
+                <span className="text-xs uppercase tracking-wider py-1 px-2.5 rounded-full text-white font-semibold" style={{ background: accent1 }}>DINOv2 multi-task</span>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 border-b border-white/5 pb-4">
                 <div>
-                  <div className="text-[0.8rem] text-gray-400 uppercase tracking-wider mb-1.5">Shape</div>
-                  <div className="text-2xl font-bold font-['Outfit'] bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent capitalize">{result.aggregate.cut.shape.label}</div>
-                  <div className="text-[0.85rem] text-gray-400 mt-0.5">{pct(result.aggregate.cut.shape.confidence)} confidence</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Shape</div>
+                  <div className="text-2xl font-bold bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent capitalize">{result.aggregate.cut.shape.label}</div>
+                  <div className="text-xs text-gray-400 mt-1">{pct(result.aggregate.cut.shape.confidence)} confidence</div>
                 </div>
                 <div>
-                  <div className="text-[0.8rem] text-gray-400 uppercase tracking-wider mb-1.5">Cut style</div>
-                  <div className="text-2xl font-bold font-['Outfit'] bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent capitalize">{result.aggregate.cut.cut_style.label}</div>
-                  <div className="text-[0.85rem] text-gray-400 mt-0.5">{pct(result.aggregate.cut.cut_style.confidence)} confidence</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Cut style</div>
+                  <div className="text-2xl font-bold bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent capitalize">{result.aggregate.cut.cut_style.label}</div>
+                  <div className="text-xs text-gray-400 mt-1">{pct(result.aggregate.cut.cut_style.confidence)} confidence</div>
                 </div>
               </div>
-              <div className="text-[0.8rem] text-gray-400 uppercase tracking-wider font-semibold mt-1">Shape distribution</div>
+              <div className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Shape distribution</div>
               <ProbBars probs={result.aggregate.cut.shape_probs} accent={accent1} />
-              <div className="text-[0.8rem] text-gray-400 uppercase tracking-wider font-semibold mt-1">Cut style distribution</div>
+              <div className="text-xs text-gray-400 uppercase tracking-wider font-semibold mt-2">Cut style distribution</div>
               <ProbBars probs={result.aggregate.cut.cut_style_probs} accent={accent1} />
             </div>
 
-            <div className="bg-white/3 border border-white/8 rounded-2xl p-6 flex flex-col gap-4">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-6 flex flex-col gap-4">
               <div className="flex items-center justify-between gap-3">
-                <h3>Color</h3>
-                <span className="text-[0.7rem] uppercase tracking-wider py-1 px-2.5 rounded-full text-white font-semibold" style={{ background: accent2 }}>DINOv2 multi-head</span>
+                <h3 className="text-lg font-semibold text-white">Color</h3>
+                <span className="text-xs uppercase tracking-wider py-1 px-2.5 rounded-full text-white font-semibold" style={{ background: accent2 }}>DINOv2 multi-head</span>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 border-b border-white/5 pb-4">
                 <div>
-                  <div className="text-[0.8rem] text-gray-400 uppercase tracking-wider mb-1.5">Hue</div>
-                  <div className="text-2xl font-bold font-['Outfit'] bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent capitalize">{result.aggregate.color.hue.label}</div>
-                  <div className="text-[0.85rem] text-gray-400 mt-0.5">{pct(result.aggregate.color.hue.confidence)} confidence</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Hue</div>
+                  <div className="text-2xl font-bold bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent capitalize">{result.aggregate.color.hue.label}</div>
+                  <div className="text-xs text-gray-400 mt-1">{pct(result.aggregate.color.hue.confidence)} confidence</div>
                 </div>
                 <div>
-                  <div className="text-[0.8rem] text-gray-400 uppercase tracking-wider mb-1.5">Saturation</div>
-                  <div className="text-2xl font-bold font-['Outfit'] bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent capitalize">{result.aggregate.color.saturation.label}</div>
-                  <div className="text-[0.85rem] text-gray-400 mt-0.5">{pct(result.aggregate.color.saturation.confidence)} confidence</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Saturation</div>
+                  <div className="text-2xl font-bold bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent capitalize">{result.aggregate.color.saturation.label}</div>
+                  <div className="text-xs text-gray-400 mt-1">{pct(result.aggregate.color.saturation.confidence)} confidence</div>
                 </div>
               </div>
-              <div className="text-[0.8rem] text-gray-400 uppercase tracking-wider font-semibold mt-1">Hue distribution</div>
+              <div className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Hue distribution</div>
               <ProbBars probs={result.aggregate.color.hue_probs} accent={accent2} />
-              <div className="text-[0.8rem] text-gray-400 uppercase tracking-wider font-semibold mt-1">Saturation distribution</div>
+              <div className="text-xs text-gray-400 uppercase tracking-wider font-semibold mt-2">Saturation distribution</div>
               <ProbBars probs={result.aggregate.color.saturation_probs} accent={accent2} />
             </div>
           </div>
 
           {result.per_image.length > 1 && (
-            <details className="mt-2 border-t border-white/8 pt-4">
-              <summary className="cursor-pointer text-gray-400 text-[0.9rem]">Per-image breakdown ({result.per_image.length})</summary>
-              <div className="mt-4 grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3">
+            <details className="mt-2 border-t border-white/10 pt-4">
+              <summary className="cursor-pointer text-gray-400 text-sm hover:text-white transition">Per-image breakdown ({result.per_image.length})</summary>
+              <div className="mt-4 grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3">
                 {result.per_image.map((p, i) => (
-                  <div key={`${p.filename}-${i}`} className="py-[0.85rem] px-4 bg-white/3 rounded-xl border border-white/8 flex flex-col gap-1">
-                    <div className="text-[0.8rem] text-gray-400 mb-1.5 break-all">{p.filename}</div>
-                    <div className="grid grid-cols-[50px_1fr_auto] gap-2 text-[0.85rem] items-center">
-                      <span className="text-gray-400 uppercase text-[0.7rem] tracking-wider">Shape</span>
-                      <strong className="capitalize">{p.cut.shape.label}</strong>
-                      <span className="text-gray-400 tabular-nums">{pct(p.cut.shape.confidence)}</span>
+                  <div key={`${p.filename}-${i}`} className="py-3 px-4 bg-white/5 rounded-xl border border-white/10 flex flex-col gap-2">
+                    <div className="text-xs text-gray-400 mb-1 break-all border-b border-white/5 pb-1">{p.filename}</div>
+                    
+                    <div className="flex justify-between items-center text-sm gap-2">
+                      <span className="text-gray-400 text-xs uppercase tracking-wider">Shape</span>
+                      <span className="capitalize font-medium text-white">{p.cut.shape.label}</span>
+                      <span className="text-gray-400 text-xs">{pct(p.cut.shape.confidence)}</span>
                     </div>
-                    <div className="grid grid-cols-[50px_1fr_auto] gap-2 text-[0.85rem] items-center">
-                      <span className="text-gray-400 uppercase text-[0.7rem] tracking-wider">Cut</span>
-                      <strong className="capitalize">{p.cut.cut_style.label}</strong>
-                      <span className="text-gray-400 tabular-nums">{pct(p.cut.cut_style.confidence)}</span>
+                    
+                    <div className="flex justify-between items-center text-sm gap-2">
+                      <span className="text-gray-400 text-xs uppercase tracking-wider">Cut</span>
+                      <span className="capitalize font-medium text-white">{p.cut.cut_style.label}</span>
+                      <span className="text-gray-400 text-xs">{pct(p.cut.cut_style.confidence)}</span>
                     </div>
-                    <div className="grid grid-cols-[50px_1fr_auto] gap-2 text-[0.85rem] items-center">
-                      <span className="text-gray-400 uppercase text-[0.7rem] tracking-wider">Hue</span>
-                      <strong className="capitalize">{p.color.hue.label}</strong>
-                      <span className="text-gray-400 tabular-nums">{pct(p.color.hue.confidence)}</span>
+
+                    <div className="flex justify-between items-center text-sm gap-2">
+                      <span className="text-gray-400 text-xs uppercase tracking-wider">Hue</span>
+                      <span className="capitalize font-medium text-white">{p.color.hue.label}</span>
+                      <span className="text-gray-400 text-xs">{pct(p.color.hue.confidence)}</span>
                     </div>
-                    <div className="grid grid-cols-[50px_1fr_auto] gap-2 text-[0.85rem] items-center">
-                      <span className="text-gray-400 uppercase text-[0.7rem] tracking-wider">Sat</span>
-                      <strong className="capitalize">{p.color.saturation.label}</strong>
-                      <span className="text-gray-400 tabular-nums">{pct(p.color.saturation.confidence)}</span>
+
+                    <div className="flex justify-between items-center text-sm gap-2">
+                      <span className="text-gray-400 text-xs uppercase tracking-wider">Sat</span>
+                      <span className="capitalize font-medium text-white">{p.color.saturation.label}</span>
+                      <span className="text-gray-400 text-xs">{pct(p.color.saturation.confidence)}</span>
                     </div>
                   </div>
                 ))}

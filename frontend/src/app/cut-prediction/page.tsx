@@ -6,7 +6,7 @@ import Image from "next/image";
 import toast, { Toaster } from "react-hot-toast";
 import GemViewer3D from "@/components/GemViewer3D";
 import ReconstructionModal from "@/components/ReconstructionModal";
-import { X, ChevronDown, Trash2 } from "lucide-react";
+import { X, ChevronDown, Trash2, Upload } from "lucide-react";
 
 
 import {
@@ -688,8 +688,8 @@ export default function CutPredictionPage() {
             >
               {images.length === 0 ? (
                 <>
-                  <div className="text-4xl opacity-30 mb-2">+</div>
-                  <div className="font-medium text-sm sm:text-base">Drag and drop files here</div>
+                  <Upload className="mx-auto mb-3 text-violet-400" />
+                  <div className="font-semibold text-sm sm:text-base">Drag and drop files here</div>
                   <div className="text-xs opacity-50 mt-2 max-w-sm mx-auto">
                     Upload between {MIN_IMAGES} to {MAX_IMAGES} high-definition side-angle
                     gemstone snapshots to perform visual hull calculations.

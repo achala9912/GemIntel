@@ -1,5 +1,6 @@
 'use client';
 
+import { Upload } from 'lucide-react';
 import { useState, useRef } from 'react';
 
 interface ImageUploaderProps {
@@ -51,17 +52,19 @@ export default function ImageUploader({
   };
 
   return (
-    <div className="w-full max-w-[600px] mx-auto">
+    <div className="w-full max-w-xl mx-auto">
       {!imagePreview ? (
         <div 
-          className="border-2 border-dashed border-violet-500/40 rounded-2xl padding py-12 px-8 text-center bg-violet-500/5 cursor-pointer transition-all duration-200 hover:bg-violet-500/10 hover:border-violet-500"
+          className="border-2 border-dashed border-violet-500/40 rounded-2xl py-8 px-4 sm:py-12 sm:px-8 text-center bg-violet-500/5 cursor-pointer transition-all duration-200 hover:bg-violet-500/10 hover:border-violet-500"
           onClick={() => fileInputRef.current?.click()}
           onDragOver={handleDragOver}
           onDrop={handleDrop}
         >
-          <div className="text-5xl mb-4">📸</div>
-          <h3 className="text-lg font-bold mb-1">Upload Gemstone Image</h3>
-          <p className="text-sm text-gray-400">Drag and drop or click to browse</p>
+          <Upload className="mx-auto mb-3 text-violet-400" />
+          <p className="font-semibold text-base sm:text-lg">Upload Gemstone Image</p>
+          <p className="text-xs sm:text-sm text-gray-400 mt-1">
+            Drag & drop or click to browse
+          </p>
           <input 
             type="file" 
             ref={fileInputRef} 
@@ -72,12 +75,12 @@ export default function ImageUploader({
         </div>
       ) : (
         <div className="flex flex-col items-center gap-6 animate-fade-in">
-          <div className="relative w-full max-w-[400px] rounded-2xl overflow-hidden shadow-2xl shadow-black/40 aspect-square flex items-center justify-center bg-black">
+          <div className="relative w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl shadow-black/40 aspect-square flex items-center justify-center bg-black">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={imagePreview} alt="Gemstone Preview" className="w-full h-full object-cover display-block" />
+            <img src={imagePreview} alt="Gemstone Preview" className="w-full h-full object-cover block" />
             {!isAnalyzing && (
               <button 
-                className="absolute top-2.5 right-2.5 bg-black/60 hover:bg-red-600 text-white border-none rounded-full w-[30px] h-[30px] flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-110 z-10 font-bold" 
+                className="absolute top-2.5 right-2.5 bg-black/60 hover:bg-red-600 text-white border-none rounded-full w-8 h-8 flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-110 z-10 font-bold" 
                 onClick={clearImage}
               >
                 ✕
@@ -91,7 +94,7 @@ export default function ImageUploader({
             )}
           </div>
           {isAnalyzing && (
-            <div className="w-full max-w-[400px] bg-white/[0.03] border border-white/[0.08] rounded-xl p-5 flex items-center gap-4 backdrop-blur-md shadow-2xl mt-2 animate-fade-in">
+            <div className="w-full max-w-sm bg-white/5 border border-white/10 rounded-xl p-5 flex items-center gap-4 backdrop-blur-md shadow-2xl mt-2 animate-fade-in">
               <div className="w-6 h-6 border-2 border-white/10 rounded-full border-t-violet-500 animate-spin shrink-0"></div>
               <div className="flex flex-col gap-1 flex-grow">
                 <div className="font-semibold text-sm text-violet-400">GemIntel Pipeline</div>
@@ -101,7 +104,11 @@ export default function ImageUploader({
           )}
           
           <button 
-            className="w-full max-w-[400px] p-4 text-base font-bold btn-primary disabled:opacity-75 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none" 
+            className={`w-full max-w-sm py-3.5 sm:py-4 rounded-xl font-semibold transition flex items-center justify-center gap-2 text-sm sm:text-base ${
+              !isAnalyzing
+                ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-90 active:scale-95 cursor-pointer text-white"
+                : "bg-white/5 opacity-40 cursor-not-allowed text-white/50"
+            }`}
             onClick={() => onAnalyze(selectedFile)}
             disabled={isAnalyzing}
           >
