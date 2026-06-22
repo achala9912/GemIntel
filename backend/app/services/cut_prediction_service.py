@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 
 
-DEFAULT_MODEL_DIR = Path(__file__).parent.parent.parent / "models" / "cut"
+DEFAULT_MODEL_DIR = Path(__file__).parent.parent.parent / "models" / "cut-prediction"
 
 
 class CutPredictor:

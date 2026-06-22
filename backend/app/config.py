@@ -30,8 +30,8 @@ W_CNN = 0.4
 W_META = 0.3
 
 # Identification Model Paths (M02 — DINOv2 cut + color classifiers)
-CUT_MODEL_PATH = os.path.join(MODELS_DIR, "cut_best_finetune.pt")
-COLOR_MODEL_PATH = os.path.join(MODELS_DIR, "color_best_stage1.pt")
+CUT_MODEL_PATH = os.path.join(MODELS_DIR, "4C", "cut_best_finetune.pt")
+COLOR_MODEL_PATH = os.path.join(MODELS_DIR, "4C", "color_best_stage1.pt")
 
 # Gem types shown in the Identification dropdown.
 # Color model (M02) is trained on blue varieties, so we restrict the list.
