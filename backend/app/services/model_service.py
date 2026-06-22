@@ -38,7 +38,7 @@ def load_all_models():
     load_ai_filter_model()
 
     # Load Cut Predictor model
-    from app.services.cut_model_service import get_predictor
+    from app.services.cut_prediction_service import get_predictor
     try:
         get_predictor().load()
     except Exception as e:
