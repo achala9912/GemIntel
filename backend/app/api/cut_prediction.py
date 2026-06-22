@@ -1,21 +1,4 @@
-"""
-api/cut.py
-==========
-FastAPI route for the cut prediction pipeline.
 
-Self-contained — no dependency on other services.
-
-Mount in main.py:
-    from app.api.cut import router as cut_router
-    app.include_router(cut_router, prefix="/api/cut", tags=["cut-prediction"])
-
-Pipeline:
-    1. Upload 8-16 images + gem_type + weight_ct
-    2. reconstruction_service handles: background removal → masks
-                                      → visual hull → dimensions → mesh
-    3. model_service predicts cut + yield
-    4. Return JSON with mesh + prediction for Three.js viewer
-"""
 
 import os
 import uuid
