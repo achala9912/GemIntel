@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { X, ChevronDown } from 'lucide-react';
-import styles from './identification.module.css';
 import {
   fetchGemTypes,
   identifyGem,
@@ -35,17 +34,17 @@ function pct(v: number): string {
 function ProbBars({ probs, accent }: { probs: Record<string, number>; accent: string }) {
   const sorted = Object.entries(probs).sort((a, b) => b[1] - a[1]);
   return (
-    <div className={styles.probList}>
+    <div className="flex flex-col gap-1.5">
       {sorted.map(([k, v]) => (
-        <div key={k} className={styles.probRow}>
-          <span className={styles.probLabel}>{k}</span>
-          <div className={styles.probBarTrack}>
+        <div key={k} className="grid grid-cols-[110px_1fr_55px] items-center gap-2.5 text-[0.85rem]">
+          <span className="text-gray-400 capitalize whitespace-nowrap overflow-hidden text-ellipsis">{k}</span>
+          <div className="h-2 bg-white/7 rounded overflow-hidden">
             <div
-              className={styles.probBarFill}
+              className="h-full rounded transition-[width] duration-400 ease-out"
               style={{ width: `${v * 100}%`, background: accent }}
             />
           </div>
-          <span className={styles.probValue}>{pct(v)}</span>
+          <span className="text-right tabular-nums text-white">{pct(v)}</span>
         </div>
       ))}
     </div>
@@ -153,7 +152,7 @@ export default function FeatureIdentification() {
   const accent2 = 'linear-gradient(135deg, #f59e0b, #ef4444)';
 
   return (
-    <div className={styles.page}>
+    <div className="max-w-[1100px] mx-auto px-6 pt-12 pb-20">
       <header className="text-center mb-8 sm:mb-12">
         <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-center mb-2 leading-tight px-2">
           Feature{' '}
@@ -168,11 +167,11 @@ export default function FeatureIdentification() {
         </p>
       </header>
 
-      <section className={`glass-panel ${styles.controlPanel}`}>
-        <div className={styles.step}>
-          <span className={styles.stepBadge}>1</span>
-          <div className={styles.stepBody}>
-            <label className={styles.stepLabel}>Gem type</label>
+      <section className="glass-panel p-8 flex flex-col gap-7">
+        <div className="flex gap-4 items-start">
+          <span className="shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 text-white font-bold inline-flex items-center justify-center text-[0.95rem]">1</span>
+          <div className="flex-1 flex flex-col gap-3">
+            <label className="text-[0.95rem] text-gray-400 uppercase tracking-wider font-semibold">Gem type</label>
             <div className="relative w-full max-w-xs" ref={dropdownRef}>
               <div
                 onClick={() => !processing && setIsDropdownOpen(!isDropdownOpen)}
@@ -281,12 +280,12 @@ export default function FeatureIdentification() {
           </div>
         </div>
 
-        <div className={styles.step}>
-          <span className={styles.stepBadge}>2</span>
-          <div className={styles.stepBody}>
-            <span className={styles.stepLabel}>Upload images</span>
+        <div className="flex gap-4 items-start">
+          <span className="shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 text-white font-bold inline-flex items-center justify-center text-[0.95rem]">2</span>
+          <div className="flex-1 flex flex-col gap-3">
+            <span className="text-[0.95rem] text-gray-400 uppercase tracking-wider font-semibold">Upload images</span>
             <div
-              className={styles.dropzone}
+              className="border-2 border-dashed border-purple-500/50 rounded-2xl py-10 px-6 text-center bg-purple-500/5 cursor-pointer transition-all duration-200 ease-in-out hover:bg-purple-500/10 hover:border-purple-500"
               onClick={() => !processing && fileInputRef.current?.click()}
               onDragOver={(e) => { e.preventDefault(); }}
               onDrop={(e) => {
@@ -294,9 +293,9 @@ export default function FeatureIdentification() {
                 if (!processing) addFiles(e.dataTransfer.files);
               }}
             >
-              <div className={styles.dropIcon}>📸</div>
-              <div className={styles.dropTitle}>Drop images here or click to browse</div>
-              <div className={styles.dropHint}>JPG / PNG / WEBP — multiple files allowed</div>
+              <div className="text-[2.25rem] mb-2">📸</div>
+              <div className="text-[1.1rem] font-semibold mb-1">Drop images here or click to browse</div>
+              <div className="text-[0.85rem] text-gray-400">JPG / PNG / WEBP — multiple files allowed</div>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -308,21 +307,21 @@ export default function FeatureIdentification() {
             </div>
 
             {images.length > 0 && (
-              <div className={styles.thumbsRow}>
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-3">
                 {images.map((img) => (
-                  <div key={img.id} className={styles.thumb}>
+                  <div key={img.id} className="relative rounded-xl overflow-hidden bg-black/30 border border-white/8 aspect-square flex flex-col">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={img.previewUrl} alt={img.file.name} />
+                    <img src={img.previewUrl} alt={img.file.name} className="w-full h-full object-cover block" />
                     <button
                       type="button"
-                      className={styles.thumbRemove}
+                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full border-none bg-black/70 text-white cursor-pointer text-base leading-none inline-flex items-center justify-center enabled:hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
                       onClick={() => removeImage(img.id)}
                       disabled={processing}
                       aria-label={`Remove ${img.file.name}`}
                     >
                       ×
                     </button>
-                    <div className={styles.thumbName}>{img.file.name}</div>
+                    <div className="absolute left-0 right-0 bottom-0 py-[0.35rem] px-2 bg-gradient-to-t from-black/85 to-transparent text-white text-[0.7rem] whitespace-nowrap overflow-hidden text-ellipsis">{img.file.name}</div>
                   </div>
                 ))}
               </div>
@@ -330,7 +329,7 @@ export default function FeatureIdentification() {
           </div>
         </div>
 
-        <div className={styles.actions}>
+        <div className="flex gap-3 flex-wrap">
           <button
             type="button"
             className="btn-primary"
@@ -349,94 +348,94 @@ export default function FeatureIdentification() {
           </button>
         </div>
 
-        {error && <div className={styles.errorBox}>{error}</div>}
+        {error && <div className="py-4 px-5 rounded-xl bg-red-500/10 border border-red-500/35 text-red-200 text-[0.95rem]">{error}</div>}
       </section>
 
       {result && (
-        <section className={`glass-panel ${styles.resultsPanel}`}>
-          <div className={styles.resultsHeader}>
+        <section className="glass-panel mt-8 p-8 flex flex-col gap-6 animate-slide-up">
+          <div className="flex justify-between items-baseline gap-4 flex-wrap border-b border-white/8 pb-4">
             <h2>Identification Result</h2>
-            <div className={styles.resultMeta}>
+            <div className="flex gap-2 text-gray-400 text-[0.95rem]">
               <span>Gem: <strong>{result.gem_type}</strong></span>
               <span>•</span>
               <span>{result.image_count} image{result.image_count === 1 ? '' : 's'}</span>
             </div>
           </div>
 
-          <div className={styles.resultGrid}>
-            <div className={styles.resultCard}>
-              <div className={styles.resultCardHeader}>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-6">
+            <div className="bg-white/3 border border-white/8 rounded-2xl p-6 flex flex-col gap-4">
+              <div className="flex items-center justify-between gap-3">
                 <h3>Cut</h3>
-                <span className={styles.tag} style={{ background: accent1 }}>DINOv2 multi-task</span>
+                <span className="text-[0.7rem] uppercase tracking-wider py-1 px-2.5 rounded-full text-white font-semibold" style={{ background: accent1 }}>DINOv2 multi-task</span>
               </div>
-              <div className={styles.bigStats}>
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className={styles.bigLabel}>Shape</div>
-                  <div className={styles.bigValue}>{result.aggregate.cut.shape.label}</div>
-                  <div className={styles.bigConf}>{pct(result.aggregate.cut.shape.confidence)} confidence</div>
+                  <div className="text-[0.8rem] text-gray-400 uppercase tracking-wider mb-1.5">Shape</div>
+                  <div className="text-2xl font-bold font-['Outfit'] bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent capitalize">{result.aggregate.cut.shape.label}</div>
+                  <div className="text-[0.85rem] text-gray-400 mt-0.5">{pct(result.aggregate.cut.shape.confidence)} confidence</div>
                 </div>
                 <div>
-                  <div className={styles.bigLabel}>Cut style</div>
-                  <div className={styles.bigValue}>{result.aggregate.cut.cut_style.label}</div>
-                  <div className={styles.bigConf}>{pct(result.aggregate.cut.cut_style.confidence)} confidence</div>
+                  <div className="text-[0.8rem] text-gray-400 uppercase tracking-wider mb-1.5">Cut style</div>
+                  <div className="text-2xl font-bold font-['Outfit'] bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent capitalize">{result.aggregate.cut.cut_style.label}</div>
+                  <div className="text-[0.85rem] text-gray-400 mt-0.5">{pct(result.aggregate.cut.cut_style.confidence)} confidence</div>
                 </div>
               </div>
-              <div className={styles.probGroupLabel}>Shape distribution</div>
+              <div className="text-[0.8rem] text-gray-400 uppercase tracking-wider font-semibold mt-1">Shape distribution</div>
               <ProbBars probs={result.aggregate.cut.shape_probs} accent={accent1} />
-              <div className={styles.probGroupLabel}>Cut style distribution</div>
+              <div className="text-[0.8rem] text-gray-400 uppercase tracking-wider font-semibold mt-1">Cut style distribution</div>
               <ProbBars probs={result.aggregate.cut.cut_style_probs} accent={accent1} />
             </div>
 
-            <div className={styles.resultCard}>
-              <div className={styles.resultCardHeader}>
+            <div className="bg-white/3 border border-white/8 rounded-2xl p-6 flex flex-col gap-4">
+              <div className="flex items-center justify-between gap-3">
                 <h3>Color</h3>
-                <span className={styles.tag} style={{ background: accent2 }}>DINOv2 multi-head</span>
+                <span className="text-[0.7rem] uppercase tracking-wider py-1 px-2.5 rounded-full text-white font-semibold" style={{ background: accent2 }}>DINOv2 multi-head</span>
               </div>
-              <div className={styles.bigStats}>
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className={styles.bigLabel}>Hue</div>
-                  <div className={styles.bigValue}>{result.aggregate.color.hue.label}</div>
-                  <div className={styles.bigConf}>{pct(result.aggregate.color.hue.confidence)} confidence</div>
+                  <div className="text-[0.8rem] text-gray-400 uppercase tracking-wider mb-1.5">Hue</div>
+                  <div className="text-2xl font-bold font-['Outfit'] bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent capitalize">{result.aggregate.color.hue.label}</div>
+                  <div className="text-[0.85rem] text-gray-400 mt-0.5">{pct(result.aggregate.color.hue.confidence)} confidence</div>
                 </div>
                 <div>
-                  <div className={styles.bigLabel}>Saturation</div>
-                  <div className={styles.bigValue}>{result.aggregate.color.saturation.label}</div>
-                  <div className={styles.bigConf}>{pct(result.aggregate.color.saturation.confidence)} confidence</div>
+                  <div className="text-[0.8rem] text-gray-400 uppercase tracking-wider mb-1.5">Saturation</div>
+                  <div className="text-2xl font-bold font-['Outfit'] bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent capitalize">{result.aggregate.color.saturation.label}</div>
+                  <div className="text-[0.85rem] text-gray-400 mt-0.5">{pct(result.aggregate.color.saturation.confidence)} confidence</div>
                 </div>
               </div>
-              <div className={styles.probGroupLabel}>Hue distribution</div>
+              <div className="text-[0.8rem] text-gray-400 uppercase tracking-wider font-semibold mt-1">Hue distribution</div>
               <ProbBars probs={result.aggregate.color.hue_probs} accent={accent2} />
-              <div className={styles.probGroupLabel}>Saturation distribution</div>
+              <div className="text-[0.8rem] text-gray-400 uppercase tracking-wider font-semibold mt-1">Saturation distribution</div>
               <ProbBars probs={result.aggregate.color.saturation_probs} accent={accent2} />
             </div>
           </div>
 
           {result.per_image.length > 1 && (
-            <details className={styles.perImageDetails}>
-              <summary>Per-image breakdown ({result.per_image.length})</summary>
-              <div className={styles.perImageGrid}>
+            <details className="mt-2 border-t border-white/8 pt-4">
+              <summary className="cursor-pointer text-gray-400 text-[0.9rem]">Per-image breakdown ({result.per_image.length})</summary>
+              <div className="mt-4 grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3">
                 {result.per_image.map((p, i) => (
-                  <div key={`${p.filename}-${i}`} className={styles.perImageCard}>
-                    <div className={styles.perImageName}>{p.filename}</div>
-                    <div className={styles.perImageRow}>
-                      <span>Shape</span>
-                      <strong>{p.cut.shape.label}</strong>
-                      <span>{pct(p.cut.shape.confidence)}</span>
+                  <div key={`${p.filename}-${i}`} className="py-[0.85rem] px-4 bg-white/3 rounded-xl border border-white/8 flex flex-col gap-1">
+                    <div className="text-[0.8rem] text-gray-400 mb-1.5 break-all">{p.filename}</div>
+                    <div className="grid grid-cols-[50px_1fr_auto] gap-2 text-[0.85rem] items-center">
+                      <span className="text-gray-400 uppercase text-[0.7rem] tracking-wider">Shape</span>
+                      <strong className="capitalize">{p.cut.shape.label}</strong>
+                      <span className="text-gray-400 tabular-nums">{pct(p.cut.shape.confidence)}</span>
                     </div>
-                    <div className={styles.perImageRow}>
-                      <span>Cut</span>
-                      <strong>{p.cut.cut_style.label}</strong>
-                      <span>{pct(p.cut.cut_style.confidence)}</span>
+                    <div className="grid grid-cols-[50px_1fr_auto] gap-2 text-[0.85rem] items-center">
+                      <span className="text-gray-400 uppercase text-[0.7rem] tracking-wider">Cut</span>
+                      <strong className="capitalize">{p.cut.cut_style.label}</strong>
+                      <span className="text-gray-400 tabular-nums">{pct(p.cut.cut_style.confidence)}</span>
                     </div>
-                    <div className={styles.perImageRow}>
-                      <span>Hue</span>
-                      <strong>{p.color.hue.label}</strong>
-                      <span>{pct(p.color.hue.confidence)}</span>
+                    <div className="grid grid-cols-[50px_1fr_auto] gap-2 text-[0.85rem] items-center">
+                      <span className="text-gray-400 uppercase text-[0.7rem] tracking-wider">Hue</span>
+                      <strong className="capitalize">{p.color.hue.label}</strong>
+                      <span className="text-gray-400 tabular-nums">{pct(p.color.hue.confidence)}</span>
                     </div>
-                    <div className={styles.perImageRow}>
-                      <span>Sat</span>
-                      <strong>{p.color.saturation.label}</strong>
-                      <span>{pct(p.color.saturation.confidence)}</span>
+                    <div className="grid grid-cols-[50px_1fr_auto] gap-2 text-[0.85rem] items-center">
+                      <span className="text-gray-400 uppercase text-[0.7rem] tracking-wider">Sat</span>
+                      <strong className="capitalize">{p.color.saturation.label}</strong>
+                      <span className="text-gray-400 tabular-nums">{pct(p.color.saturation.confidence)}</span>
                     </div>
                   </div>
                 ))}
