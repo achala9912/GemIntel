@@ -4,7 +4,7 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from typing import List
 import cv2
 import numpy as np
-from app.services.model_service import run_inference
+from app.services.auth_service import run_inference
 from collections import defaultdict
 from app.config import GEM_TYPES, GEM_TYPE_HUES
 from app.services.cut_service import predict_cut_one, cut_classes

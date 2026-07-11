@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from app.api.routes import router
 from app.api.valuation import router as valuation_router
-from app.services.model_service import load_all_models
+from app.services.auth_service import load_all_models
 from app.api.cut_prediction import router as cut_router
 
 import os

@@ -17,6 +17,7 @@ interface AuthenticationResult {
     };
   };
   ensemble_result?: {
+    prediction?: string;
     confidence?: number;
   };
   breakdown?: Record<string, {
@@ -29,6 +30,8 @@ interface AuthenticationResult {
 const renderAuthenticationResult = (result: AuthenticationResult) => {
   const filter = result?.filter_result;
   const isAi = result?.status === 'ai_generated' || filter?.is_ai_generated;
+  const isSynthetic = result.ensemble_result?.prediction === 'Synthetic';
+  const isRejected = isAi || isSynthetic;
   
   // Scoring variables
   const rawConfidence = isAi 
@@ -41,28 +44,28 @@ const renderAuthenticationResult = (result: AuthenticationResult) => {
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (rawConfidence * circumference);
 
-  const themeColorClass = isAi ? 'text-red-400' : 'text-emerald-400';
-  const borderLeftColor = isAi ? 'border-l-red-500' : 'border-l-emerald-500';
-  const strokeColorClass = isAi ? 'stroke-red-500' : 'stroke-emerald-400';
+  const themeColorClass = isRejected ? 'text-rose-400' : 'text-emerald-400';
+  const borderLeftColor = isRejected ? 'border-l-rose-500' : 'border-l-emerald-500';
+  const strokeColorClass = isRejected ? 'stroke-rose-500' : 'stroke-emerald-400';
 
   return (
     <div className="flex flex-col gap-5">
       {/* Main Verdict Card */}
       <div className={`flex flex-col sm:flex-row items-center justify-between gap-6 p-6 sm:p-8 rounded-2xl border ${
-        isAi 
+        isRejected 
           ? 'bg-rose-500/5 border-rose-500/20' 
           : 'bg-emerald-500/5 border-emerald-500/20'
       }`}>
         <div className="flex items-center gap-4 flex-col sm:flex-row text-center sm:text-left min-w-0">
           <div className={`relative w-14 h-14 rounded-full flex items-center justify-center shrink-0 border ${
-            isAi 
+            isRejected 
               ? 'bg-rose-500/10 border-rose-500/20' 
               : 'bg-emerald-500/10 border-emerald-500/20'
           }`}>
             <span className={`absolute inset-0 rounded-full animate-ping opacity-40 ${
-              isAi ? 'bg-rose-500' : 'bg-emerald-500'
+              isRejected ? 'bg-rose-500' : 'bg-emerald-500'
             }`} />
-            {isAi ? (
+            {isRejected ? (
               <ShieldAlert className="w-7 h-7 text-rose-500" />
             ) : (
               <ShieldCheck className="w-7 h-7 text-emerald-400" />
@@ -70,11 +73,18 @@ const renderAuthenticationResult = (result: AuthenticationResult) => {
           </div>
           <div className="min-w-0">
             <h2 className={`text-xl sm:text-2xl font-bold mb-1.5 ${themeColorClass}`}>
-              {isAi ? 'Synthetic Origin Detected' : 'Natural Origin Confirmed'}
+              {isAi 
+                ? 'AI Image Rejected' 
+                : isSynthetic 
+                ? 'Synthetic Origin Detected' 
+                : 'Natural Origin Confirmed'
+              }
             </h2>
             <p className="text-xs sm:text-sm text-gray-400 leading-relaxed max-w-sm">
               {isAi 
                 ? (result.message || 'Synthetic pixel distributions or generative model artifacts have been detected.')
+                : isSynthetic
+                ? 'Ensemble model analysis has identified markers indicating laboratory creation/synthetic origin.'
                 : 'Ensemble model analysis has verified the unique crystal growth patterns and natural inclusions.'
               }
             </p>
