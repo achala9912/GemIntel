@@ -1,14 +1,33 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from app.api.routes import router
+from app.api.valuation import router as valuation_router
 from app.services.model_service import load_all_models
+from app.api.cut_prediction import router as cut_router
+
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = FastAPI(title="Dual-Branch Gem Authentication API")
 
-# Setup CORS
+@app.get("/")
+def read_root():
+    return RedirectResponse(url="/docs")
+
+env_origins = os.getenv("ALLOWED_ORIGINS")
+if env_origins:
+    origins = [o.strip() for o in env_origins.split(",") if o.strip()]
+else:
+    # Default fallback for local development if env/dotenv is not configured
+    origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"], 
+    allow_origins=origins, 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -24,3 +43,5 @@ async def startup_event():
 
 # Include all routes
 app.include_router(router)
+app.include_router(cut_router, prefix="/api/cut", tags=["cut-prediction"])
+app.include_router(valuation_router, prefix="/api/valuation", tags=["valuation"])

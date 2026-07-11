@@ -2,19 +2,18 @@
 
 import { useState } from 'react';
 import ImageUploader from '@/components/ImageUploader';
-import styles from '@/app/features.module.css';
 
-interface FeatureLayoutProps {
-  title: string;
+interface FeatureLayoutProps<T = unknown> {
+  title: React.ReactNode;
   description: string;
   buttonText: string;
   mockDelay?: number;
   apiEndpoint?: string;
-  renderResult?: (result: any) => React.ReactNode;
+  renderResult?: (result: T) => React.ReactNode;
   children: React.ReactNode;
 }
 
-export default function FeatureLayout({ 
+export default function FeatureLayout<T = unknown>({ 
   title, 
   description, 
   buttonText, 
@@ -22,11 +21,11 @@ export default function FeatureLayout({
   apiEndpoint,
   renderResult,
   children 
-}: FeatureLayoutProps) {
+}: FeatureLayoutProps<T>) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStatus, setAnalysisStatus] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [analysisResult, setAnalysisResult] = useState<T | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [resetKey, setResetKey] = useState(0);
 
@@ -124,45 +123,33 @@ export default function FeatureLayout({
   };
 
   return (
-    <div className={styles.pageContainer}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>{title}</h1>
-        <p className={styles.description}>{description}</p>
+    <div className="max-w-[1100px] mx-auto px-4 sm:px-6 pt-6 sm:pt-12 pb-16 sm:pb-20">
+      <header className="text-center mb-8 sm:mb-12">
+        <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-center mb-2 leading-tight px-2 text-white">
+          {title}
+        </h1>
+        <p className="text-center text-sm sm:text-base opacity-60 max-w-2xl mx-auto px-4 text-gray-300">
+          {description}
+        </p>
       </header>
 
-      <main className={styles.workspace}>
-        <ImageUploader 
-          key={resetKey}
-          onAnalyze={handleAnalyze} 
-          isAnalyzing={isAnalyzing} 
-          analysisStatus={analysisStatus}
-          buttonText={buttonText} 
-        />
+      <main className="flex flex-col gap-8 sm:gap-12 items-center w-full">
+        {!showResult && (
+          <ImageUploader 
+            key={resetKey}
+            onAnalyze={handleAnalyze} 
+            isAnalyzing={isAnalyzing} 
+            analysisStatus={analysisStatus}
+            buttonText={buttonText} 
+          />
+        )}
 
         {errorMessage && (
-          <div style={{
-            marginTop: '1.5rem',
-            padding: '1rem',
-            borderRadius: '1rem',
-            background: 'rgba(255, 80, 80, 0.12)',
-            color: 'var(--danger, #b00020)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '1rem'
-          }}>
-            <span>{errorMessage}</span>
+          <div className="mt-6 p-4 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 flex flex-col items-center gap-4 text-center max-w-md">
+            <span className="font-semibold text-sm">{errorMessage}</span>
             <button 
               onClick={handleReset}
-              style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                color: 'white',
-                padding: '0.4rem 1.2rem',
-                borderRadius: '0.5rem',
-                cursor: 'pointer',
-                fontSize: '0.85rem'
-              }}
+              className="bg-white/5 border border-white/10 hover:bg-white/10 text-white py-1.5 px-5 rounded-lg cursor-pointer text-xs font-semibold transition"
             >
               Reset
             </button>
@@ -170,29 +157,14 @@ export default function FeatureLayout({
         )}
 
         {showResult && (
-          <div className={`${styles.resultsContainer} glass-panel`}>
-            {renderResult ? renderResult(analysisResult) : children}
-            <div style={{ display: 'flex', justifyContent: 'center', margin: '2rem 0' }}>
-              <button 
-                onClick={handleReset}
-                className="btn-primary" 
-                style={{ 
-                  background: 'rgba(255, 255, 255, 0.05)', 
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  color: 'var(--text-primary)',
-                  padding: '0.75rem 2rem',
-                  borderRadius: '0.75rem',
-                  cursor: 'pointer',
-                  fontWeight: 600,
-                  transition: 'all 0.2s',
-                  fontSize: '0.95rem'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
-              >
-                Reset
-              </button>
-            </div>
+          <div className="w-full glass-panel p-5 sm:p-8 flex flex-col gap-6 sm:gap-7 animate-fade-in max-w-3xl">
+            {renderResult ? renderResult(analysisResult as T) : children}
+            <button 
+              onClick={handleReset}
+              className="btn-secondary w-full py-3.5 sm:py-4 text-sm sm:text-base mt-2"
+            >
+              Reset / Authenticate Another Gem
+            </button>
           </div>
         )}
       </main>
