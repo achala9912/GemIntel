@@ -347,7 +347,7 @@ export default function CutPredictionPage({ onBack }: { onBack?: () => void }) {
 // getStepStatus helper has been extracted to components/ReconstructionModal
 
   return (
-    <div className="min-h-screen text-white">
+    <div className="w-full text-white">
       {result && (
         <div className="fixed inset-0 z-[100] bg-[#0a0c1a]">
           <GemViewer3D data={result} onClose={reset} />

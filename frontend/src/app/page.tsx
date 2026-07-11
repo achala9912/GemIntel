@@ -37,7 +37,7 @@ export default function Home() {
   }
 
   return (
-    <div className="max-w-[1100px] mx-auto px-4 sm:px-6 pt-12 sm:pt-20 pb-16 sm:pb-24 relative animate-fade-in">
+    <div className="max-w-[1100px] mx-auto px-4 sm:px-6 pt-4 sm:pt-6 pb-16 sm:pb-24 relative animate-fade-in">
       {/* Background Decor */}
       <div className="fixed -top-40 -right-40 h-96 w-96 rounded-full bg-purple-600/10 blur-[100px] pointer-events-none" />
       <div className="fixed -bottom-40 -left-40 h-96 w-96 rounded-full bg-blue-600/10 blur-[100px] pointer-events-none" />
@@ -151,46 +151,6 @@ export default function Home() {
             <button className="w-full btn-primary text-sm py-3 cursor-pointer group-hover:brightness-105 style={{ background: 'linear-gradient(135deg, #a855f7, #6366f1)' }}">
               Start Guided Pipeline →
             </button>
-          </div>
-        </div>
-      </section>
-
-      {/* Individual Tools Access Section */}
-      <section className="max-w-4xl mx-auto pt-6 border-t border-white/5">
-        <div className="glass-panel p-6 bg-slate-950/20 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div>
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-1">
-              Direct Tool Access
-            </h4>
-            <p className="text-xs text-gray-400">
-              Are you an expert seeking direct API results? Access individual models independently.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Link 
-              href="/authentication" 
-              className="text-xs bg-white/5 hover:bg-white/10 hover:text-cyan-400 border border-white/10 px-3.5 py-2 rounded-xl transition duration-200"
-            >
-              Authentication
-            </Link>
-            <Link 
-              href="/identification" 
-              className="text-xs bg-white/5 hover:bg-white/10 hover:text-cyan-400 border border-white/10 px-3.5 py-2 rounded-xl transition duration-200"
-            >
-              Feature Extraction
-            </Link>
-            <Link 
-              href="/valuation" 
-              className="text-xs bg-white/5 hover:bg-white/10 hover:text-cyan-400 border border-white/10 px-3.5 py-2 rounded-xl transition duration-200"
-            >
-              Value Estimation
-            </Link>
-            <Link 
-              href="/cut-prediction" 
-              className="text-xs bg-white/5 hover:bg-white/10 hover:text-cyan-400 border border-white/10 px-3.5 py-2 rounded-xl transition duration-200"
-            >
-              Cut prediction
-            </Link>
           </div>
         </div>
       </section>

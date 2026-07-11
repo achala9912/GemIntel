@@ -7,10 +7,6 @@ import { Menu, X, Gem } from 'lucide-react';
 
 const navItems = [
   { name: 'Home', path: '/' },
-  { name: 'Identification', path: '/identification' },
-  { name: 'Authentication', path: '/authentication' },
-  { name: 'Valuation', path: '/valuation' },
-  { name: 'Cut Prediction', path: '/cut-prediction' },
 ];
 
 export default function Navbar() {

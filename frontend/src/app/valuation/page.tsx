@@ -397,7 +397,7 @@ export default function Valuation() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex-1 flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-3">
           <div className="spinner" />
           <div className="text-gray-400 text-sm font-medium">Loading valuation form...</div>
@@ -451,7 +451,7 @@ export default function Valuation() {
   };
 
   return (
-    <div className="max-w-[1100px] mx-auto px-4 sm:px-6 pt-6 sm:pt-12 pb-16 sm:pb-20">
+    <div className="max-w-[1100px] mx-auto px-4 sm:px-6 pt-2 sm:pt-4 pb-16 sm:pb-20">
       {isFlowActive && <FacetedFlowTracker currentStep={3} />}
 
       {isFlowActive && (
