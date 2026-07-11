@@ -10,7 +10,9 @@ interface FeatureLayoutProps<T = unknown> {
   mockDelay?: number;
   apiEndpoint?: string;
   renderResult?: (result: T) => React.ReactNode;
-  children: React.ReactNode;
+  onSuccess?: (file: File, result: T) => void;
+  customFooter?: (result: T, handleReset: () => void) => React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export default function FeatureLayout<T = unknown>({ 
@@ -20,6 +22,8 @@ export default function FeatureLayout<T = unknown>({
   mockDelay = 2500,
   apiEndpoint,
   renderResult,
+  onSuccess,
+  customFooter,
   children 
 }: FeatureLayoutProps<T>) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -89,6 +93,9 @@ export default function FeatureLayout<T = unknown>({
           // If AI origin detected, validation fails - show results immediately
           setAnalysisResult(result);
           setShowResult(true);
+          if (onSuccess && file) {
+            onSuccess(file, result);
+          }
         } else {
           // Step 2: Gemstone Authentication phase (Total 1.8s, rotating messages every 600ms)
           setAnalysisStatus('Initializing deep feature extractors...');
@@ -102,6 +109,9 @@ export default function FeatureLayout<T = unknown>({
           
           setAnalysisResult(result);
           setShowResult(true);
+          if (onSuccess && file) {
+            onSuccess(file, result);
+          }
         }
       } catch (error) {
         setErrorMessage(error instanceof Error ? error.message : String(error));
@@ -159,12 +169,16 @@ export default function FeatureLayout<T = unknown>({
         {showResult && (
           <div className="w-full glass-panel p-5 sm:p-8 flex flex-col gap-6 sm:gap-7 animate-fade-in max-w-3xl">
             {renderResult ? renderResult(analysisResult as T) : children}
-            <button 
-              onClick={handleReset}
-              className="btn-secondary w-full py-3.5 sm:py-4 text-sm sm:text-base mt-2"
-            >
-              Reset / Authenticate Another Gem
-            </button>
+            {customFooter ? (
+              customFooter(analysisResult as T, handleReset)
+            ) : (
+              <button 
+                onClick={handleReset}
+                className="btn-secondary w-full py-3.5 sm:py-4 text-sm sm:text-base mt-2"
+              >
+                Reset / Authenticate Another Gem
+              </button>
+            )}
           </div>
         )}
       </main>

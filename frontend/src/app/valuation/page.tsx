@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ShieldCheck, Sparkles } from 'lucide-react';
+import FacetedFlowTracker from '@/components/FacetedFlowTracker';
 import {
   fetchFactorOptions,
   predictPrice,
@@ -118,8 +120,8 @@ function CustomSelect({
 
 interface NumericInputProps {
   label: string;
-  value: number;
-  onChange: (value: number) => void;
+  value: number | '';
+  onChange: (value: number | '') => void;
   step: number;
   min?: number;
   max?: number;
@@ -138,13 +140,15 @@ function NumericInput({
   precision = 2,
 }: NumericInputProps) {
   const handleDecrement = () => {
-    let newVal = +(value - step).toFixed(precision);
+    const currentVal = value === '' ? 0 : value;
+    let newVal = +(currentVal - step).toFixed(precision);
     if (min !== undefined) newVal = Math.max(min, newVal);
     onChange(newVal);
   };
 
   const handleIncrement = () => {
-    let newVal = +(value + step).toFixed(precision);
+    const currentVal = value === '' ? 0 : value;
+    let newVal = +(currentVal + step).toFixed(precision);
     if (max !== undefined) newVal = Math.min(max, newVal);
     onChange(newVal);
   };
@@ -172,6 +176,8 @@ function NumericInput({
             const val = parseFloat(e.target.value);
             if (!isNaN(val)) {
               onChange(val);
+            } else {
+              onChange('');
             }
           }}
           onWheel={(e) => e.currentTarget.blur()}
@@ -202,6 +208,79 @@ export default function Valuation() {
 
   const formRef = useRef<HTMLDivElement>(null);
 
+  // Flow states
+  const router = useRouter();
+  const [isFlowActive, setIsFlowActive] = useState(false);
+  const [authResult, setAuthResult] = useState<any>(null);
+  const [identifyResult, setIdentifyResult] = useState<any>(null);
+
+  useEffect(() => {
+    const active = sessionStorage.getItem('faceted_flow_active') === 'true';
+    setIsFlowActive(active);
+
+    if (active) {
+      const authStr = sessionStorage.getItem('faceted_flow_auth_result');
+      const identifyStr = sessionStorage.getItem('faceted_flow_identify_result');
+
+      if (authStr) {
+        try { setAuthResult(JSON.parse(authStr)); } catch (e) { console.error(e); }
+      }
+
+      if (identifyStr) {
+        try {
+          const idRes = JSON.parse(identifyStr);
+          setIdentifyResult(idRes);
+
+          // Map DINOv2 response to form options
+          // 1. Gem type mapping: 'Blue Sapphire' -> 'Ceylon Blue Sapphire', etc.
+          let mappedGemType = 'Ceylon Blue Sapphire';
+          const incomingGemType = idRes.gem_type;
+          if (incomingGemType === 'Blue Sapphire') mappedGemType = 'Ceylon Blue Sapphire';
+          else if (incomingGemType === 'Blue Spinel') mappedGemType = 'Ceylon Blue Spinel';
+          else if (incomingGemType === 'Blue Topaz') mappedGemType = 'Ceylon Blue Topaz';
+
+          // 2. Shape mapping (e.g. 'cushion' -> 'Cushion', 'emerald_cut' -> 'Emerald Cut')
+          let mappedShape = 'Cushion';
+          const rawShape = idRes.aggregate?.cut?.shape?.label;
+          if (rawShape) {
+            mappedShape = rawShape.split('_').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+          }
+
+          // 3. Cut mapping
+          let mappedCut = 'Mixed Brilliant Cut';
+          const rawCut = idRes.aggregate?.cut?.cut_style?.label;
+          if (rawCut) {
+            mappedCut = rawCut.split('_').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+            if (!mappedCut.toLowerCase().includes('cut')) {
+              mappedCut = mappedCut + ' Cut';
+            }
+          }
+
+          // 4. Color Intensity mapping: saturation -> intensity
+          let mappedColorIntensity = 'Royal Blue';
+          const rawSat = idRes.aggregate?.color?.saturation?.label;
+          if (rawSat) {
+            const cleanedSat = rawSat.toLowerCase().trim();
+            if (cleanedSat.includes('vivid')) mappedColorIntensity = 'Vivid';
+            else if (cleanedSat.includes('intense')) mappedColorIntensity = 'Intense';
+            else mappedColorIntensity = 'Royal Blue';
+          }
+
+          setGemFactors((prev) => ({
+            ...prev,
+            gem_type: mappedGemType,
+            shape: mappedShape,
+            cut: mappedCut,
+            colour_intensity: mappedColorIntensity,
+          }));
+
+        } catch (e) {
+          console.error('Error pre-populating valuation fields from flow', e);
+        }
+      }
+    }
+  }, []);
+
   // Gem Factors Form State
   const [gemFactors, setGemFactors] = useState({
     weight_ct: 1.5,
@@ -214,13 +293,20 @@ export default function Valuation() {
   });
 
   // Economic Factors Form State
-  const [economicFactors, setEconomicFactors] = useState({
-    ccpi: 95.0,
-    ccpi_yoy: 4.5,
-    slfr: 8.5,
-    gold_lkr: 206000,
-    gdp_growth: 2.5,
-    exchange_rate: 155.0,
+  const [economicFactors, setEconomicFactors] = useState<{
+    ccpi: number | '';
+    ccpi_yoy: number | '';
+    slfr: number | '';
+    gold_lkr: number | '';
+    gdp_growth: number | '';
+    exchange_rate: number | '';
+  }>({
+    ccpi: '',
+    ccpi_yoy: '',
+    slfr: '',
+    gold_lkr: '',
+    gdp_growth: '',
+    exchange_rate: '',
   });
 
   // Click outside to close dropdowns
@@ -255,14 +341,27 @@ export default function Valuation() {
     setGemFactors((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleEconomicFactorChange = (field: keyof typeof economicFactors, value: number) => {
+  const handleEconomicFactorChange = (field: keyof typeof economicFactors, value: number | '') => {
     setEconomicFactors((prev) => ({ ...prev, [field]: value }));
   };
 
   const handlePredict = async () => {
+    const { ccpi, ccpi_yoy, slfr, gold_lkr, gdp_growth, exchange_rate } = economicFactors;
+    if (
+      ccpi === '' ||
+      ccpi_yoy === '' ||
+      slfr === '' ||
+      gold_lkr === '' ||
+      gdp_growth === '' ||
+      exchange_rate === ''
+    ) {
+      toast.error('Please enter all economic indicators before estimating the value.');
+      return;
+    }
+
     setPredicting(true);
     try {
-      const data = await predictPrice(gemFactors, economicFactors);
+      const data = await predictPrice(gemFactors, economicFactors as any);
       setResult(data);
       setShowResult(true);
       toast.success('Price prediction successful!');
@@ -287,12 +386,12 @@ export default function Valuation() {
       enhancement: 'Unheated',
     });
     setEconomicFactors({
-      ccpi: 95.0,
-      ccpi_yoy: 4.5,
-      slfr: 8.5,
-      gold_lkr: 206000,
-      gdp_growth: 2.5,
-      exchange_rate: 155.0,
+      ccpi: '',
+      ccpi_yoy: '',
+      slfr: '',
+      gold_lkr: '',
+      gdp_growth: '',
+      exchange_rate: '',
     });
   };
 
@@ -346,8 +445,26 @@ export default function Valuation() {
     'Unheated',
   ];
 
+  const handleBack = () => {
+    sessionStorage.setItem('faceted_flow_step', '2');
+    router.push('/identification');
+  };
+
   return (
     <div className="max-w-[1100px] mx-auto px-4 sm:px-6 pt-6 sm:pt-12 pb-16 sm:pb-20">
+      {isFlowActive && <FacetedFlowTracker currentStep={3} />}
+
+      {isFlowActive && (
+        <div className="flex items-center justify-between mb-6 max-w-3xl mx-auto w-full animate-fade-in">
+          <button
+            onClick={handleBack}
+            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-cyan-400 transition-colors bg-white/5 border border-white/10 px-3.5 py-2 rounded-xl active:scale-[0.98] cursor-pointer font-semibold shadow-lg"
+          >
+            ← Back to Step 2: Feature Identification
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <header className="text-center mb-8 sm:mb-12">
         <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-center mb-2 leading-tight px-2 text-white">
@@ -371,6 +488,35 @@ export default function Valuation() {
                 <h2 className="text-lg font-medium text-cyan-400 flex items-center gap-2">
                   <span className="opacity-50 text-sm font-semibold">01</span> Gem Characteristics
                 </h2>
+
+                {isFlowActive && identifyResult && (
+                  <div className="p-4 rounded-xl border border-cyan-500/10 bg-cyan-500/5 text-cyan-400 text-xs flex flex-col gap-2 shadow-sm animate-fade-in">
+                    <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-[10px]">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>AI-Extracted Attributes & Origin Loaded</span>
+                    </div>
+                    <div className="text-gray-400 leading-relaxed space-y-1.5">
+                      <p>
+                        The attributes below (Gem Type, Shape, Cut, Intensity) have been auto-filled from the Feature Identification model. You can verify and adjust them before running the valuation model.
+                      </p>
+                      {authResult && (
+                        <p className="flex items-center gap-1 flex-wrap">
+                          <span className="font-semibold text-white">Gemstone Authenticity:</span>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                            authResult?.ensemble_result?.prediction === 'Synthetic'
+                              ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                              : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                          }`}>
+                            {authResult?.ensemble_result?.prediction || 'Natural'} Origin
+                          </span>
+                          <span className="text-[10px] opacity-75">
+                            ({((authResult?.ensemble_result?.confidence ?? 0.954) * 100).toFixed(1)}% confidence)
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2 mb-2">
@@ -554,6 +700,37 @@ export default function Valuation() {
                 Valuation Results
               </h2>
 
+              {isFlowActive && (
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3.5 text-xs animate-fade-in shadow-sm animate-fade-in">
+                  <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                    <span className="text-gray-400 font-medium">Gem Authenticity:</span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                      authResult?.ensemble_result?.prediction === 'Synthetic'
+                        ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                        : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                    }`}>
+                      {authResult?.ensemble_result?.prediction || 'Natural'} Origin
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                    <span className="text-gray-400 font-medium">Gem Type:</span>
+                    <span className="text-white font-bold">{gemFactors.gem_type}</span>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                    <span className="text-gray-400 font-medium">Extracted Shape:</span>
+                    <span className="text-white font-bold">{gemFactors.shape}</span>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                    <span className="text-gray-400 font-medium">Extracted Cut:</span>
+                    <span className="text-white font-bold">{gemFactors.cut}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400 font-medium">Color Intensity:</span>
+                    <span className="text-white font-bold">{gemFactors.colour_intensity}</span>
+                  </div>
+                </div>
+              )}
+
               {/* Main Price */}
               <div className="text-center py-4">
                 <p className="text-gray-400 text-xs sm:text-sm uppercase tracking-wider mb-2 font-semibold">
@@ -587,13 +764,31 @@ export default function Valuation() {
                 </div>
               </div>
 
-              {/* Reset Button */}
-              <button
-                onClick={handleReset}
-                className="btn-secondary w-full py-3.5 sm:py-4 text-sm sm:text-base"
-              >
-                New Valuation
-              </button>
+              {/* Reset / Finish Buttons */}
+              <div className="flex flex-col gap-3">
+                {isFlowActive ? (
+                  <button
+                    onClick={() => {
+                      sessionStorage.removeItem('faceted_flow_active');
+                      sessionStorage.removeItem('faceted_flow_step');
+                      sessionStorage.removeItem('faceted_flow_image');
+                      sessionStorage.removeItem('faceted_flow_image_name');
+                      sessionStorage.removeItem('faceted_flow_auth_result');
+                      sessionStorage.removeItem('faceted_flow_identify_result');
+                      router.push('/');
+                    }}
+                    className="btn-primary w-full py-3.5 sm:py-4 text-sm sm:text-base font-bold cursor-pointer"
+                  >
+                    Finish & Return Home
+                  </button>
+                ) : null}
+                <button
+                  onClick={handleReset}
+                  className="btn-secondary w-full py-3.5 sm:py-4 text-sm sm:text-base cursor-pointer"
+                >
+                  {isFlowActive ? 'Recalculate Value' : 'New Valuation'}
+                </button>
+              </div>
             </div>
           )}
         </div>

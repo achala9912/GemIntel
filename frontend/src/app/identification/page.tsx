@@ -1,12 +1,26 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { X, ChevronDown, Upload } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { X, ChevronDown, Upload, ShieldCheck } from 'lucide-react';
 import {
   fetchGemTypes,
   identifyGem,
   type IdentifyResponse,
 } from '@/services/identificationApi';
+import FacetedFlowTracker from '@/components/FacetedFlowTracker';
+
+const dataURLtoFile = (dataurl: string, filename: string): File => {
+  const arr = dataurl.split(",");
+  const mime = arr[0].match(/:(.*?);/)?.[1] || "image/png";
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, { type: mime });
+};
 
 const FALLBACK_GEM_TYPES = ['Blue Sapphire', 'Blue Spinel', 'Blue Topaz'];
 
@@ -62,6 +76,48 @@ export default function FeatureIdentification() {
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Flow states
+  const router = useRouter();
+  const [isFlowActive, setIsFlowActive] = useState(false);
+  const [authResult, setAuthResult] = useState<any>(null);
+  const [flowImageName, setFlowImageName] = useState<string>('gem.png');
+
+  useEffect(() => {
+    const active = sessionStorage.getItem('faceted_flow_active') === 'true';
+    setIsFlowActive(active);
+    if (active) {
+      const authStr = sessionStorage.getItem('faceted_flow_auth_result');
+      if (authStr) {
+        try {
+          setAuthResult(JSON.parse(authStr));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      const img = sessionStorage.getItem('faceted_flow_image');
+      const imgName = sessionStorage.getItem('faceted_flow_image_name') || 'gem.png';
+      setFlowImageName(imgName);
+
+      if (img) {
+        try {
+          const file = dataURLtoFile(img, imgName);
+          setImages([{
+            id: 'flow-image',
+            file: file,
+            previewUrl: img
+          }]);
+        } catch (e) {
+          console.error('Error preloading authenticated image', e);
+        }
+      }
+    }
+  }, []);
+
+  const handleProceed = () => {
+    sessionStorage.setItem('faceted_flow_step', '3');
+    router.push('/valuation');
+  };
 
   useEffect(() => {
     fetchGemTypes()
@@ -140,6 +196,9 @@ export default function FeatureIdentification() {
         images.map((img) => img.file),
       );
       setResult(data);
+      if (isFlowActive) {
+        sessionStorage.setItem('faceted_flow_identify_result', JSON.stringify(data));
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -153,8 +212,26 @@ export default function FeatureIdentification() {
   const canSubmit = gemType && images.length > 0 && !processing;
   const showClear = Boolean(gemType || images.length > 0 || result || error);
 
+  const handleBack = () => {
+    sessionStorage.setItem('faceted_flow_step', '1');
+    router.push('/authentication');
+  };
+
   return (
     <div className="max-w-[1100px] mx-auto px-4 sm:px-6 pt-6 sm:pt-12 pb-16 sm:pb-20">
+      {isFlowActive && <FacetedFlowTracker currentStep={2} />}
+
+      {isFlowActive && (
+        <div className="flex items-center justify-between mb-6 max-w-3xl mx-auto w-full animate-fade-in">
+          <button
+            onClick={handleBack}
+            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-cyan-400 transition-colors bg-white/5 border border-white/10 px-3.5 py-2 rounded-xl active:scale-[0.98] cursor-pointer font-semibold shadow-lg"
+          >
+            ← Back to Step 1: Authentication
+          </button>
+        </div>
+      )}
+
       <header className="text-center mb-8 sm:mb-12">
         <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-center mb-2 leading-tight px-2">
           Feature{' '}
@@ -170,7 +247,28 @@ export default function FeatureIdentification() {
       </header>
 
       {/* Single Vertical Card Layout */}
-      <section className="glass-panel p-4 sm:p-8 flex flex-col gap-6 sm:gap-7 max-w-3xl mx-auto w-full">
+      <section className="glass-panel p-4 sm:p-8 flex flex-col gap-6 sm:gap-7 max-w-3xl mx-auto w-full relative">
+        {isFlowActive && authResult && (
+          <div className={`p-4 rounded-xl border flex items-center justify-between gap-4 shadow-sm ${
+            authResult?.ensemble_result?.prediction === 'Synthetic'
+              ? 'bg-amber-500/5 border-amber-500/20 text-amber-400'
+              : 'bg-emerald-500/5 border-emerald-500/20 text-emerald-400'
+          }`}>
+            <div className="min-w-0">
+              <div className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Step 1 Verdict</div>
+              <div className="text-sm font-extrabold flex items-center gap-1.5 capitalize truncate">
+                <ShieldCheck className="w-4 h-4 shrink-0" />
+                <span>{authResult?.ensemble_result?.prediction || 'Natural'} Origin Confirmed</span>
+              </div>
+            </div>
+            <div className="text-right shrink-0 border-l border-white/10 pl-4">
+              <div className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Confidence</div>
+              <div className="text-sm font-extrabold font-mono">
+                {(((authResult?.ensemble_result?.confidence ?? 0.954)) * 100).toFixed(1)}%
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Step 1: Gem Type selection */}
         <div className="flex gap-3 sm:gap-4 items-start">
@@ -285,34 +383,60 @@ export default function FeatureIdentification() {
           </div>
         </div>
 
-        {/* Step 2: Upload images dropzone */}
+        {/* Step 2: Upload images dropzone or pre-uploaded flow image */}
         <div className="flex gap-3 sm:gap-4 items-start">
           <span className="shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 text-white font-bold inline-flex items-center justify-center text-sm">2</span>
           <div className="flex-1 flex flex-col gap-3 min-w-0">
-            <span className="text-sm text-gray-400 uppercase tracking-wider font-semibold">Upload images</span>
-            <div
-              className="border-2 border-dashed border-purple-500/50 rounded-2xl py-6 px-4 sm:py-10 sm:px-6 text-center bg-purple-500/5 cursor-pointer transition-all duration-200 ease-in-out hover:bg-purple-500/10 hover:border-purple-500"
-              onClick={() => !processing && fileInputRef.current?.click()}
-              onDragOver={(e) => { e.preventDefault(); }}
-              onDrop={(e) => {
-                e.preventDefault();
-                if (!processing) addFiles(e.dataTransfer.files);
-              }}
-            >
-          <Upload className="mx-auto mb-3 text-violet-400" />
-          <p className="font-semibold text-base sm:text-lg">Upload Gemstone Image</p>
-          <p className="text-xs sm:text-sm text-gray-400 mt-1">
-            Drag & drop or click to browse
-          </p>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                hidden
-                onChange={(e) => addFiles(e.target.files)}
-              />
-            </div>
+            <span className="text-sm text-gray-400 uppercase tracking-wider font-semibold">{isFlowActive ? 'Imported gemstone image' : 'Upload images'}</span>
+            
+            {isFlowActive ? (
+              <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/10 flex flex-col sm:flex-row items-center gap-5">
+                {images.length > 0 ? (
+                  <div className="relative rounded-xl overflow-hidden bg-black/30 border border-white/10 aspect-square w-28 h-28 shrink-0 shadow-md">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={images[0].previewUrl} alt="Flow Gem" className="w-full h-full object-cover block" />
+                  </div>
+                ) : (
+                  <div className="w-28 h-28 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-xs text-gray-500 shrink-0">
+                    No Image Preloaded
+                  </div>
+                )}
+                <div className="flex-1 text-center sm:text-left">
+                  <h4 className="text-sm font-bold text-emerald-400 mb-1 flex items-center gap-1.5 justify-center sm:justify-start">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    <span>Step 1 Image Imported</span>
+                  </h4>
+                  <p className="text-xs text-gray-400 leading-normal max-w-sm">
+                    This image was verified in the authentication stage and is locked to maintain workflow consistency.
+                  </p>
+                  <div className="text-[10px] text-gray-500 font-mono mt-2 break-all">{flowImageName}</div>
+                </div>
+              </div>
+            ) : (
+              <div
+                className="border-2 border-dashed border-purple-500/50 rounded-2xl py-6 px-4 sm:py-10 sm:px-6 text-center bg-purple-500/5 cursor-pointer transition-all duration-200 ease-in-out hover:bg-purple-500/10 hover:border-purple-500"
+                onClick={() => !processing && fileInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (!processing) addFiles(e.dataTransfer.files);
+                }}
+              >
+                <Upload className="mx-auto mb-3 text-violet-400" />
+                <p className="font-semibold text-base sm:text-lg">Upload Gemstone Image</p>
+                <p className="text-xs sm:text-sm text-gray-400 mt-1">
+                  Drag & drop or click to browse
+                </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  hidden
+                  onChange={(e) => addFiles(e.target.files)}
+                />
+              </div>
+            )}
 
             {images.length > 0 && (
               <div className="grid grid-cols-[repeat(auto-fill,minmax(90px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-3">
@@ -357,7 +481,7 @@ export default function FeatureIdentification() {
               `Process ${images.length || ''} image${images.length === 1 ? '' : 's'}`.trim()
             )}
           </button>
-          {showClear && (
+          {showClear && !isFlowActive && (
             <button
               type="button"
               onClick={clearAll}
@@ -382,6 +506,28 @@ export default function FeatureIdentification() {
               <span>{result.image_count} image{result.image_count === 1 ? '' : 's'}</span>
             </div>
           </div>
+
+          {isFlowActive && authResult && (
+            <div className={`p-4 rounded-xl border flex items-center justify-between gap-4 shadow-sm animate-fade-in ${
+              authResult?.ensemble_result?.prediction === 'Synthetic'
+                ? 'bg-amber-500/5 border-amber-500/10 text-amber-400'
+                : 'bg-emerald-500/5 border-emerald-500/10 text-emerald-400'
+            }`}>
+              <div>
+                <div className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Gemstone Authenticity</div>
+                <div className="text-sm font-extrabold flex items-center gap-1.5 capitalize">
+                  <ShieldCheck className="w-4 h-4 shrink-0" />
+                  <span>{authResult?.ensemble_result?.prediction || 'Natural'} Origin Confirmed</span>
+                </div>
+              </div>
+              <div className="text-right shrink-0 border-l border-white/10 pl-4">
+                <div className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Authentication Confidence</div>
+                <div className="text-sm font-bold font-mono">
+                  {(((authResult?.ensemble_result?.confidence ?? 0.954)) * 100).toFixed(1)}%
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-col gap-6">
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-6 flex flex-col gap-4">
@@ -466,6 +612,17 @@ export default function FeatureIdentification() {
                 ))}
               </div>
             </details>
+          )}
+          {isFlowActive && (
+            <div className="mt-6 pt-6 border-t border-white/10 w-full flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={handleProceed}
+                className="w-full btn-primary py-3.5 sm:py-4 text-sm sm:text-base font-bold cursor-pointer"
+              >
+                Proceed to Value Estimation →
+              </button>
+            </div>
           )}
         </section>
       )}

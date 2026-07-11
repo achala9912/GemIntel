@@ -1,84 +1,198 @@
-import Link from 'next/link';
+'use client';
 
-const features = [
-  {
-    title: 'Feature Identification',
-    description: 'Instantly analyze the 4Cs (Carat, Cut, Color, Clarity) of any gemstone using AI vision.',
-    path: '/identification',
-    icon: '🔍'
-  },
-  {
-    title: 'Authentication',
-    description: 'Determine if a gem is natural or synthetic with deep reasoning and specific markers.',
-    path: '/authentication',
-    icon: '🛡️'
-  },
-  {
-    title: 'Price Estimation',
-    description: 'Get an accurate market valuation based on current trends and AI analysis.',
-    path: '/valuation',
-    icon: '💰'
-  },
-  {
-    title: 'Cut Prediction',
-    description: 'View a 3D prediction of the most optimal cut for rough gemstones.',
-    path: '/cut-prediction',
-    icon: '💎'
-  }
-];
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Gem, Shield, Search, Coins, Layers, Eye } from 'lucide-react';
+import CutPredictionPage from '@/app/cut-prediction/page';
 
 export default function Home() {
+  const router = useRouter();
+  const [activePortal, setActivePortal] = useState<'home' | 'rough'>('home');
+
+  useEffect(() => {
+    // Make sure we clear any stale flow state when arriving back on the main landing page
+    if (activePortal === 'home') {
+      sessionStorage.removeItem('faceted_flow_active');
+      sessionStorage.removeItem('faceted_flow_step');
+    }
+  }, [activePortal]);
+
+  const handleStartFacetedFlow = () => {
+    sessionStorage.setItem('faceted_flow_active', 'true');
+    sessionStorage.setItem('faceted_flow_step', '1');
+    sessionStorage.removeItem('faceted_flow_image');
+    sessionStorage.removeItem('faceted_flow_image_name');
+    sessionStorage.removeItem('faceted_flow_auth_result');
+    sessionStorage.removeItem('faceted_flow_identify_result');
+    router.push('/authentication');
+  };
+
+  if (activePortal === 'rough') {
+    return (
+      <div className="animate-fade-in">
+        <CutPredictionPage onBack={() => setActivePortal('home')} />
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-[1100px] mx-auto px-4 sm:px-6 pt-12 sm:pt-20 pb-16 sm:pb-24 relative">
+    <div className="max-w-[1100px] mx-auto px-4 sm:px-6 pt-12 sm:pt-20 pb-16 sm:pb-24 relative animate-fade-in">
       {/* Background Decor */}
       <div className="fixed -top-40 -right-40 h-96 w-96 rounded-full bg-purple-600/10 blur-[100px] pointer-events-none" />
       <div className="fixed -bottom-40 -left-40 h-96 w-96 rounded-full bg-blue-600/10 blur-[100px] pointer-events-none" />
 
       {/* Hero Section */}
-      <section className="mb-16 sm:mb-24 text-center">
+      <section className="mb-16 sm:mb-20 text-center">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-violet-500/15 to-cyan-500/15 text-cyan-300 border border-cyan-500/20 mb-5">
+          <Gem className="w-3.5 h-3.5" />
+          <span>Next-Generation Gemstone Analytics</span>
+        </span>
         <h1 className="mb-6 text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight text-white">
-          Unlock the True Value of{' '}
+          True Value Estimation &{' '}
           <span className="gradient-text">
-            Gemstones
+            AI Authentication
           </span>
         </h1>
         <p className="mx-auto mb-10 max-w-2xl text-base sm:text-lg text-gray-400 leading-relaxed">
-          State-of-the-art AI for classification, authentication, and valuation.
-          Upload gemstone photographs or input attributes to reveal their secrets.
+          GemIntel uses state-of-the-art DINOv2 vision models, 3D visual hull reconstruction, 
+          and ensemble ML regression to classify, authenticate, and value raw and finished gemstones.
         </p>
-        <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-          <Link
-            href="/identification"
-            className="btn-primary px-8 py-3.5 text-sm sm:text-base w-full sm:w-auto shadow-lg"
+      </section>
+
+      {/* Main Focus: 2 Gem Categories Split Portal */}
+      <section className="mb-20">
+        <div className="text-center mb-10">
+          <h2 className="text-xl sm:text-2xl font-extrabold text-white mb-2 uppercase tracking-wider">
+            Select Gemstone Category
+          </h2>
+          <p className="text-sm text-gray-400 max-w-lg mx-auto">
+            Our system is tailored for two distinct states of gemstone lifecycle. 
+            Choose the category to unlock appropriate analytics models.
+          </p>
+        </div>
+
+        <div className="grid gap-8 md:grid-cols-2 max-w-4xl mx-auto">
+          {/* Rough Gems Panel */}
+          <div 
+            onClick={() => setActivePortal('rough')}
+            className="glass-panel group p-8 flex flex-col justify-between items-start transition hover:-translate-y-1.5 duration-300 border border-white/10 hover:border-cyan-500/40 relative overflow-hidden bg-slate-950/20 hover:bg-slate-950/40 cursor-pointer shadow-xl"
           >
-            Start Analysis →
-          </Link>
-          <Link
-            href="/identification"
-            className="btn-secondary px-8 py-3.5 text-sm sm:text-base w-full sm:w-auto shadow-lg"
+            {/* Glow Accent */}
+            <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-cyan-500/5 blur-2xl group-hover:bg-cyan-500/10 transition-colors pointer-events-none" />
+
+            <div className="w-full">
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-2xl text-cyan-400 group-hover:scale-105 transition-transform duration-300">
+                <Layers className="w-6 h-6" />
+              </div>
+              <h3 className="mb-3 text-xl font-bold text-white group-hover:text-cyan-400 transition-colors">
+                Rough Gems Portal
+              </h3>
+              <p className="text-sm leading-relaxed text-gray-400 mb-6">
+                Designed for uncut, raw gemstone crystals. Perform 3D visual hull reconstruction from multi-angle snapshots, calculate volume metrics, and predict the optimal cutting configuration and raw yield percentage.
+              </p>
+              
+              <div className="space-y-2.5 mb-8">
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                  <span>3D Voxel Hull Visualizer</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                  <span>Optimal Cut Predictions</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                  <span>Carat Yield Estimation</span>
+                </div>
+              </div>
+            </div>
+
+            <button className="w-full btn-primary text-sm py-3 cursor-pointer group-hover:brightness-105">
+              Analyze Rough Gem →
+            </button>
+          </div>
+
+          {/* Faceted Gems Panel */}
+          <div 
+            onClick={handleStartFacetedFlow}
+            className="glass-panel group p-8 flex flex-col justify-between items-start transition hover:-translate-y-1.5 duration-300 border border-white/10 hover:border-purple-500/40 relative overflow-hidden bg-slate-950/20 hover:bg-slate-950/40 cursor-pointer shadow-xl"
           >
-            How It Works
-          </Link>
+            {/* Glow Accent */}
+            <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-purple-500/5 blur-2xl group-hover:bg-purple-500/10 transition-colors pointer-events-none" />
+
+            <div className="w-full">
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-500/10 border border-purple-500/20 text-2xl text-purple-400 group-hover:scale-105 transition-transform duration-300">
+                <Gem className="w-6 h-6" />
+              </div>
+              <h3 className="mb-3 text-xl font-bold text-white group-hover:text-purple-400 transition-colors">
+                Faceted Gems Portal
+              </h3>
+              <p className="text-sm leading-relaxed text-gray-400 mb-6">
+                Designed for finished, cut gemstones. Start the multi-stage pipeline: authenticate microscopic features to detect lab-synthetics, execute DINOv2 color and shape classifiers, and estimate pricing based on live economic factors.
+              </p>
+
+              <div className="space-y-2.5 mb-8">
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                  <span>AI Generated & Synthetic Check</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                  <span>DINOv2 Shape & Hue Extraction</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                  <span>CCPI-Adjusted Value Estimator</span>
+                </div>
+              </div>
+            </div>
+
+            <button className="w-full btn-primary text-sm py-3 cursor-pointer group-hover:brightness-105 style={{ background: 'linear-gradient(135deg, #a855f7, #6366f1)' }}">
+              Start Guided Pipeline →
+            </button>
+          </div>
         </div>
       </section>
 
-      {/* Features Grid - Glassmorphic Card Styles */}
-      <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {features.map((feature, i) => (
-          <Link
-            key={i}
-            href={feature.path}
-            className="glass-panel group flex flex-col items-center p-6 sm:p-8 text-center transition hover:-translate-y-1.5 duration-300"
-          >
-            <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-white/5 border border-white/10 text-2xl group-hover:bg-white/10 transition-colors">
-              {feature.icon}
-            </div>
-            <h3 className="mb-2 text-base sm:text-lg font-bold text-white group-hover:text-cyan-400 transition-colors">
-              {feature.title}
-            </h3>
-            <p className="text-xs sm:text-sm leading-relaxed text-gray-400">{feature.description}</p>
-          </Link>
-        ))}
+      {/* Individual Tools Access Section */}
+      <section className="max-w-4xl mx-auto pt-6 border-t border-white/5">
+        <div className="glass-panel p-6 bg-slate-950/20 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div>
+            <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-1">
+              Direct Tool Access
+            </h4>
+            <p className="text-xs text-gray-400">
+              Are you an expert seeking direct API results? Access individual models independently.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link 
+              href="/authentication" 
+              className="text-xs bg-white/5 hover:bg-white/10 hover:text-cyan-400 border border-white/10 px-3.5 py-2 rounded-xl transition duration-200"
+            >
+              Authentication
+            </Link>
+            <Link 
+              href="/identification" 
+              className="text-xs bg-white/5 hover:bg-white/10 hover:text-cyan-400 border border-white/10 px-3.5 py-2 rounded-xl transition duration-200"
+            >
+              Feature Extraction
+            </Link>
+            <Link 
+              href="/valuation" 
+              className="text-xs bg-white/5 hover:bg-white/10 hover:text-cyan-400 border border-white/10 px-3.5 py-2 rounded-xl transition duration-200"
+            >
+              Value Estimation
+            </Link>
+            <Link 
+              href="/cut-prediction" 
+              className="text-xs bg-white/5 hover:bg-white/10 hover:text-cyan-400 border border-white/10 px-3.5 py-2 rounded-xl transition duration-200"
+            >
+              Cut prediction
+            </Link>
+          </div>
+        </div>
       </section>
     </div>
   );

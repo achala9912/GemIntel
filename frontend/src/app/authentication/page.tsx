@@ -1,6 +1,9 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import FeatureLayout from '@/components/FeatureLayout';
+import FacetedFlowTracker from '@/components/FacetedFlowTracker';
 import { ShieldCheck, ShieldAlert } from 'lucide-react';
 
 interface AuthenticationResult {
@@ -206,22 +209,93 @@ const renderAuthenticationResult = (result: AuthenticationResult) => {
 };
 
 export default function Authentication() {
+  const router = useRouter();
+  const [isFlowActive, setIsFlowActive] = useState(false);
+  const [authResult, setAuthResult] = useState<any>(null);
+
+  useEffect(() => {
+    const active = sessionStorage.getItem('faceted_flow_active') === 'true';
+    setIsFlowActive(active);
+  }, []);
+
+  const handleSuccess = async (file: File, result: any) => {
+    if (!isFlowActive) return;
+    setAuthResult(result);
+
+    // Convert file to base64 and save it in sessionStorage
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = error => reject(error);
+      });
+      sessionStorage.setItem('faceted_flow_image', base64);
+      sessionStorage.setItem('faceted_flow_image_name', file.name);
+      sessionStorage.setItem('faceted_flow_auth_result', JSON.stringify(result));
+    } catch (e) {
+      console.error('Error saving image in flow', e);
+    }
+  };
+
+  const handleProceed = () => {
+    sessionStorage.setItem('faceted_flow_step', '2');
+    router.push('/identification');
+  };
+
+  const customFooter = (result: any, handleReset: () => void) => {
+    const filter = result?.filter_result;
+    const isAi = result?.status === 'ai_generated' || filter?.is_ai_generated;
+    const isRejected = isAi;
+
+    return (
+      <div className="flex flex-col gap-3 mt-4 w-full">
+        {!isRejected ? (
+          <button
+            onClick={handleProceed}
+            className="btn-primary w-full py-3.5 sm:py-4 text-sm sm:text-base font-bold cursor-pointer"
+          >
+            Proceed to Feature Identification →
+          </button>
+        ) : (
+          <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-center text-xs sm:text-sm font-semibold mb-2 leading-relaxed">
+            ⚠️ Image rejected as AI-generated. The guided pipeline requires a real gemstone image to proceed.
+          </div>
+        )}
+        <button
+          onClick={() => {
+            setAuthResult(null);
+            handleReset();
+          }}
+          className="btn-secondary w-full py-3.5 sm:py-4 text-sm sm:text-base cursor-pointer"
+        >
+          Reset / Authenticate Another Gem
+        </button>
+      </div>
+    );
+  };
+
   return (
-    <FeatureLayout
-      title={
-        <>
-          Gemstone{' '}
-          <span className="gradient-text">
-            Authentication
-          </span>
-        </>
-      }
-      description="AI-powered authenticity verification. Our model detects microscopic markers, inclusions, and growth patterns to determine natural origin versus synthetic laboratory creation."
-      buttonText="Authenticate Gem"
-      apiEndpoint="/authenticate"
-      renderResult={renderAuthenticationResult}
-    >
-      <></>
-    </FeatureLayout>
+    <div className="w-full pt-4">
+      {isFlowActive && <FacetedFlowTracker currentStep={1} />}
+      <FeatureLayout
+        title={
+          <>
+            Gemstone{' '}
+            <span className="gradient-text">
+              Authentication
+            </span>
+          </>
+        }
+        description="AI-powered authenticity verification. Our model detects microscopic markers, inclusions, and growth patterns to determine natural origin versus synthetic laboratory creation."
+        buttonText="Authenticate Gem"
+        apiEndpoint="/authenticate"
+        renderResult={renderAuthenticationResult}
+        onSuccess={handleSuccess}
+        customFooter={isFlowActive ? customFooter : undefined}
+      >
+        <></>
+      </FeatureLayout>
+    </div>
   );
 }

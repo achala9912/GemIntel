@@ -45,7 +45,7 @@ const dataURLtoFile = (dataurl: string, filename: string): File => {
 
 // StepIcon helper has been extracted to components/ReconstructionModal
 
-export default function CutPredictionPage() {
+export default function CutPredictionPage({ onBack }: { onBack?: () => void }) {
   const [gemType, setGemType] = useState<string>("");
   const [weight, setWeight] = useState<string | number>("");
   const [images, setImages] = useState<ImageFile[]>([]);
@@ -355,6 +355,14 @@ export default function CutPredictionPage() {
       )}
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="mb-6 flex items-center gap-1.5 text-xs text-gray-400 hover:text-cyan-400 transition-colors bg-white/5 border border-white/10 px-3.5 py-2 rounded-xl active:scale-[0.98] cursor-pointer font-semibold shadow-lg"
+          >
+            ← Back to Portal Selection
+          </button>
+        )}
     
 
         <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-center mb-2 leading-tight px-2">
