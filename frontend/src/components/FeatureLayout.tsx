@@ -56,7 +56,7 @@ export default function FeatureLayout({
       
       // Trigger API fetch in the background immediately
       const fetchPromise = (async () => {
-        const endpoint = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'}${apiEndpoint}`;
+        const endpoint = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000'}${apiEndpoint}`;
         const formData = new FormData();
         formData.append('file', file);
 
