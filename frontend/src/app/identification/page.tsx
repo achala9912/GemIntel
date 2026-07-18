@@ -218,7 +218,7 @@ export default function FeatureIdentification() {
   };
 
   return (
-    <div className="max-w-[1100px] mx-auto px-4 sm:px-6 pt-2 sm:pt-4 pb-16 sm:pb-20">
+    <div className="max-width-container pt-2 sm:pt-4 pb-16 sm:pb-20">
       {isFlowActive && <FacetedFlowTracker currentStep={2} />}
 
       {isFlowActive && (

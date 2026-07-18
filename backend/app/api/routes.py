@@ -227,3 +227,68 @@ async def identify_gem(
         },
         "per_image": per_image,
     }
+
+
+# =========================================================
+# Feedback (M04 — Submitting feedback to admin email)
+# =========================================================
+from pydantic import BaseModel
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import os
+
+class FeedbackRequest(BaseModel):
+    name: str
+    email: str
+    feedback_type: str
+    rating: int
+    message: str
+
+@router.post("/feedback")
+async def receive_feedback(req: FeedbackRequest):
+    print(f"Feedback received: {req}")
+    
+    admin_emails_raw = os.getenv("ADMIN_EMAILS", "")
+    admin_emails = [email.strip() for email in admin_emails_raw.split(",") if email.strip()]  
+    subject = f"GemIntel Feedback: {req.feedback_type.capitalize()} (Rating: {req.rating}/5)"
+    
+    body = f"""
+You have received new feedback from GemIntel:
+
+Name: {req.name}
+Email: {req.email}
+Feedback Type: {req.feedback_type}
+Rating: {req.rating}/5
+
+Message:
+{req.message}
+"""
+    
+    msg = MIMEMultipart()
+    msg['From'] = req.email
+    msg['To'] = ", ".join(admin_emails)
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'plain'))
+    
+    try:
+        smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
+        smtp_port = int(os.getenv("SMTP_PORT", "587"))
+        smtp_user = os.getenv("SMTP_USER", "")
+        smtp_pass = os.getenv("SMTP_PASSWORD", "")
+        
+        if smtp_user and smtp_pass:
+            with smtplib.SMTP(smtp_host, smtp_port) as server:
+                server.starttls()
+                server.login(smtp_user, smtp_pass)
+                server.send_message(msg)
+            print("Feedback email sent successfully.")
+        else:
+            print("[Warning] Feedback email not sent. SMTP credentials (SMTP_USER/SMTP_PASSWORD) are not configured in .env.")
+    except Exception as e:
+        print(f"[Error] Failed to send feedback email: {e}")
+        
+    return {
+        "status": "success",
+        "message": "Feedback received successfully. Admin has been notified."
+    }

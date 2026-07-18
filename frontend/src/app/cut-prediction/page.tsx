@@ -354,7 +354,7 @@ export default function CutPredictionPage({ onBack }: { onBack?: () => void }) {
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
+      <div className="max-width-container py-6 sm:py-12">
         {onBack && (
           <button
             onClick={onBack}

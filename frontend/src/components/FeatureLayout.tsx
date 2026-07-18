@@ -133,7 +133,7 @@ export default function FeatureLayout<T = unknown>({
   };
 
   return (
-    <div className="max-w-[1100px] mx-auto px-4 sm:px-6 pt-2 sm:pt-4 pb-16 sm:pb-20">
+    <div className="max-width-container pt-2 sm:pt-4 pb-16 sm:pb-20">
       <header className="text-center mb-8 sm:mb-12">
         <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-center mb-2 leading-tight px-2 text-white">
           {title}

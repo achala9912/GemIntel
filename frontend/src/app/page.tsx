@@ -37,10 +37,12 @@ export default function Home() {
   }
 
   return (
-    <div className="max-w-[1100px] mx-auto px-4 sm:px-6 pt-4 sm:pt-6 pb-16 sm:pb-24 relative animate-fade-in">
+    <>
       {/* Background Decor */}
       <div className="fixed -top-40 -right-40 h-96 w-96 rounded-full bg-purple-600/10 blur-[100px] pointer-events-none" />
       <div className="fixed -bottom-40 -left-40 h-96 w-96 rounded-full bg-blue-600/10 blur-[100px] pointer-events-none" />
+
+      <div className="max-width-container pt-4 sm:pt-6 pb-16 sm:pb-20 relative animate-fade-in">
 
       {/* Hero Section */}
       <section className="mb-16 sm:mb-20 text-center">
@@ -155,5 +157,6 @@ export default function Home() {
         </div>
       </section>
     </div>
-  );
+  </>
+);
 }

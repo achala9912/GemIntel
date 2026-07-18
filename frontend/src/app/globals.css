@@ -129,7 +129,6 @@
 
 html {
   overflow-x: hidden;
-  height: 100%;
 }
 
 body {
@@ -168,4 +167,55 @@ a {
 
 * {
   box-sizing: border-box;
+}
+
+/* Max width container */
+.max-width-container {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  max-width: 1440px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+@media (min-width: 768px) {
+  .max-width-container {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+}
+@media (min-width: 1024px) {
+  .max-width-container {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+}
+@media (min-width: 1280px) {
+  .max-width-container {
+    padding-left: 80px;
+    padding-right: 80px;
+  }
+}
+
+@media (min-width: 1800px) {
+  .max-width-container {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+/* Custom Autofill Styling to remove white background from autofilled fields */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0px 1000px #090d16 inset !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
