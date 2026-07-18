@@ -32,7 +32,7 @@ const isActive = (path: string) => {
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isOpen ? 'bottom-0' : 'h-16'}`}>
       
       {/* Header Bar Background & Content */}
-      <div className="absolute top-0 left-0 right-0 h-16 bg-slate-950/80 backdrop-blur-lg border-b border-white/10 z-50">
+      <div className="absolute top-0 left-0 right-0 h-16 bg-slate-950/80 backdrop-blur-lg border-b border-white/10 z-50 flex justify-center">
         <div className="max-width-container h-full">
           <div className="flex h-full items-center justify-between">
 
