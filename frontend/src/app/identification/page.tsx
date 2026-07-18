@@ -65,7 +65,7 @@ function ProbBars({ probs, accent }: { probs: Record<string, number>; accent: st
   );
 }
 
-export default function FeatureIdentification() {
+export default function FeatureIdentification({ standalone = false }: { standalone?: boolean }) {
   const [gemTypes, setGemTypes] = useState<string[]>(FALLBACK_GEM_TYPES);
   const [gemType, setGemType] = useState<string>("");
   const [images, setImages] = useState<UploadedImage[]>([]);
@@ -84,6 +84,8 @@ export default function FeatureIdentification() {
   const [flowImageName, setFlowImageName] = useState<string>('gem.png');
 
   useEffect(() => {
+    // standalone tab: never join the authentication flow, always plain upload/test.
+    if (standalone) return;
     const active = sessionStorage.getItem('faceted_flow_active') === 'true';
     setIsFlowActive(active);
     if (active) {
@@ -208,6 +210,7 @@ export default function FeatureIdentification() {
 
   const accent1 = 'linear-gradient(135deg, #8b5cf6, #06b6d4)';
   const accent2 = 'linear-gradient(135deg, #f59e0b, #ef4444)';
+  const accent3 = 'linear-gradient(135deg, #10b981, #14b8a6)';
 
   const canSubmit = gemType && images.length > 0 && !processing;
   const showClear = Boolean(gemType || images.length > 0 || result || error);
@@ -241,8 +244,8 @@ export default function FeatureIdentification() {
         </h1>
         <p className="text-center text-sm sm:text-base opacity-60 max-w-2xl mx-auto px-4">
           Choose a gem type, upload one or more gemstone images, and run our AI models to
-          identify the <strong>cut</strong> (shape and style) and <strong>color</strong>{' '}
-          (hue and saturation).
+          identify the <strong>cut</strong> (shape and style), <strong>color</strong>{' '}
+          (hue and intensity), and <strong>clarity</strong>.
         </p>
       </header>
 
@@ -497,7 +500,7 @@ export default function FeatureIdentification() {
       {error && <div className="mt-4 py-4 px-5 rounded-xl bg-red-500/10 border border-red-500/35 text-red-200 text-sm max-w-3xl mx-auto w-full">{error}</div>}
 
       {result && (
-        <section className="glass-panel mt-8 p-6 sm:p-8 flex flex-col gap-6 animate-slide-up max-w-3xl mx-auto w-full">
+        <section className="glass-panel mt-8 p-6 sm:p-8 flex flex-col gap-6 animate-slide-up max-w-6xl mx-auto w-full">
           <div className="flex justify-between items-baseline gap-4 flex-wrap border-b border-white/10 pb-4">
             <h2 className="text-xl font-bold text-white">Identification Result</h2>
             <div className="flex gap-2 text-gray-400 text-sm">
@@ -529,7 +532,7 @@ export default function FeatureIdentification() {
             </div>
           )}
 
-          <div className="flex flex-col gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-6 flex flex-col gap-4">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-lg font-semibold text-white">Cut</h3>
@@ -556,7 +559,7 @@ export default function FeatureIdentification() {
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-6 flex flex-col gap-4">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-lg font-semibold text-white">Color</h3>
-                <span className="text-xs uppercase tracking-wider py-1 px-2.5 rounded-full text-white font-semibold" style={{ background: accent2 }}>DINOv2 multi-head</span>
+                <span className="text-xs uppercase tracking-wider py-1 px-2.5 rounded-full text-white font-semibold" style={{ background: accent2 }}>DINOv2 classifier</span>
               </div>
               <div className="grid grid-cols-2 gap-4 border-b border-white/5 pb-4">
                 <div>
@@ -565,15 +568,29 @@ export default function FeatureIdentification() {
                   <div className="text-xs text-gray-400 mt-1">{pct(result.aggregate.color.hue.confidence)} confidence</div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Saturation</div>
-                  <div className="text-2xl font-bold bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent capitalize">{result.aggregate.color.saturation.label}</div>
-                  <div className="text-xs text-gray-400 mt-1">{pct(result.aggregate.color.saturation.confidence)} confidence</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Intensity</div>
+                  <div className="text-2xl font-bold bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent capitalize">{result.aggregate.color.intensity.label}</div>
+                  <div className="text-xs text-gray-400 mt-1">{pct(result.aggregate.color.intensity.confidence)} confidence</div>
                 </div>
               </div>
               <div className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Hue distribution</div>
               <ProbBars probs={result.aggregate.color.hue_probs} accent={accent2} />
-              <div className="text-xs text-gray-400 uppercase tracking-wider font-semibold mt-2">Saturation distribution</div>
-              <ProbBars probs={result.aggregate.color.saturation_probs} accent={accent2} />
+              <div className="text-xs text-gray-400 uppercase tracking-wider font-semibold mt-2">Intensity distribution</div>
+              <ProbBars probs={result.aggregate.color.intensity_probs} accent={accent2} />
+            </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-6 flex flex-col gap-4">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-lg font-semibold text-white">Clarity</h3>
+                <span className="text-xs uppercase tracking-wider py-1 px-2.5 rounded-full text-white font-semibold" style={{ background: accent3 }}>EfficientNetV2</span>
+              </div>
+              <div className="border-b border-white/5 pb-4">
+                <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Grade</div>
+                <div className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent capitalize">{result.aggregate.clarity.grade.label}</div>
+                <div className="text-xs text-gray-400 mt-1">{pct(result.aggregate.clarity.grade.confidence)} confidence</div>
+              </div>
+              <div className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Clarity distribution</div>
+              <ProbBars probs={result.aggregate.clarity.clarity_probs} accent={accent3} />
             </div>
           </div>
 
@@ -604,9 +621,15 @@ export default function FeatureIdentification() {
                     </div>
 
                     <div className="flex justify-between items-center text-sm gap-2">
-                      <span className="text-gray-400 text-xs uppercase tracking-wider">Sat</span>
-                      <span className="capitalize font-medium text-white">{p.color.saturation.label}</span>
-                      <span className="text-gray-400 text-xs">{pct(p.color.saturation.confidence)}</span>
+                      <span className="text-gray-400 text-xs uppercase tracking-wider">Intensity</span>
+                      <span className="capitalize font-medium text-white">{p.color.intensity.label}</span>
+                      <span className="text-gray-400 text-xs">{pct(p.color.intensity.confidence)}</span>
+                    </div>
+
+                    <div className="flex justify-between items-center text-sm gap-2">
+                      <span className="text-gray-400 text-xs uppercase tracking-wider">Clarity</span>
+                      <span className="capitalize font-medium text-white">{p.clarity.grade.label}</span>
+                      <span className="text-gray-400 text-xs">{pct(p.clarity.grade.confidence)}</span>
                     </div>
                   </div>
                 ))}

@@ -29,25 +29,42 @@ W_FREQ = 0.3
 W_CNN = 0.4
 W_META = 0.3
 
-# Identification Model Paths (M02 — DINOv2 cut + color classifiers)
-CUT_MODEL_PATH = os.path.join(MODELS_DIR, "4C", "cut_best_finetune.pt")
-COLOR_MODEL_PATH = os.path.join(MODELS_DIR, "4C", "color_best_stage1.pt")
+# Identification / 4C Model Paths (DINOv2 cut + color, EfficientNet clarity)
+CUT_MODEL_PATH = os.path.join(MODELS_DIR, "4C", "cut-module.pt")
+COLOR_MODEL_PATH = os.path.join(MODELS_DIR, "4C", "color-module.pt")
+CLARITY_MODEL_PATH = os.path.join(MODELS_DIR, "4C", "clarity-module.pt")
 
 # Gem types shown in the Identification dropdown.
-# Color model (M02) is trained on blue varieties, so we restrict the list.
+# Color model is trained on blue varieties, so we restrict the list.
 GEM_TYPES = [
     "Blue Sapphire",
     "Blue Spinel",
     "Blue Topaz",
 ]
 
-# Domain-allowed hue labels per gem type.
-# The DINOv2 color model is trained on the union of these; at inference time
-# we restrict the hue distribution to the labels valid for the selected gem
-# variety and renormalize. Labels are matched case-insensitively, with
-# spaces / hyphens / underscores treated as equivalent.
-GEM_TYPE_HUES = {
-    "Blue Sapphire": ["royal blue", "cornflower blue"],
-    "Blue Spinel":   ["cobalt blue"],
-    "Blue Topaz":    ["London blue", "Swiss blue", "sky blue"],
-}
+# Color model classes, in the model's output index order (0..17).
+# ponytail: order taken verbatim from the training label grid the user supplied.
+# If color labels look scrambled, the training run indexed classes differently
+# (e.g. alphabetical folder sort) — reorder this list to match, nothing else.
+# Each class is a (Gem_Type, Hue, Intensity) triple. `gem_type` here uses the
+# same display names as GEM_TYPES so we can filter by the selected variety.
+COLOR_CLASSES = [
+    {"gem_type": "Blue Sapphire", "hue": "Blue",        "intensity": "Light"},
+    {"gem_type": "Blue Sapphire", "hue": "Blue",        "intensity": "Medium"},
+    {"gem_type": "Blue Sapphire", "hue": "Blue",        "intensity": "Intense"},
+    {"gem_type": "Blue Sapphire", "hue": "Blue",        "intensity": "Vivid"},
+    {"gem_type": "Blue Sapphire", "hue": "Blue",        "intensity": "Deep"},
+    {"gem_type": "Blue Topaz",    "hue": "Swiss Blue",  "intensity": "Light"},
+    {"gem_type": "Blue Topaz",    "hue": "Swiss Blue",  "intensity": "Medium"},
+    {"gem_type": "Blue Topaz",    "hue": "Swiss Blue",  "intensity": "Intense"},
+    {"gem_type": "Blue Topaz",    "hue": "Swiss Blue",  "intensity": "Vivid"},
+    {"gem_type": "Blue Topaz",    "hue": "Sky Blue",    "intensity": "Light"},
+    {"gem_type": "Blue Topaz",    "hue": "Sky Blue",    "intensity": "Medium"},
+    {"gem_type": "Blue Topaz",    "hue": "London Blue", "intensity": "Intense"},
+    {"gem_type": "Blue Topaz",    "hue": "London Blue", "intensity": "Vivid"},
+    {"gem_type": "Blue Topaz",    "hue": "London Blue", "intensity": "Dark"},
+    {"gem_type": "Blue Spinel",   "hue": "Blue",        "intensity": "Light"},
+    {"gem_type": "Blue Spinel",   "hue": "Blue",        "intensity": "Intense"},
+    {"gem_type": "Blue Spinel",   "hue": "Blue",        "intensity": "Vivid"},
+    {"gem_type": "Blue Spinel",   "hue": "Blue",        "intensity": "Dark"},
+]
