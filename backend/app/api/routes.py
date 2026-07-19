@@ -23,6 +23,17 @@ async def authenticate_gem(file: UploadFile = File(...)):
         image_bytes = await file.read()
         base_image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         
+        # --- Global Domain Filter check ---
+        from app.services.domain_filter_service import validate_gem_image
+        is_valid, score = validate_gem_image(base_image)
+        print(f"[Telemetry] Score: {score}")
+        if not is_valid:
+            return {
+                "status": "invalid input",
+                "message": "The image entered is not a gem. Please input a valid gem image.",
+                "score": score
+            }
+        
         # --- AI Filter check ---
         from app.services.ai_filter_service import analyze_image_origin
         filter_result = analyze_image_origin(base_image)
@@ -37,6 +48,7 @@ async def authenticate_gem(file: UploadFile = File(...)):
         # Pass to our service
         result = run_inference(base_image)
         result["filter_result"] = filter_result
+        result["score"] = score
         return result
         
     except HTTPException as he:
@@ -143,6 +155,17 @@ async def identify_gem(
             image = Image.open(io.BytesIO(raw)).convert("RGB")
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"{f.filename}: {e}")
+
+        # --- Global Domain Filter check ---
+        from app.services.domain_filter_service import validate_gem_image
+        is_valid, score = validate_gem_image(image)
+        print(f"[Telemetry] Score: {score}")
+        if not is_valid:
+            return {
+                "status": "invalid input",
+                "message": f"The image entered is not a gem: {f.filename}. Please input a valid gem image.",
+                "score": score
+            }
 
         try:
             cut_res = predict_cut_one(image)

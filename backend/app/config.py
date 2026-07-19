@@ -6,8 +6,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Model Paths
 MODELS_DIR = os.path.join(BASE_DIR, "models")
 VALUE_MODELS_DIR = os.path.join(MODELS_DIR, "value")
-EFF_MODEL_PATH = os.path.join(VALUE_MODELS_DIR, "efficientnet_b4.pth")
-GEM_PIPELINE_PATH = os.path.join(MODELS_DIR, "xgboost_model.pkl")
+EFF_MODEL_PATH = os.path.join(MODELS_DIR, "authentication", "efficientnet_b4.pth")
+GEM_PIPELINE_PATH = os.path.join(MODELS_DIR, "authentication", "xgboost_model.pkl")
 
 # Valuation Model Paths
 XGB_VALUATION_MODEL_PATH = os.path.join(VALUE_MODELS_DIR, "xgb_model.pkl")
@@ -23,7 +23,8 @@ W_VALUATION_XGB = 0.5
 W_VALUATION_LGBM = 0.5
 
 # AI Filter Configuration
-AI_FILTER_MODEL_PATH = os.path.join(MODELS_DIR, "ai-filter.pt")
+AI_FILTER_MODEL_PATH = os.path.join(MODELS_DIR, "Filters", "ai-filter.pt")
+GLOBAL_DOMAIN_FILTER_PATH = os.path.join(MODELS_DIR, "Filters", "global_domain_filter.pkl")
 AI_FILTER_THRESHOLD = 0.6
 W_FREQ = 0.3
 W_CNN = 0.4
