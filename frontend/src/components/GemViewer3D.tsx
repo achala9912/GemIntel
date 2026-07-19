@@ -511,6 +511,7 @@ export default function GemViewer3D({
 
   return (
     <div className="relative w-full h-full">
+      <div className="hide-nav-footer-trigger hidden" />
       <div ref={containerRef} className="absolute inset-0" />
 
       {/* Info panel */}
