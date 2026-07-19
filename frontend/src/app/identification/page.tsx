@@ -172,12 +172,29 @@ export default function FeatureIdentification({ standalone = false }: { standalo
   };
 
   const clearAll = () => {
-    images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
+    images.forEach((img) => {
+      if (img.id !== 'flow-image') {
+        URL.revokeObjectURL(img.previewUrl);
+      }
+    });
     setImages([]);
     setGemType('');
     setResult(null);
     setError(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleReset = () => {
+    setResult(null);
+    setError(null);
+    
+    if (isFlowActive) {
+      // Keep the imported image, but reset the selected gem type
+      setGemType('');
+    } else {
+      // Standalone flow: clear everything
+      clearAll();
+    }
   };
 
   const handleProcess = async () => {
@@ -225,7 +242,7 @@ export default function FeatureIdentification({ standalone = false }: { standalo
       {isFlowActive && <FacetedFlowTracker currentStep={2} />}
 
       {isFlowActive && (
-        <div className="flex items-center justify-between mb-6 max-w-3xl mx-auto w-full animate-fade-in">
+        <div className={`flex items-center justify-between mb-6 ${result ? 'max-w-6xl' : 'max-w-3xl'} mx-auto w-full transition-all duration-300 animate-fade-in`}>
           <button
             onClick={handleBack}
             className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-cyan-400 transition-colors bg-white/5 border border-white/10 px-3.5 py-2 rounded-xl active:scale-[0.98] cursor-pointer font-semibold shadow-lg"
@@ -250,7 +267,8 @@ export default function FeatureIdentification({ standalone = false }: { standalo
       </header>
 
       {/* Single Vertical Card Layout */}
-      <section className="glass-panel p-4 sm:p-8 flex flex-col gap-6 sm:gap-7 max-w-3xl mx-auto w-full relative">
+      {!result && (
+        <section className="glass-panel p-4 sm:p-8 flex flex-col gap-6 sm:gap-7 max-w-3xl mx-auto w-full relative">
         {isFlowActive && authResult && (
           <div className={`p-4 rounded-xl border flex items-center justify-between gap-4 shadow-sm ${
             authResult?.ensemble_result?.prediction === 'Synthetic'
@@ -496,11 +514,12 @@ export default function FeatureIdentification({ standalone = false }: { standalo
           )}
         </div>
       </section>
+      )}
 
       {error && <div className="mt-4 py-4 px-5 rounded-xl bg-red-500/10 border border-red-500/35 text-red-200 text-sm max-w-3xl mx-auto w-full">{error}</div>}
 
       {result && (
-        <section className="glass-panel mt-8 p-6 sm:p-8 flex flex-col gap-6 animate-slide-up max-w-6xl mx-auto w-full">
+        <section className="glass-panel mt-4 p-6 sm:p-8 flex flex-col gap-6 animate-slide-up max-w-6xl mx-auto w-full">
           <div className="flex justify-between items-baseline gap-4 flex-wrap border-b border-white/10 pb-4">
             <h2 className="text-xl font-bold text-white">Identification Result</h2>
             <div className="flex gap-2 text-gray-400 text-sm">
@@ -636,8 +655,8 @@ export default function FeatureIdentification({ standalone = false }: { standalo
               </div>
             </details>
           )}
-          {isFlowActive && (
-            <div className="mt-6 pt-6 border-t border-white/10 w-full flex flex-col gap-3">
+          <div className="mt-6 pt-6 border-t border-white/10 w-full flex flex-col gap-3">
+            {isFlowActive && (
               <button
                 type="button"
                 onClick={handleProceed}
@@ -645,8 +664,15 @@ export default function FeatureIdentification({ standalone = false }: { standalo
               >
                 Proceed to Value Estimation →
               </button>
-            </div>
-          )}
+            )}
+            <button
+              type="button"
+              onClick={handleReset}
+              className="w-full btn-secondary py-3.5 sm:py-4 text-sm sm:text-base cursor-pointer"
+            >
+              Reset / Identify Another Gem
+            </button>
+          </div>
         </section>
       )}
     </div>
