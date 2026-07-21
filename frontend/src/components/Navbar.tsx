@@ -7,7 +7,6 @@ import { Menu, X, Gem } from 'lucide-react';
 
 const navItems = [
   { name: 'Home', path: '/' },
-  { name: 'Carat', path: '/carat' },
   { name: 'About Us', path: '/about' },
   { name: 'Feedback', path: '/feedback' },
 ];
