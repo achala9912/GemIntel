@@ -42,31 +42,49 @@ interface GemPreset {
 
 const GEM_PRESETS: Record<string, GemPreset> = {
   blue_sapphire: {
-    color: 0x1a4f96,
-    attenuation: 0x0a1e50,
-    fire: 0x6baeff,
+    color: 0x124076,
+    attenuation: 0x081c3c,
+    fire: 0x60a5fa,
     name: "Blue Sapphire",
     ior: 1.77,
     attenuationDist: 2.5,
     saturationBoost: 1.2,
   },
   spinel: {
-    color: 0xa8234a,
-    attenuation: 0x5c0a22,
-    fire: 0xff6b8a,
-    name: "Spinel",
+    color: 0x1e3a8a,
+    attenuation: 0x0f172a,
+    fire: 0x818cf8,
+    name: "Blue Spinel",
     ior: 1.72,
     attenuationDist: 2.2,
-    saturationBoost: 1.0,
+    saturationBoost: 1.1,
+  },
+  blue_spinel: {
+    color: 0x1e3a8a,
+    attenuation: 0x0f172a,
+    fire: 0x818cf8,
+    name: "Blue Spinel",
+    ior: 1.72,
+    attenuationDist: 2.2,
+    saturationBoost: 1.1,
   },
   topaz: {
-    color: 0xc48520,
-    attenuation: 0x6e4408,
-    fire: 0xffe4a0,
-    name: "Topaz",
+    color: 0x0284c7,
+    attenuation: 0x0369a1,
+    fire: 0x38bdf8,
+    name: "Blue Topaz",
     ior: 1.63,
     attenuationDist: 3.0,
-    saturationBoost: 0.8,
+    saturationBoost: 0.9,
+  },
+  blue_topaz: {
+    color: 0x0284c7,
+    attenuation: 0x0369a1,
+    fire: 0x38bdf8,
+    name: "Blue Topaz",
+    ior: 1.63,
+    attenuationDist: 3.0,
+    saturationBoost: 0.9,
   },
 };
 
@@ -502,13 +520,13 @@ export default function GemViewer3D({
     controls.update();
 
     let animId: number;
-    const clock = new THREE.Clock();
+    const startTime = performance.now();
     const animate = () => {
       animId = requestAnimationFrame(animate);
       controls.update();
 
       if (materialRef.current) {
-        const t = clock.getElapsedTime();
+        const t = (performance.now() - startTime) / 1000;
         const flicker =
           1.0 +
           0.06 * Math.sin(t * 2.3) +

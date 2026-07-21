@@ -21,9 +21,9 @@ import type { PredictionResult, PipelineStatus } from "@/services/cutApi";
 const MIN_IMAGES = 8;
 const MAX_IMAGES = 16;
 const GEM_TYPES = [
-  { value: "blue_sapphire", label: "Blue Sapphire", dotColor: "#3b82f6"  },
-  { value: "spinel",        label: "Spinel",        dotColor: "#ec4899" },
-  { value: "topaz",         label: "Topaz",         dotColor: "#eab308" },
+  { value: "blue_sapphire", label: "Blue Sapphire", dotColor: "#3b82f6" },
+  { value: "spinel",        label: "Blue Spinel",   dotColor: "#6366f1" },
+  { value: "topaz",         label: "Blue Topaz",    dotColor: "#38bdf8" },
 ];
 
 interface ImageFile {
