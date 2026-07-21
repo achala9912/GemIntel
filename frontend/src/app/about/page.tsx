@@ -45,10 +45,6 @@ const renderIcon = (iconName: string, className = "w-5 h-5") => {
 export default function AboutPage() {
   return (
     <>
-      {/* Background Ambient Decor */}
-      <div className="fixed -top-40 -right-40 h-96 w-96 rounded-full bg-purple-600/5 blur-[100px] pointer-events-none" />
-      <div className="fixed -bottom-40 -left-40 h-96 w-96 rounded-full bg-blue-600/5 blur-[100px] pointer-events-none" />
-
       <div className="max-width-container pt-4 sm:pt-6 pb-16 sm:pb-20 relative animate-fade-in z-10 space-y-16 sm:space-y-20">
 
         {/* Hero Header */}

@@ -32,7 +32,14 @@ export default function RootLayout({
     <html lang="en">
       <body suppressHydrationWarning className={`${outfit.className} ${outfit.variable} ${orbitron.variable} min-h-screen flex flex-col`}>
         <Navbar />
-        <main className="pt-16 flex-1 flex flex-col">{children}</main>
+        <main className="pt-16 flex-1 flex flex-col bg-grid-dots relative overflow-hidden">
+          {/* Background Ambient Decor */}
+          <div className="fixed -top-40 -right-40 h-96 w-96 rounded-full bg-blue-600/5 blur-[120px] pointer-events-none z-0" />
+          <div className="fixed -bottom-40 -left-40 h-96 w-96 rounded-full bg-cyan-600/5 blur-[120px] pointer-events-none z-0" />
+          <div className="relative z-10 flex-1 flex flex-col">
+            {children}
+          </div>
+        </main>
         <Footer />
       </body>
     </html>
