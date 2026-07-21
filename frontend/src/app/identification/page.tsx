@@ -225,6 +225,9 @@ export default function FeatureIdentification({ standalone = false }: { standalo
         gemType,
         images.map((img) => img.file),
       );
+      if (!data?.aggregate?.cut || !data?.aggregate?.color || !data?.aggregate?.clarity) {
+        throw new Error('The server returned an unexpected result (missing cut/color/clarity). Please try again.');
+      }
       setResult(data);
       if (isFlowActive) {
         sessionStorage.setItem('faceted_flow_identify_result', JSON.stringify(data));
@@ -575,7 +578,7 @@ export default function FeatureIdentification({ standalone = false }: { standalo
 
       {tab === 'identify' && error && <div className="mt-4 py-4 px-5 rounded-xl bg-red-500/10 border border-red-500/35 text-red-200 text-sm max-w-3xl mx-auto w-full">{error}</div>}
 
-      {tab === 'identify' && result && (
+      {tab === 'identify' && result?.aggregate && (
         <section className="glass-panel mt-4 p-6 sm:p-8 flex flex-col gap-6 animate-slide-up max-w-6xl mx-auto w-full">
           <div className="flex justify-between items-baseline gap-4 flex-wrap border-b border-white/10 pb-4">
             <h2 className="text-xl font-bold text-white">Identification Result</h2>

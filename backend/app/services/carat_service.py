@@ -78,21 +78,31 @@ def decode_image(raw_bytes: bytes) -> np.ndarray:
 
 def detect_coin(img: np.ndarray, work_max: int = 1200):
     """Detect the coin via HoughCircles on a downscaled copy (fast on large
-    phone photos), returning (cx, cy, r) at full resolution, or None."""
+    phone photos), returning (cx, cy, r) at full resolution, or None.
+
+    Robust to low-contrast / dark / slightly-angled coins on fabric: contrast is
+    boosted with CLAHE and the accumulator threshold is swept from strict to
+    permissive, taking the largest circle found."""
     h, w = img.shape[:2]
     scale = min(1.0, work_max / max(h, w))
     small = cv2.resize(img, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
-    gray = cv2.medianBlur(cv2.cvtColor(small, cv2.COLOR_BGR2GRAY), 5)
+    gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
+    gray = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8)).apply(gray)  # boost contrast
+    gray = cv2.medianBlur(gray, 5)
     min_dim = min(gray.shape[:2])
-    circles = cv2.HoughCircles(
-        gray, cv2.HOUGH_GRADIENT, dp=1.2, minDist=min_dim,
-        param1=120, param2=60,
-        minRadius=int(min_dim * 0.05), maxRadius=int(min_dim * 0.55),
-    )
-    if circles is None:
-        return None
-    cx, cy, r = max(np.round(circles[0, :]).astype(int), key=lambda c: c[2])
-    return (int(cx / scale), int(cy / scale), int(r / scale))
+
+    # Sweep param2 (accumulator threshold) strict -> permissive so a faint coin
+    # still registers; the largest detected circle is taken as the coin.
+    for param2 in (60, 45, 35, 28, 22):
+        circles = cv2.HoughCircles(
+            gray, cv2.HOUGH_GRADIENT, dp=1.2, minDist=min_dim,
+            param1=120, param2=param2,
+            minRadius=int(min_dim * 0.05), maxRadius=int(min_dim * 0.55),
+        )
+        if circles is not None:
+            cx, cy, r = max(np.round(circles[0, :]).astype(int), key=lambda c: c[2])
+            return (int(cx / scale), int(cy / scale), int(r / scale))
+    return None
 
 
 def segment_stone(img: np.ndarray, coin, label: str):

@@ -83,7 +83,7 @@ export default function CaratTester() {
   const [sideImage, setSideImage] = useState<File | null>(null);
   const [gemType, setGemType] = useState('');
   const [cutShape, setCutShape] = useState('');
-  const [coinDiameter, setCoinDiameter] = useState('22.0'); // Sri Lanka Rs.2 (2017+)
+  const [coinDiameter, setCoinDiameter] = useState('28.5'); // Sri Lanka Rs.2 (older, large)
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CaratResult | null>(null);
 
