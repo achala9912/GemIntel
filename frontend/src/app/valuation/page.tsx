@@ -386,12 +386,26 @@ export default function Valuation() {
             else if (cleanedClarity.includes('vs')) mappedClarity = 'VS';
           }
 
+          const caratStr = sessionStorage.getItem('faceted_flow_carat_result');
+          let mappedWeight = 1.5;
+          if (caratStr) {
+            try {
+              const caratRes = JSON.parse(caratStr);
+              if (caratRes && typeof caratRes.carat === 'number') {
+                mappedWeight = +((caratRes.carat * 0.01).toFixed(2));
+              }
+            } catch (err) {
+              console.error('Error parsing carat result in valuation page', err);
+            }
+          }
+
           const authPrediction = authStr
             ? JSON.parse(authStr)?.ensemble_result?.prediction
             : 'Natural';
 
           setGemFactors((prev) => ({
             ...prev,
+            weight_ct: mappedWeight,
             gem_type: mappedGemType,
             shape: mappedShape,
             cut: mappedCut,
@@ -403,8 +417,6 @@ export default function Valuation() {
                 ? 'Synthetic'
                 : 'Natural',
           }));
-
-
         } catch (e) {
           console.error('Error pre-populating valuation fields from flow', e);
         }
