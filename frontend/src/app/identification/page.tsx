@@ -459,7 +459,7 @@ export default function FeatureIdentification({ standalone = false }: { standalo
               </div>
             )}
 
-            {images.length > 0 && (
+            {images.length > 0 && !isFlowActive && (
               <div className="grid grid-cols-[repeat(auto-fill,minmax(90px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-3">
                 {images.map((img) => (
                   <div key={img.id} className="relative rounded-xl overflow-hidden bg-black/30 border border-white/10 aspect-square flex flex-col">

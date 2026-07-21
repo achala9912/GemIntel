@@ -10,17 +10,21 @@ EFF_MODEL_PATH = os.path.join(MODELS_DIR, "authentication", "efficientnet_b4.pth
 GEM_PIPELINE_PATH = os.path.join(MODELS_DIR, "authentication", "xgboost_model.pkl")
 
 # Valuation Model Paths
-XGB_VALUATION_MODEL_PATH = os.path.join(VALUE_MODELS_DIR, "xgb_model.pkl")
-LGBM_VALUATION_MODEL_PATH = os.path.join(VALUE_MODELS_DIR, "lgbm_model.pkl")
-FEATURE_NAMES_PATH = os.path.join(VALUE_MODELS_DIR, "feature_names.pkl")
+# Deployment bundle containing the fitted price-per-carat voting ensemble,
+# exact weights, feature contract, calibration residuals, and test metadata.
+VALUATION_MODELS_DIR = os.path.join(MODELS_DIR, "valuation")
+VALUATION_BUNDLE_PATH = os.path.join(
+    VALUATION_MODELS_DIR, "ppc_voting_ensemble_bundle.joblib"
+)
+VALUATION_N_JOBS = max(1, int(os.getenv("VALUATION_N_JOBS", "1")))
+VALUATION_DATA_DIR = os.path.join(BASE_DIR, "data", "valuation")
+VALUATION_ECONOMIC_HISTORY_PATH = os.path.join(
+    VALUATION_DATA_DIR, "monthly_economic_history.csv"
+)
 
 # Ensemble Weights
 W_EFF = 0.6
 W_XGB = 0.4
-
-# Valuation Ensemble Weights
-W_VALUATION_XGB = 0.5
-W_VALUATION_LGBM = 0.5
 
 # AI Filter Configuration
 AI_FILTER_MODEL_PATH = os.path.join(MODELS_DIR, "Filters", "ai-filter.pt")
