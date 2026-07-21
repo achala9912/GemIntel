@@ -25,10 +25,12 @@ W_VALUATION_LGBM = 0.5
 # AI Filter Configuration
 AI_FILTER_MODEL_PATH = os.path.join(MODELS_DIR, "Filters", "ai-filter.pt")
 GLOBAL_DOMAIN_FILTER_PATH = os.path.join(MODELS_DIR, "Filters", "global_domain_filter.pkl")
+DOMAIN_FILTER_THRESHOLD = 0.09
 AI_FILTER_THRESHOLD = 0.6
 W_FREQ = 0.3
 W_CNN = 0.4
 W_META = 0.3
+
 
 # Identification / 4C Model Paths (DINOv2 cut + color, EfficientNet clarity)
 CUT_MODEL_PATH = os.path.join(MODELS_DIR, "4C", "cut-module.pt")

@@ -37,6 +37,13 @@ def load_all_models():
     from app.services.ai_filter_service import load_ai_filter_model
     load_ai_filter_model()
 
+    # Load Domain Filter model
+    from app.services.domain_filter_service import load_domain_filter_models
+    try:
+        load_domain_filter_models()
+    except Exception as e:
+        print(f"[Error] Failed to load Domain Filter model: {e}")
+
     # Load Cut Predictor model
     from app.services.cut_prediction_service import get_predictor
     try:
