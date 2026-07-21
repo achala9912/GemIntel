@@ -851,12 +851,12 @@ export default function Valuation() {
               {/* Main Price */}
               <div className="text-center py-4">
                 <p className="text-gray-400 text-xs sm:text-sm uppercase tracking-wider mb-2 font-semibold">
-                  Estimated Total Price
+                  Estimated Price Range
                 </p>
-                <div className="text-4xl sm:text-5xl lg:text-6xl font-bold gradient-text tracking-tight mb-3">
+                {/* <div className="text-4xl sm:text-5xl lg:text-6xl font-bold gradient-text tracking-tight mb-3">
                   LKR {result ? formatLkr(result.predicted_total_price_lkr) : '—'}
-                </div>
-                <p className="text-sm sm:text-base text-gray-300 mb-3">
+                </div> */}
+                <p className="text-4xl sm:text-5xl lg:text-5xl font-bold gradient-text tracking-tight mb-3">
                   {result
                     ? `LKR ${formatLkr(result.prediction_interval.lower_total_price_lkr)} – LKR ${formatLkr(result.prediction_interval.upper_total_price_lkr)}`
                     : '—'}

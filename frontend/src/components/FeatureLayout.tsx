@@ -9,6 +9,7 @@ interface FeatureLayoutProps<T = unknown> {
   buttonText: string;
   mockDelay?: number;
   apiEndpoint?: string;
+  gemType?: string;
   renderResult?: (result: T) => React.ReactNode;
   onSuccess?: (file: File, result: T) => void;
   customFooter?: (result: T, handleReset: () => void) => React.ReactNode;
@@ -21,6 +22,7 @@ export default function FeatureLayout<T = unknown>({
   buttonText,
   mockDelay = 2500,
   apiEndpoint,
+  gemType,
   renderResult,
   onSuccess,
   customFooter,
@@ -62,11 +64,15 @@ export default function FeatureLayout<T = unknown>({
         const endpoint = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000'}${apiEndpoint}`;
         const formData = new FormData();
         formData.append('file', file);
+        if (gemType) {
+          formData.append('gem_type', gemType);
+        }
 
         const response = await fetch(endpoint, {
           method: 'POST',
           body: formData,
         });
+
 
         if (!response.ok) {
           const errorBody = await response.json().catch(() => null);
@@ -157,14 +163,18 @@ export default function FeatureLayout<T = unknown>({
 
       <main className="flex flex-col gap-8 sm:gap-12 items-center w-full">
         {!showResult && (
-          <ImageUploader
-            key={resetKey}
-            onAnalyze={handleAnalyze}
-            isAnalyzing={isAnalyzing}
-            analysisStatus={analysisStatus}
-            buttonText={buttonText}
-          />
+          <div className="w-full max-w-xl flex flex-col items-center gap-6">
+            {children}
+            <ImageUploader
+              key={resetKey}
+              onAnalyze={handleAnalyze}
+              isAnalyzing={isAnalyzing}
+              analysisStatus={analysisStatus}
+              buttonText={buttonText}
+            />
+          </div>
         )}
+
 
         {errorMessage && (
           <div className="mt-6 p-4 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 flex flex-col items-center gap-4 text-center max-w-md">

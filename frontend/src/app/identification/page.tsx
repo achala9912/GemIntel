@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, ChevronDown, Upload, ShieldCheck } from 'lucide-react';
+import { X, ChevronDown, Upload, ShieldCheck, Lock } from 'lucide-react';
+
 import {
   fetchGemTypes,
   identifyGem,
@@ -88,6 +89,12 @@ export default function FeatureIdentification({ standalone = false }: { standalo
     if (standalone) return;
     const active = sessionStorage.getItem('faceted_flow_active') === 'true';
     setIsFlowActive(active);
+
+    const savedType = sessionStorage.getItem('faceted_flow_gem_type');
+    if (savedType) {
+      setGemType(savedType);
+    }
+
     if (active) {
       const authStr = sessionStorage.getItem('faceted_flow_auth_result');
       if (authStr) {
@@ -296,27 +303,13 @@ export default function FeatureIdentification({ standalone = false }: { standalo
           <span className="shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 text-white font-bold inline-flex items-center justify-center text-sm">1</span>
           <div className="flex-1 flex flex-col gap-3 min-w-0">
             <label className="text-sm text-gray-400 uppercase tracking-wider font-semibold">Gem type</label>
-            <div className="relative w-full" ref={dropdownRef}>
-              <div
-                onClick={() => !processing && setIsDropdownOpen(!isDropdownOpen)}
-                className={`w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-sm flex justify-between items-center text-left transition ${
-                  processing
-                    ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:bg-white/5 active:scale-95 cursor-pointer'
-                }`}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    if (!processing) setIsDropdownOpen(!isDropdownOpen);
-                  }
-                }}
-              >
+            
+            {isFlowActive ? (
+              <div className="w-full bg-black/40 border border-white/10 opacity-80 rounded-xl px-4 py-3.5 text-sm flex justify-between items-center text-left cursor-not-allowed select-none">
                 {gemType ? (
-                  <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex items-center gap-2.5 min-w-0">
                     <span
-                      className="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_currentColor] shrink-0"
+                      className="w-2.5 h-2.5 rounded-full shrink-0 shadow-[0_0_8px_currentColor]"
                       style={{
                         backgroundColor: getGemColor(gemType),
                         color: getGemColor(gemType),
@@ -327,82 +320,120 @@ export default function FeatureIdentification({ standalone = false }: { standalo
                 ) : (
                   <span className="text-white/40 font-medium truncate">Select type...</span>
                 )}
+                <Lock className="w-4 h-4 text-gray-400 shrink-0" />
+              </div>
+            ) : (
 
-                <div className="flex items-center gap-2 shrink-0">
-                  {gemType && !processing ? (
-                    <span
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setGemType('');
-                      }}
-                      className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/10 text-white/40 hover:text-white/80 transition cursor-pointer"
-                      title="Clear selection"
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
+
+              <div className="relative w-full" ref={dropdownRef}>
+                <div
+                  onClick={() => !processing && setIsDropdownOpen(!isDropdownOpen)}
+                  className={`w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-sm flex justify-between items-center text-left transition ${
+                    processing
+                      ? 'opacity-50 cursor-not-allowed'
+                      : 'hover:bg-white/5 active:scale-95 cursor-pointer'
+                  }`}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      if (!processing) setIsDropdownOpen(!isDropdownOpen);
+                    }
+                  }}
+                >
+                  {gemType ? (
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        className="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_currentColor] shrink-0"
+                        style={{
+                          backgroundColor: getGemColor(gemType),
+                          color: getGemColor(gemType),
+                        }}
+                      />
+                      <span className="font-semibold text-white truncate">{gemType}</span>
+                    </div>
+                  ) : (
+                    <span className="text-white/40 font-medium truncate">Select type...</span>
+                  )}
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {gemType && !processing ? (
+                      <span
+                        onClick={(e) => {
                           e.stopPropagation();
                           setGemType('');
-                        }
-                      }}
-                    >
-                      <X className="w-3.5 h-3.5 hover:text-red-600" strokeWidth={3} />
-                    </span>
-                  ) : (
-                    <ChevronDown
-                      className={`w-4 h-4 text-white/50 transition-transform duration-200 ${
-                        isDropdownOpen ? 'rotate-180' : ''
-                      }`}
-                    />
-                  )}
+                        }}
+                        className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/10 text-white/40 hover:text-white/80 transition cursor-pointer"
+                        title="Clear selection"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setGemType('');
+                          }
+                        }}
+                      >
+                        <X className="w-3.5 h-3.5 hover:text-red-600" strokeWidth={3} />
+                      </span>
+                    ) : (
+                      <ChevronDown
+                        className={`w-4 h-4 text-white/50 transition-transform duration-200 ${
+                          isDropdownOpen ? 'rotate-180' : ''
+                        }`}
+                      />
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {isDropdownOpen && (
-                <div className="absolute top-full mt-2 left-0 w-full bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden py-1.5 animate-fade-in-pure">
-                  {gemTypes.map((g) => (
-                    <button
-                      key={g}
-                      type="button"
-                      onClick={() => {
-                        setGemType(g);
-                        setIsDropdownOpen(false);
-                      }}
-                      className={`w-full px-4 py-2.5 text-left hover:bg-white/5 transition flex items-center justify-between group cursor-pointer ${
-                        gemType === g ? 'bg-white/5' : ''
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span
-                          className="w-2.5 h-2.5 rounded-full transition-transform group-hover:scale-110 shrink-0"
-                          style={{ backgroundColor: getGemColor(g) }}
-                        />
-                        <span className="font-semibold text-white text-sm truncate">{g}</span>
-                      </div>
-
-                      {gemType === g && (
-                        <svg
-                          className="w-4 h-4 text-blue-400 shrink-0"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2.5"
-                            d="M5 13l4 4L19 7"
+                {isDropdownOpen && (
+                  <div className="absolute top-full mt-2 left-0 w-full bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden py-1.5 animate-fade-in-pure">
+                    {gemTypes.map((g) => (
+                      <button
+                        key={g}
+                        type="button"
+                        onClick={() => {
+                          setGemType(g);
+                          setIsDropdownOpen(false);
+                        }}
+                        className={`w-full px-4 py-2.5 text-left hover:bg-white/5 transition flex items-center justify-between group cursor-pointer ${
+                          gemType === g ? 'bg-white/5' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span
+                            className="w-2.5 h-2.5 rounded-full transition-transform group-hover:scale-110 shrink-0"
+                            style={{ backgroundColor: getGemColor(g) }}
                           />
-                        </svg>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+                          <span className="font-semibold text-white text-sm truncate">{g}</span>
+                        </div>
+
+                        {gemType === g && (
+                          <svg
+                            className="w-4 h-4 text-blue-400 shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2.5"
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
+
 
         {/* Step 2: Upload images dropzone or pre-uploaded flow image */}
         <div className="flex gap-3 sm:gap-4 items-start">

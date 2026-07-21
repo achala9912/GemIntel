@@ -14,7 +14,10 @@ from app.services.clarity_service import predict_clarity_one, clarity_classes
 router = APIRouter()
 
 @router.post("/authenticate")
-async def authenticate_gem(file: UploadFile = File(...)):
+async def authenticate_gem(
+    file: UploadFile = File(...),
+    gem_type: str | None = Form(None)
+):
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image.")
     
@@ -46,10 +49,11 @@ async def authenticate_gem(file: UploadFile = File(...)):
             }
         
         # Pass to our service
-        result = run_inference(base_image)
+        result = run_inference(base_image, gem_type=gem_type)
         result["filter_result"] = filter_result
         result["score"] = score
         return result
+
         
     except HTTPException as he:
         raise he
