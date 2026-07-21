@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useState, useEffect } from 'react';;
 import { useRouter } from 'next/navigation';
-import { Gem, Shield, Search, Coins, Layers, Eye } from 'lucide-react';
+import { Gem,  Layers } from 'lucide-react';
 import CutPredictionPage from '@/app/cut-prediction/page';
 
 export default function Home() {
