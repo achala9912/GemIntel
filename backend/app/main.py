@@ -46,9 +46,13 @@ async def startup_event():
     # Valuation has an independent lifecycle so a failure in an unrelated
     # image model does not prevent the pricing pipelines from loading.
     try:
+        import sklearn
+        import traceback
+        print(f"[DEBUG] scikit-learn version installed: {sklearn.__version__}")
         load_valuation_models()
     except Exception as e:
         print(f"[Error] Failed to load valuation models: {e}")
+        traceback.print_exc()
 
 # Include all routes
 app.include_router(router)
