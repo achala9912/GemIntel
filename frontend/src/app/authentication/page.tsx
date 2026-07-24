@@ -347,23 +347,28 @@ export default function Authentication() {
     setIsDropdownOpen(false);
   };
 
-  const handleSuccess = async (file: File, result: any) => {
+  const handleSuccess = async (filesInput: File[] | File, result: any) => {
     if (gemType) {
       sessionStorage.setItem('faceted_flow_gem_type', gemType);
     }
     if (!isFlowActive) return;
     setAuthResult(result);
 
-    // Convert file to base64 and save it in sessionStorage
+    const files = Array.isArray(filesInput) ? filesInput : [filesInput];
+    const primaryFile = files[0];
+
+    // Pass ONLY ONE image (the primary file) to Step 2 (Feature Identification / 4C Evaluation)
     try {
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = error => reject(error);
-      });
-      sessionStorage.setItem('faceted_flow_image', base64);
-      sessionStorage.setItem('faceted_flow_image_name', file.name);
+      if (primaryFile) {
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(primaryFile);
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = error => reject(error);
+        });
+        sessionStorage.setItem('faceted_flow_image', base64);
+        sessionStorage.setItem('faceted_flow_image_name', primaryFile.name);
+      }
       sessionStorage.setItem('faceted_flow_auth_result', JSON.stringify(result));
     } catch (e) {
       console.error('Error saving image in flow', e);

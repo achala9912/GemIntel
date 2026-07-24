@@ -12,7 +12,7 @@ interface FeatureLayoutProps<T = unknown> {
   apiEndpoint?: string;
   gemType?: string;
   renderResult?: (result: T) => React.ReactNode;
-  onSuccess?: (file: File, result: T) => void;
+  onSuccess?: (files: File[] | File, result: T) => void;
   customFooter?: (result: T, handleReset: () => void) => React.ReactNode;
   children?: React.ReactNode;
 }
@@ -59,13 +59,19 @@ export default function FeatureLayout<T = unknown>({
     setStageStatuses({ stage1: 'pending', stage2: 'pending', stage3: 'pending' });
   };
 
-  const handleAnalyze = async (file?: File | null) => {
+  const handleAnalyze = async (filesInput?: File[] | File | null) => {
     setErrorMessage(null);
     setShowResult(false);
 
     if (apiEndpoint) {
-      if (!file) {
-        setErrorMessage('Please upload a gemstone image before authenticating.');
+      const fileList = Array.isArray(filesInput)
+        ? filesInput
+        : filesInput
+        ? [filesInput]
+        : [];
+
+      if (fileList.length === 0) {
+        setErrorMessage('Please upload gemstone image(s) before authenticating.');
         return;
       }
 
@@ -78,7 +84,10 @@ export default function FeatureLayout<T = unknown>({
       const fetchPromise = (async () => {
         const endpoint = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000'}${apiEndpoint}`;
         const formData = new FormData();
-        formData.append('file', file);
+        fileList.forEach((f) => formData.append('files', f));
+        if (fileList.length > 0) {
+          formData.append('file', fileList[0]);
+        }
         if (gemType) {
           formData.append('gem_type', gemType);
         }
@@ -131,8 +140,8 @@ export default function FeatureLayout<T = unknown>({
           await new Promise(resolve => setTimeout(resolve, 500));
           setAnalysisResult(result);
           setShowResult(true);
-          if (onSuccess && file) {
-            onSuccess(file, result);
+          if (onSuccess) {
+            onSuccess(fileList, result);
           }
         } else {
           // Stage 2 passed, move to Stage 3
@@ -149,8 +158,8 @@ export default function FeatureLayout<T = unknown>({
 
           setAnalysisResult(result);
           setShowResult(true);
-          if (onSuccess && file) {
-            onSuccess(file, result);
+          if (onSuccess) {
+            onSuccess(fileList, result);
           }
         }
       } catch (error) {
