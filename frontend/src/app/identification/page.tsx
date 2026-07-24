@@ -359,10 +359,10 @@ export default function FeatureIdentification({ standalone = false }: { standalo
     }
   };
 
-  const accent1 = 'linear-gradient(135deg, #8b5cf6, #06b6d4)';
-  const accent2 = 'linear-gradient(135deg, #f59e0b, #ef4444)';
-  const accent3 = 'linear-gradient(135deg, #10b981, #14b8a6)';
-  const accent4 = 'linear-gradient(135deg, #ec4899, #8b5cf6)';
+  const accent1 = '#2563EB';
+  const accent2 = '#D97706';
+  const accent3 = '#10B981';
+  const accent4 = '#DB2777';
 
   const canSubmit = gemType && images.length > 0 && topImage && sideImage && coinDiameter && !processing;
   const showClear = Boolean(gemType || images.length > 0 || topImage || sideImage || result || caratResult || error);
@@ -380,7 +380,7 @@ export default function FeatureIdentification({ standalone = false }: { standalo
         <div className={`flex items-center justify-between mb-6 ${result ? 'max-w-6xl' : 'max-w-3xl'} mx-auto w-full transition-all duration-300 animate-fade-in`}>
           <button
             onClick={handleBack}
-            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-cyan-400 transition-colors bg-white/5 border border-white/10 px-3.5 py-2 rounded-xl active:scale-[0.98] cursor-pointer font-semibold shadow-lg"
+            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-blue-400 transition-colors bg-slate-900 border border-slate-800 px-3.5 py-2 rounded-xl active:scale-[0.98] cursor-pointer font-semibold shadow-md"
           >
             ← Back to Step 1: Authentication
           </button>
@@ -390,7 +390,7 @@ export default function FeatureIdentification({ standalone = false }: { standalo
       <header className="text-center mb-8 sm:mb-12">
         <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-center mb-2 leading-tight px-2">
           Gemstone{' '}
-          <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+          <span className="text-blue-400">
             Identification & 4C Evaluation
           </span>
         </h1>
@@ -409,14 +409,14 @@ export default function FeatureIdentification({ standalone = false }: { standalo
               : 'bg-emerald-500/5 border-emerald-500/20 text-emerald-400'
           }`}>
             <div className="min-w-0">
-              <div className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Step 1 Verdict</div>
+              <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-0.5">Step 1 Verdict</div>
               <div className="text-sm font-extrabold flex items-center gap-1.5 capitalize truncate">
                 <ShieldCheck className="w-4 h-4 shrink-0" />
                 <span>{authResult?.ensemble_result?.prediction || 'Natural'} Origin Confirmed</span>
               </div>
             </div>
             <div className="text-right shrink-0 border-l border-white/10 pl-4">
-              <div className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Confidence</div>
+              <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-0.5">Confidence</div>
               <div className="text-sm font-extrabold font-mono">
                 {(((authResult?.ensemble_result?.confidence ?? 0.954)) * 100).toFixed(1)}%
               </div>
@@ -426,7 +426,7 @@ export default function FeatureIdentification({ standalone = false }: { standalo
         
         {/* Step 1: Gem Type selection */}
         <div className="flex gap-3 sm:gap-4 items-start">
-          <span className="shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 text-white font-bold inline-flex items-center justify-center text-sm">1</span>
+          <span className="shrink-0 w-8 h-8 rounded-full bg-slate-800 border border-slate-700 text-blue-400 font-bold inline-flex items-center justify-center text-sm">1</span>
           <div className="flex-1 flex flex-col gap-3 min-w-0">
             <label className="text-sm text-gray-400 uppercase tracking-wider font-semibold">Gem type</label>
             
@@ -560,19 +560,19 @@ export default function FeatureIdentification({ standalone = false }: { standalo
 
         {/* Step 2: Upload images for Cut, Color & Clarity */}
         <div className="flex gap-3 sm:gap-4 items-start">
-          <span className="shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 text-white font-bold inline-flex items-center justify-center text-sm">2</span>
+          <span className="shrink-0 w-8 h-8 rounded-full bg-slate-800 border border-slate-700 text-blue-400 font-bold inline-flex items-center justify-center text-sm">2</span>
           <div className="flex-1 flex flex-col gap-3 min-w-0">
-            <span className="text-sm text-gray-400 uppercase tracking-wider font-semibold">{isFlowActive ? 'Imported gemstone image' : 'Upload images for Cut, Color & Clarity'}</span>
+            <span className="text-sm text-slate-400 uppercase tracking-wider font-semibold">{isFlowActive ? 'Imported gemstone image' : 'Upload images for Cut, Color & Clarity'}</span>
             
             {isFlowActive ? (
-              <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/10 flex flex-col sm:flex-row items-center gap-5">
+              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row items-center gap-5">
                 {images.length > 0 ? (
-                  <div className="relative rounded-xl overflow-hidden bg-black/30 border border-white/10 aspect-square w-28 h-28 shrink-0 shadow-md">
+                  <div className="relative rounded-xl overflow-hidden bg-slate-950 border border-slate-800 aspect-square w-28 h-28 shrink-0 shadow-md">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={images[0].previewUrl} alt="Flow Gem" className="w-full h-full object-cover block" />
                   </div>
                 ) : (
-                  <div className="w-28 h-28 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-xs text-gray-500 shrink-0">
+                  <div className="w-28 h-28 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center text-xs text-slate-500 shrink-0">
                     No Image Preloaded
                   </div>
                 )}
@@ -581,15 +581,15 @@ export default function FeatureIdentification({ standalone = false }: { standalo
                     <ShieldCheck className="w-4 h-4 text-emerald-400" />
                     <span>Step 1 Image Imported</span>
                   </h4>
-                  <p className="text-xs text-gray-400 leading-normal max-w-sm">
+                  <p className="text-xs text-slate-400 leading-normal max-w-sm">
                     This image was verified in the authentication stage and is locked for consistency.
                   </p>
-                  <div className="text-[10px] text-gray-500 font-mono mt-2 break-all">{flowImageName}</div>
+                  <div className="text-[10px] text-slate-500 font-mono mt-2 break-all">{flowImageName}</div>
                 </div>
               </div>
             ) : (
               <div
-                className="border-2 border-dashed border-purple-500/50 rounded-2xl py-6 px-4 sm:py-8 sm:px-6 text-center bg-purple-500/5 cursor-pointer transition-all duration-200 ease-in-out hover:bg-purple-500/10 hover:border-purple-500"
+                className="border-2 border-dashed border-slate-700 rounded-2xl py-6 px-4 sm:py-8 sm:px-6 text-center bg-slate-900/60 cursor-pointer transition-all duration-200 ease-in-out hover:bg-slate-900 hover:border-blue-500"
                 onClick={() => !processing && fileInputRef.current?.click()}
                 onDragOver={(e) => { e.preventDefault(); }}
                 onDrop={(e) => {
@@ -597,9 +597,9 @@ export default function FeatureIdentification({ standalone = false }: { standalo
                   if (!processing) addFiles(e.dataTransfer.files);
                 }}
               >
-                <Upload className="mx-auto mb-2 text-violet-400" />
-                <p className="font-semibold text-base sm:text-lg">Upload Gemstone Images</p>
-                <p className="text-xs sm:text-sm text-gray-400 mt-1">
+                <Upload className="mx-auto mb-2 text-blue-400" />
+                <p className="font-semibold text-base sm:text-lg text-slate-100">Upload Gemstone Images</p>
+                <p className="text-xs sm:text-sm text-slate-400 mt-1">
                   Drag & drop or click to browse images for Cut, Color & Clarity AI
                 </p>
                 <input
@@ -616,19 +616,19 @@ export default function FeatureIdentification({ standalone = false }: { standalo
             {images.length > 0 && !isFlowActive && (
               <div className="grid grid-cols-[repeat(auto-fill,minmax(90px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-3">
                 {images.map((img) => (
-                  <div key={img.id} className="relative rounded-xl overflow-hidden bg-black/30 border border-white/10 aspect-square flex flex-col">
+                  <div key={img.id} className="relative rounded-xl overflow-hidden bg-slate-950 border border-slate-800 aspect-square flex flex-col">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={img.previewUrl} alt={img.file.name} className="w-full h-full object-cover block" />
                     <button
                       type="button"
-                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full border-none bg-black/70 text-white cursor-pointer text-base leading-none inline-flex items-center justify-center enabled:hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full border-none bg-slate-900/80 text-white cursor-pointer text-base leading-none inline-flex items-center justify-center enabled:hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
                       onClick={() => removeImage(img.id)}
                       disabled={processing}
                       aria-label={`Remove ${img.file.name}`}
                     >
                       ×
                     </button>
-                    <div className="absolute left-0 right-0 bottom-0 py-1.5 px-2 bg-gradient-to-t from-black/80 to-transparent text-white text-xs whitespace-nowrap overflow-hidden text-ellipsis">{img.file.name}</div>
+                    <div className="absolute left-0 right-0 bottom-0 py-1.5 px-2 bg-slate-950/90 text-white text-xs whitespace-nowrap overflow-hidden text-ellipsis">{img.file.name}</div>
                   </div>
                 ))}
               </div>
@@ -638,11 +638,11 @@ export default function FeatureIdentification({ standalone = false }: { standalo
 
         {/* Step 3: Optional Carat Estimation inputs */}
         <div className="flex gap-3 sm:gap-4 items-start">
-          <span className="shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 text-white font-bold inline-flex items-center justify-center text-sm">3</span>
+          <span className="shrink-0 w-8 h-8 rounded-full bg-slate-800 border border-slate-700 text-blue-400 font-bold inline-flex items-center justify-center text-sm">3</span>
           <div className="flex-1 flex flex-col gap-3 min-w-0">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-400 uppercase tracking-wider font-semibold">Carat Estimation (Optional)</span>
-              <span className="text-xs text-purple-400 font-medium">Coin Scale Reference</span>
+              <span className="text-sm text-slate-400 uppercase tracking-wider font-semibold">Carat Estimation (Optional)</span>
+              <span className="text-xs text-blue-400 font-medium">Coin Scale Reference</span>
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -664,8 +664,8 @@ export default function FeatureIdentification({ standalone = false }: { standalo
 
             <div className="flex flex-col gap-1.5 text-left mt-1">
               <div className="flex justify-between items-center">
-                <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Coin Diameter (mm)</label>
-                <span className="text-[11px] text-gray-400">SL Rs.2 = 28.5mm / 22.0mm &middot; Quarter = 24.26mm</span>
+                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Coin Diameter (mm)</label>
+                <span className="text-[11px] text-slate-400">SL Rs.2 = 28.5mm / 22.0mm &middot; Quarter = 24.26mm</span>
               </div>
               <input
                 type="number"
@@ -675,22 +675,22 @@ export default function FeatureIdentification({ standalone = false }: { standalo
                 onChange={(e) => setCoinDiameter(e.target.value)}
                 placeholder="28.5"
                 disabled={processing}
-                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500/50 disabled:opacity-50"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 disabled:opacity-50"
               />
             </div>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3 border-t border-white/5 pt-6 mt-2">
+        <div className="flex flex-col sm:flex-row gap-3 border-t border-slate-800 pt-6 mt-2">
           <button
             type="button"
             onClick={handleProcess}
             disabled={!canSubmit}
-            className={`flex-1 py-3.5 sm:py-4 rounded-xl font-medium transition flex items-center justify-center gap-2 text-sm sm:text-base ${
+            className={`flex-1 py-3.5 sm:py-4 rounded-xl font-semibold transition flex items-center justify-center gap-2 text-sm sm:text-base ${
               canSubmit
-                ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-90 cursor-pointer text-white shadow-lg shadow-purple-900/20"
-                : "bg-white/5 opacity-40 cursor-not-allowed text-white/50"
+                ? "btn-primary cursor-pointer active:scale-[0.99]"
+                : "bg-slate-800 border border-slate-700 cursor-not-allowed text-slate-500 opacity-60"
             }`}
           >
             {processing ? (
@@ -763,63 +763,63 @@ export default function FeatureIdentification({ standalone = false }: { standalo
               </div>
               <div className="grid grid-cols-2 gap-4 border-b border-white/5 pb-4">
                 <div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Shape</div>
-                  <div className="text-2xl font-bold bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent capitalize">{result.aggregate.cut.shape.label}</div>
-                  <div className="text-xs text-gray-400 mt-1">{pct(result.aggregate.cut.shape.confidence)} confidence</div>
+                  <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Shape</div>
+                  <div className="text-2xl font-bold text-blue-400 capitalize">{result.aggregate.cut.shape.label}</div>
+                  <div className="text-xs text-slate-400 mt-1">{pct(result.aggregate.cut.shape.confidence)} confidence</div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Cut style</div>
-                  <div className="text-2xl font-bold bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent capitalize">{result.aggregate.cut.cut_style.label}</div>
-                  <div className="text-xs text-gray-400 mt-1">{pct(result.aggregate.cut.cut_style.confidence)} confidence</div>
+                  <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Cut style</div>
+                  <div className="text-2xl font-bold text-blue-400 capitalize">{result.aggregate.cut.cut_style.label}</div>
+                  <div className="text-xs text-slate-400 mt-1">{pct(result.aggregate.cut.cut_style.confidence)} confidence</div>
                 </div>
               </div>
-              <div className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Shape distribution</div>
+              <div className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Shape distribution</div>
               <ProbBars probs={result.aggregate.cut.shape_probs} accent={accent1} />
-              <div className="text-xs text-gray-400 uppercase tracking-wider font-semibold mt-2">Cut style distribution</div>
+              <div className="text-xs text-slate-400 uppercase tracking-wider font-semibold mt-2">Cut style distribution</div>
               <ProbBars probs={result.aggregate.cut.cut_style_probs} accent={accent1} />
             </div>
 
             {/* Color */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-6 flex flex-col gap-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 flex flex-col gap-4">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-lg font-semibold text-white">Color</h3>
                 <span className="text-xs uppercase tracking-wider py-1 px-2.5 rounded-full text-white font-semibold" style={{ background: accent2 }}>DINOv2 classifier</span>
               </div>
-              <div className="grid grid-cols-2 gap-4 border-b border-white/5 pb-4">
+              <div className="grid grid-cols-2 gap-4 border-b border-slate-800 pb-4">
                 <div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Hue</div>
-                  <div className="text-2xl font-bold bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent capitalize">{result.aggregate.color.hue.label}</div>
-                  <div className="text-xs text-gray-400 mt-1">{pct(result.aggregate.color.hue.confidence)} confidence</div>
+                  <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Hue</div>
+                  <div className="text-2xl font-bold text-amber-400 capitalize">{result.aggregate.color.hue.label}</div>
+                  <div className="text-xs text-slate-400 mt-1">{pct(result.aggregate.color.hue.confidence)} confidence</div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Intensity</div>
-                  <div className="text-2xl font-bold bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent capitalize">{result.aggregate.color.intensity.label}</div>
-                  <div className="text-xs text-gray-400 mt-1">{pct(result.aggregate.color.intensity.confidence)} confidence</div>
+                  <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Intensity</div>
+                  <div className="text-2xl font-bold text-amber-400 capitalize">{result.aggregate.color.intensity.label}</div>
+                  <div className="text-xs text-slate-400 mt-1">{pct(result.aggregate.color.intensity.confidence)} confidence</div>
                 </div>
               </div>
-              <div className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Hue distribution</div>
+              <div className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Hue distribution</div>
               <ProbBars probs={result.aggregate.color.hue_probs} accent={accent2} />
-              <div className="text-xs text-gray-400 uppercase tracking-wider font-semibold mt-2">Intensity distribution</div>
+              <div className="text-xs text-slate-400 uppercase tracking-wider font-semibold mt-2">Intensity distribution</div>
               <ProbBars probs={result.aggregate.color.intensity_probs} accent={accent2} />
             </div>
 
             {/* Clarity */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-6 flex flex-col gap-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 flex flex-col gap-4">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-lg font-semibold text-white">Clarity</h3>
                 <span className="text-xs uppercase tracking-wider py-1 px-2.5 rounded-full text-white font-semibold" style={{ background: accent3 }}>EfficientNetV2</span>
               </div>
-              <div className="border-b border-white/5 pb-4">
-                <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Grade</div>
-                <div className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent capitalize">{result.aggregate.clarity.grade.label}</div>
-                <div className="text-xs text-gray-400 mt-1">{pct(result.aggregate.clarity.grade.confidence)} confidence</div>
+              <div className="border-b border-slate-800 pb-4">
+                <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Grade</div>
+                <div className="text-2xl font-bold text-emerald-400 capitalize">{result.aggregate.clarity.grade.label}</div>
+                <div className="text-xs text-slate-400 mt-1">{pct(result.aggregate.clarity.grade.confidence)} confidence</div>
               </div>
-              <div className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Clarity distribution</div>
+              <div className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Clarity distribution</div>
               <ProbBars probs={result.aggregate.clarity.clarity_probs} accent={accent3} />
             </div>
 
             {/* Carat */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-6 flex flex-col gap-4 justify-between">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 flex flex-col gap-4 justify-between">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-lg font-semibold text-white flex items-center gap-1.5">
                   <Scale className="w-5 h-5 text-pink-400" />
@@ -834,19 +834,19 @@ export default function FeatureIdentification({ standalone = false }: { standalo
                   <div className="text-xs text-pink-300 font-medium">
                     Estimating Carat weight...
                   </div>
-                  <div className="text-[11px] text-gray-400">
+                  <div className="text-[11px] text-slate-400">
                     Applying predicted <span className="text-white capitalize font-semibold">{result.aggregate.cut.shape.label}</span> cut shape
                   </div>
                 </div>
               ) : caratResult ? (
                 <div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Carat Weight</div>
-                  <div className="text-4xl font-extrabold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
+                  <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Carat Weight</div>
+                  <div className="text-4xl font-extrabold text-pink-400">
                     {(caratResult.carat * 0.01).toFixed(2)} ct
                   </div>
                 </div>
               ) : (
-                <div className="text-xs text-gray-400 my-auto text-center">
+                <div className="text-xs text-slate-400 my-auto text-center">
                   Carat calculation unavailable
                 </div>
               )}

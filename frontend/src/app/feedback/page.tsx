@@ -77,12 +77,12 @@ export default function FeedbackPage() {
       <div className="max-width-container pt-4 sm:pt-6 pb-16 sm:pb-20 relative animate-fade-in z-10">
 
       <header className="text-center mb-10 sm:mb-12">
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-violet-500/15 to-cyan-500/15 text-cyan-300 border border-cyan-500/20 mb-5">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-950/60 text-blue-400 border border-blue-800/60 mb-5">
           <MessageSquare className="w-3.5 h-3.5" />
           <span>User Feedback</span>
         </span>
         <h1 className="text-3xl sm:text-5xl font-extrabold text-white mb-3">
-          Share Your <span className="gradient-text">Feedback</span>
+          Share Your <span className="text-blue-400">Feedback</span>
         </h1>
         <p className="max-w-md mx-auto text-xs sm:text-sm text-gray-400 leading-relaxed px-4">
           Help us improve GemIntel. Your thoughts, reports, and suggestions are directly sent to the admin team.

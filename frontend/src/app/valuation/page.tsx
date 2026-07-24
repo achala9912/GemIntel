@@ -292,14 +292,21 @@ export default function Valuation() {
     if (active) {
       const authStr = sessionStorage.getItem('faceted_flow_auth_result');
       const identifyStr = sessionStorage.getItem('faceted_flow_identify_result');
+      const roughStr = sessionStorage.getItem('rough_flow_cut_result');
 
       if (authStr) {
         try { setAuthResult(JSON.parse(authStr)); } catch (e) { console.error(e); }
       }
 
+      let idRes = null;
       if (identifyStr) {
+        try { idRes = JSON.parse(identifyStr); } catch (e) { console.error(e); }
+      } else if (roughStr) {
+        try { idRes = JSON.parse(roughStr); } catch (e) { console.error(e); }
+      }
+
+      if (idRes) {
         try {
-          const idRes = JSON.parse(identifyStr);
           setIdentifyResult(idRes);
 
           // Map DINOv2 response to form options
@@ -310,39 +317,45 @@ export default function Valuation() {
           else if (incomingGemType === 'Blue Spinel') mappedGemType = 'Ceylon Blue Spinel';
           else if (incomingGemType === 'Blue Topaz') mappedGemType = 'Ceylon Blue Topaz';
 
-          // 2. Shape mapping (e.g. 'cushion' -> 'Cushion', 'square' -> 'Asscher')
+          // 2. Shape mapping (e.g. 'square' -> 'Asscher', 'octagon' -> 'Emerald', 'round' -> 'Round')
           let mappedShape = 'Cushion';
-          const rawShape = idRes.aggregate?.cut?.shape?.label;
-          if (rawShape) {
-            const normalizedShape = rawShape.toLowerCase().replaceAll('-', '_').replaceAll(' ', '_');
-            const shapeMap: Record<string, string> = {
-              asscher: 'Asscher', asscher_cut: 'Asscher',
-              cushion: 'Cushion', cushion_cut: 'Cushion',
-              emerald: 'Emerald', emerald_cut: 'Emerald',
-              heart: 'Heart', heart_cut: 'Heart',
-              marquise: 'Marquise', marquise_cut: 'Marquise',
-              oval: 'Oval', oval_cut: 'Oval',
-              pear: 'Pear', pear_cut: 'Pear',
-              radiant: 'Radiant', radiant_cut: 'Radiant',
-              round: 'Round', round_cut: 'Round'
-            };
-            mappedShape = shapeMap[normalizedShape] || 'Cushion';
+          const rawShape = 
+            idRes.aggregate?.cut?.shape?.label ||
+            idRes.shape ||
+            idRes.cut_shape ||
+            idRes.predicted_shape ||
+            idRes.prediction?.cut;
+
+          if (rawShape && typeof rawShape === 'string') {
+            const cleanShape = rawShape.toLowerCase().trim();
+            if (cleanShape.includes('square') || cleanShape.includes('asscher')) mappedShape = 'Asscher';
+            else if (cleanShape.includes('cushion')) mappedShape = 'Cushion';
+            else if (cleanShape.includes('octagon') || cleanShape.includes('emerald') || cleanShape.includes('baguette')) mappedShape = 'Emerald';
+            else if (cleanShape.includes('heart')) mappedShape = 'Heart';
+            else if (cleanShape.includes('marquise')) mappedShape = 'Marquise';
+            else if (cleanShape.includes('oval')) mappedShape = 'Oval';
+            else if (cleanShape.includes('pear') || cleanShape.includes('teardrop')) mappedShape = 'Pear';
+            else if (cleanShape.includes('radiant') || cleanShape.includes('trillion') || cleanShape.includes('trilliant')) mappedShape = 'Radiant';
+            else if (cleanShape.includes('round') || cleanShape.includes('circle')) mappedShape = 'Round';
           }
 
-
-          // 3. Cut mapping
+          // 3. Cut style mapping (e.g. 'brilliant cut' -> 'Brilliant', 'mixed cut' -> 'Mixed', 'step cut' -> 'Step')
           let mappedCut = 'Mixed';
-          const rawCut = idRes.aggregate?.cut?.cut_style?.label;
-          if (rawCut) {
-            const normalizedCut = rawCut.toLowerCase().replaceAll('-', '_').replaceAll(' ', '_');
-            const cutMap: Record<string, string> = {
-              asscher: 'Asscher Cut', asscher_cut: 'Asscher Cut',
-              brilliant: 'Brilliant', mixed: 'Mixed', mixed_brilliant: 'Mixed',
-              emerald: 'Emerald', emerald_cut: 'Emerald',
-              radiant: 'Radiant Cut', radiant_cut: 'Radiant Cut',
-              step: 'Step', step_cut: 'Step',
-            };
-            mappedCut = cutMap[normalizedCut] || 'Mixed';
+          const rawCut = 
+            idRes.aggregate?.cut?.cut_style?.label ||
+            idRes.cut_style ||
+            idRes.cut ||
+            idRes.predicted_cut ||
+            idRes.prediction?.cut_style;
+
+          if (rawCut && typeof rawCut === 'string') {
+            const cleanCut = rawCut.toLowerCase().trim();
+            if (cleanCut.includes('brilliant')) mappedCut = 'Brilliant';
+            else if (cleanCut.includes('step')) mappedCut = 'Step';
+            else if (cleanCut.includes('mixed')) mappedCut = 'Mixed';
+            else if (cleanCut.includes('asscher')) mappedCut = 'Asscher Cut';
+            else if (cleanCut.includes('radiant')) mappedCut = 'Radiant Cut';
+            else if (cleanCut.includes('emerald')) mappedCut = 'Emerald';
           }
 
           // 4. Color Intensity mapping: intensity -> saturation fallback
@@ -604,7 +617,7 @@ export default function Valuation() {
       <header className="text-center mb-8 sm:mb-12">
         <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-center mb-2 leading-tight px-2 text-white">
           Dynamic Gem Valuation &{' '}
-          <span className="gradient-text">
+          <span className="text-blue-400">
             Price Estimator
           </span>
         </h1>
@@ -868,12 +881,12 @@ export default function Valuation() {
                 {/* <div className="text-4xl sm:text-5xl lg:text-6xl font-bold gradient-text tracking-tight mb-3">
                   LKR {result ? formatLkr(result.predicted_total_price_lkr) : '—'}
                 </div> */}
-                <p className="text-4xl sm:text-5xl lg:text-5xl font-bold gradient-text tracking-tight mb-3">
+                <p className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-blue-400 tracking-tight mb-3">
                   {result
                     ? `LKR ${formatLkr(result.prediction_interval.lower_total_price_lkr)} – LKR ${formatLkr(result.prediction_interval.upper_total_price_lkr)}`
                     : '—'}
                 </p>
-                <div className="inline-block px-4 py-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-xs sm:text-sm font-semibold shadow-[0_0_12px_rgba(16,185,129,0.05)]">
+                <div className="inline-block px-4 py-1.5 bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 rounded-full text-xs sm:text-sm font-semibold">
                   {result ? `${(result.prediction_interval.confidence_level * 100).toFixed(0)}% prediction interval` : 'Prediction interval'}
                 </div>
               </div>

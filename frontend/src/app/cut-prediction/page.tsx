@@ -278,6 +278,9 @@ export default function CutPredictionPage({ onBack }: { onBack?: () => void }) {
           // 4. Fetch result
           const rData = await getPredictionResult(session_id);
           setResult(rData);
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('rough_flow_cut_result', JSON.stringify(rData));
+          }
           
           // Wait 1 second to show the completed/success state in the modal, then close it automatically
           await new Promise((r) => setTimeout(r, 1000));
@@ -369,7 +372,7 @@ export default function CutPredictionPage({ onBack }: { onBack?: () => void }) {
           >
             Gem Cut Prediction &
             <br />
-            <span className="gradient-text">
+            <span className="text-blue-400">
               3D Visualizer
             </span>
           </h1>
@@ -770,12 +773,11 @@ export default function CutPredictionPage({ onBack }: { onBack?: () => void }) {
               <button
                 onClick={runPipeline}
                 disabled={!canSubmit || isProcessing}
-                className={`w-full py-4 rounded-xl font-bold tracking-wider uppercase transition flex items-center justify-center gap-2.5 text-sm sm:text-base shadow-xl ${
+                className={`w-full py-4 rounded-xl font-bold tracking-wider uppercase transition flex items-center justify-center gap-2.5 text-sm sm:text-base ${
                   canSubmit && !isProcessing
-                    ? "text-white cursor-pointer active:scale-[0.98]"
-                    : "bg-slate-900/60 border border-slate-850/80 text-gray-500 opacity-55 cursor-not-allowed"
+                    ? "btn-primary cursor-pointer active:scale-[0.98]"
+                    : "bg-slate-900 border border-slate-800 text-slate-500 opacity-55 cursor-not-allowed"
                 }`}
-                style={canSubmit && !isProcessing ? { background: 'linear-gradient(135deg, #1d4ed8, #0ea5e9)' } : undefined}
               >
                 <svg className="w-5 h-5 opacity-90 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />

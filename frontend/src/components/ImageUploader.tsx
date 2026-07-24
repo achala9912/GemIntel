@@ -55,14 +55,14 @@ export default function ImageUploader({
     <div className="w-full max-w-xl mx-auto">
       {!imagePreview ? (
         <div 
-          className="border-2 border-dashed border-violet-500/40 rounded-2xl py-8 px-4 sm:py-12 sm:px-8 text-center bg-violet-500/5 cursor-pointer transition-all duration-200 hover:bg-violet-500/10 hover:border-violet-500"
+          className="border-2 border-dashed border-slate-700 rounded-2xl py-8 px-4 sm:py-12 sm:px-8 text-center bg-slate-900/60 cursor-pointer transition-all duration-200 hover:bg-slate-900 hover:border-blue-500"
           onClick={() => fileInputRef.current?.click()}
           onDragOver={handleDragOver}
           onDrop={handleDrop}
         >
-          <Upload className="mx-auto mb-3 text-violet-400" />
-          <p className="font-semibold text-base sm:text-lg">Upload Gemstone Image</p>
-          <p className="text-xs sm:text-sm text-gray-400 mt-1">
+          <Upload className="mx-auto mb-3 text-blue-400" />
+          <p className="font-semibold text-base sm:text-lg text-slate-100">Upload Gemstone Image</p>
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
             Drag & drop or click to browse
           </p>
           <input 
@@ -75,12 +75,12 @@ export default function ImageUploader({
         </div>
       ) : (
         <div className="flex flex-col items-center gap-6 animate-fade-in">
-          <div className="relative w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl shadow-black/40 aspect-square flex items-center justify-center bg-black">
+          <div className="relative w-full max-w-sm rounded-2xl overflow-hidden shadow-xl aspect-square flex items-center justify-center bg-slate-950 border border-slate-800">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={imagePreview} alt="Gemstone Preview" className="w-full h-full object-cover block" />
             {!isAnalyzing && (
               <button 
-                className="absolute top-2.5 right-2.5 bg-black/60 hover:bg-red-600 text-white border-none rounded-full w-8 h-8 flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-110 z-10 font-bold" 
+                className="absolute top-2.5 right-2.5 bg-slate-900/80 hover:bg-red-600 text-white border border-slate-700 rounded-full w-8 h-8 flex items-center justify-center cursor-pointer transition-all duration-200 z-10 font-bold" 
                 onClick={clearImage}
               >
                 ✕
@@ -88,26 +88,18 @@ export default function ImageUploader({
             )}
             
             {isAnalyzing && (
-              <div className="absolute inset-0 bg-violet-500/20 pointer-events-none">
-                <div className="w-full h-1 bg-gradient-to-r from-violet-500 to-cyan-500 absolute top-0 shadow-[0_0_10px_#8b5cf6,0_0_20px_#06b6d4] animate-scan"></div>
+              <div className="absolute inset-0 bg-blue-500/10 pointer-events-none">
+                <div className="w-full h-1 bg-blue-500 absolute top-0 animate-scan"></div>
               </div>
             )}
           </div>
-          {isAnalyzing && (
-            <div className="w-full max-w-sm bg-white/5 border border-white/10 rounded-xl p-5 flex items-center gap-4 backdrop-blur-md shadow-2xl mt-2 animate-fade-in">
-              <div className="w-6 h-6 border-2 border-white/10 rounded-full border-t-violet-500 animate-spin shrink-0"></div>
-              <div className="flex flex-col gap-1 flex-grow">
-                <div className="font-semibold text-sm text-violet-400">GemIntel Pipeline</div>
-                <div className="text-xs text-gray-400 font-mono">{analysisStatus || 'Analyzing...'}</div>
-              </div>
-            </div>
-          )}
+
           
           <button 
             className={`w-full max-w-sm py-3.5 sm:py-4 rounded-xl font-semibold transition flex items-center justify-center gap-2 text-sm sm:text-base ${
               !isAnalyzing
-                ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-90 active:scale-95 cursor-pointer text-white"
-                : "bg-white/5 opacity-40 cursor-not-allowed text-white/50"
+                ? "btn-primary active:scale-[0.99] cursor-pointer"
+                : "bg-slate-800 border border-slate-700 cursor-not-allowed text-slate-500"
             }`}
             onClick={() => onAnalyze(selectedFile)}
             disabled={isAnalyzing}
