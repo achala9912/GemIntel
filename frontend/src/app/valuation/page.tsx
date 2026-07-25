@@ -24,6 +24,9 @@ import {
 } from '@/services/valuesApi';
 
 const GEM_COLORS: Record<string, string> = {
+  'Blue Sapphire': '#3b82f6',
+  'Blue Spinel': '#ec4899',
+  'Blue Topaz': '#eab308',
   'Ceylon Blue Sapphire': '#3b82f6',
   'Ceylon Blue Spinel': '#ec4899',
   'Ceylon Blue Topaz': '#eab308',
@@ -298,6 +301,15 @@ export default function Valuation() {
         try { setAuthResult(JSON.parse(authStr)); } catch (e) { console.error(e); }
       }
 
+      const valStr = sessionStorage.getItem('faceted_flow_valuation_result');
+      if (valStr) {
+        try {
+          const valRes = JSON.parse(valStr);
+          setResult(valRes);
+          setShowResult(true);
+        } catch (e) { console.error(e); }
+      }
+
       let idRes = null;
       if (identifyStr) {
         try { idRes = JSON.parse(identifyStr); } catch (e) { console.error(e); }
@@ -309,13 +321,13 @@ export default function Valuation() {
         try {
           setIdentifyResult(idRes);
 
-          // Map DINOv2 response to form options
-          // 1. Gem type mapping: 'Blue Sapphire' -> 'Ceylon Blue Sapphire', etc.
-          let mappedGemType = 'Ceylon Blue Sapphire';
+          // 1. Gem type mapping
+          let mappedGemType = 'Blue Sapphire';
           const incomingGemType = idRes.gem_type;
-          if (incomingGemType === 'Blue Sapphire') mappedGemType = 'Ceylon Blue Sapphire';
-          else if (incomingGemType === 'Blue Spinel') mappedGemType = 'Ceylon Blue Spinel';
-          else if (incomingGemType === 'Blue Topaz') mappedGemType = 'Ceylon Blue Topaz';
+          if (incomingGemType === 'Blue Sapphire' || incomingGemType === 'Ceylon Blue Sapphire') mappedGemType = 'Blue Sapphire';
+          else if (incomingGemType === 'Blue Spinel' || incomingGemType === 'Ceylon Blue Spinel') mappedGemType = 'Blue Spinel';
+          else if (incomingGemType === 'Blue Topaz' || incomingGemType === 'Ceylon Blue Topaz') mappedGemType = 'Blue Topaz';
+          else if (incomingGemType) mappedGemType = String(incomingGemType).replace('Ceylon ', '');
 
           // 2. Shape mapping (e.g. 'square' -> 'Asscher', 'octagon' -> 'Emerald', 'round' -> 'Round')
           let mappedShape = 'Cushion';
@@ -440,7 +452,7 @@ export default function Valuation() {
   // Gem Factors Form State
   const [gemFactors, setGemFactors] = useState<GemFactors>({
     weight_ct: 1.5,
-    gem_type: 'Ceylon Blue Sapphire',
+    gem_type: 'Blue Sapphire',
     hue: 'Royal Blue',
     colour_intensity: 'Vivid',
     clarity: 'VVS',
@@ -519,6 +531,9 @@ export default function Valuation() {
       });
       setResult(data);
       setShowResult(true);
+      if (isFlowActive) {
+        sessionStorage.setItem('faceted_flow_valuation_result', JSON.stringify(data));
+      }
       toast.success('Price prediction successful!');
     } catch (error) {
       console.error('Prediction error:', error);
@@ -531,9 +546,10 @@ export default function Valuation() {
   const handleReset = () => {
     setShowResult(false);
     setResult(null);
+    sessionStorage.removeItem('faceted_flow_valuation_result');
     setGemFactors({
       weight_ct: 1.5,
-      gem_type: 'Ceylon Blue Sapphire',
+      gem_type: 'Blue Sapphire',
       hue: 'Royal Blue',
       colour_intensity: 'Vivid',
       clarity: 'VVS',
@@ -559,11 +575,12 @@ export default function Valuation() {
   }
 
   // Fallback options
-  const gemTypeOptions = factorOptions?.gem_factors.gem_type || [
-    'Ceylon Blue Sapphire',
-    'Ceylon Blue Spinel',
-    'Ceylon Blue Topaz',
+  const rawGemTypes = factorOptions?.gem_factors.gem_type || [
+    'Blue Sapphire',
+    'Blue Spinel',
+    'Blue Topaz',
   ];
+  const gemTypeOptions = Array.from(new Set(rawGemTypes.map((gt) => gt.replace('Ceylon ', ''))));
   const hueOptions = factorOptions?.gem_factors.hue || [
     'Blue',
     'Cobalt Blue',

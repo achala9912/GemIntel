@@ -336,10 +336,23 @@ export default function Authentication() {
   useEffect(() => {
     const active = sessionStorage.getItem('faceted_flow_active') === 'true';
     setIsFlowActive(active);
-    // Start empty by default so user can choose variety
-    setGemType('');
-  }, []);
 
+    const savedType = sessionStorage.getItem('faceted_flow_gem_type');
+    if (savedType) {
+      setGemType(savedType);
+    }
+
+    if (active) {
+      const authStr = sessionStorage.getItem('faceted_flow_auth_result');
+      if (authStr) {
+        try {
+          setAuthResult(JSON.parse(authStr));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }, []);
 
   const handleGemTypeSelect = (type: string) => {
     setGemType(type);
@@ -407,6 +420,7 @@ export default function Authentication() {
             setAuthResult(null);
             setGemType('');
             sessionStorage.removeItem('faceted_flow_gem_type');
+            sessionStorage.removeItem('faceted_flow_auth_result');
             handleReset();
           }}
           className="btn-secondary w-full py-3.5 sm:py-4 text-sm sm:text-base cursor-pointer"
@@ -434,6 +448,7 @@ export default function Authentication() {
         buttonText="Authenticate Gem"
         apiEndpoint="/authenticate"
         gemType={gemType}
+        initialResult={isFlowActive ? authResult : null}
         renderResult={renderAuthenticationResult}
 
         onSuccess={handleSuccess}

@@ -16,6 +16,7 @@ import io
 import cv2
 import numpy as np
 from PIL import Image, ImageOps
+from concurrent.futures import ThreadPoolExecutor
 
 # Optional HEIC/HEIF (iPhone) support. If pillow-heif is installed, register it
 # so decode_image() can read .heic uploads; otherwise HEIC simply fails with a
@@ -76,7 +77,7 @@ def decode_image(raw_bytes: bytes) -> np.ndarray:
         return img
 
 
-def detect_coin(img: np.ndarray, work_max: int = 1200):
+def detect_coin(img: np.ndarray, work_max: int = 800):
     """Detect the coin via HoughCircles on a downscaled copy (fast on large
     phone photos), returning (cx, cy, r) at full resolution, or None.
 
@@ -84,32 +85,46 @@ def detect_coin(img: np.ndarray, work_max: int = 1200):
     boosted with CLAHE and the accumulator threshold is swept from strict to
     permissive, taking the largest circle found."""
     h, w = img.shape[:2]
-    scale = min(1.0, work_max / max(h, w))
-    small = cv2.resize(img, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+    scale = min(1.0, work_max / float(max(h, w)))
+    if scale < 1.0:
+        small = cv2.resize(img, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_LINEAR)
+    else:
+        small = img
     gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
     gray = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8)).apply(gray)  # boost contrast
-    gray = cv2.medianBlur(gray, 5)
+    gray = cv2.GaussianBlur(gray, (5, 5), 1.5)
     min_dim = min(gray.shape[:2])
 
     # Sweep param2 (accumulator threshold) strict -> permissive so a faint coin
     # still registers; the largest detected circle is taken as the coin.
-    for param2 in (60, 45, 35, 28, 22):
+    for param2 in (45, 35, 28, 22, 18):
         circles = cv2.HoughCircles(
             gray, cv2.HOUGH_GRADIENT, dp=1.2, minDist=min_dim,
-            param1=120, param2=param2,
+            param1=100, param2=param2,
             minRadius=int(min_dim * 0.05), maxRadius=int(min_dim * 0.55),
         )
         if circles is not None:
             cx, cy, r = max(np.round(circles[0, :]).astype(int), key=lambda c: c[2])
-            return (int(cx / scale), int(cy / scale), int(r / scale))
+            return (int(round(cx / scale)), int(round(cy / scale)), int(round(r / scale)))
     return None
 
 
-def segment_stone(img: np.ndarray, coin, label: str):
+def segment_stone(img: np.ndarray, coin, label: str, work_max: int = 1600):
     """Segment the stone against a plain background (Otsu, both polarities,
-    coin masked out) and return its cv2.minAreaRect."""
-    cx, cy, r = coin
-    gray = cv2.GaussianBlur(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY), (5, 5), 0)
+    coin masked out) and return its cv2.minAreaRect in full resolution coordinates."""
+    h, w = img.shape[:2]
+    scale = min(1.0, work_max / float(max(h, w)))
+
+    if scale < 1.0:
+        small = cv2.resize(img, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_LINEAR)
+        cx = int(coin[0] * scale)
+        cy = int(coin[1] * scale)
+        r = int(coin[2] * scale)
+    else:
+        small = img
+        cx, cy, r = coin[0], coin[1], coin[2]
+
+    gray = cv2.GaussianBlur(cv2.cvtColor(small, cv2.COLOR_BGR2GRAY), (5, 5), 0)
 
     coin_mask = np.zeros(gray.shape, dtype=np.uint8)
     cv2.circle(coin_mask, (cx, cy), int(r * 1.15), 255, -1)
@@ -118,7 +133,13 @@ def segment_stone(img: np.ndarray, coin, label: str):
     _, th_light = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
     best = None
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
+    # Scale kernel size based on downscaling factor to keep physical morph radius consistent
+    ksize = max(3, int(round(7 * scale)))
+    if ksize % 2 == 0:
+        ksize += 1
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (ksize, ksize))
+    total_area = gray.shape[0] * gray.shape[1]
+
     for th in (th_dark, th_light):
         m = th.copy()
         m[coin_mask > 0] = 0
@@ -128,7 +149,7 @@ def segment_stone(img: np.ndarray, coin, label: str):
         if not cnts:
             continue
         c = max(cnts, key=cv2.contourArea)
-        frac = cv2.contourArea(c) / (gray.shape[0] * gray.shape[1])
+        frac = cv2.contourArea(c) / total_area
         if frac > 0.85 or frac < 0.001:
             continue
         if best is None or cv2.contourArea(c) > best[0]:
@@ -139,13 +160,29 @@ def segment_stone(img: np.ndarray, coin, label: str):
             f"Could not segment the stone in the {label} image. "
             "Use a plainer background / better lighting."
         )
-    return cv2.minAreaRect(best[1])
+
+    (mcx, mcy), (mw, mh), angle = cv2.minAreaRect(best[1])
+    if scale < 1.0:
+        return ((mcx / scale, mcy / scale), (mw / scale, mh / scale), angle)
+    return ((mcx, mcy), (mw, mh), angle)
 
 
 def _rect_sides(rect):
     """Return (long_px, short_px) of a minAreaRect."""
     (_, _), (w_px, h_px), _ = rect
     return max(w_px, h_px), min(w_px, h_px)
+
+
+def _process_image_view(raw_bytes: bytes, coin_diameter_mm: float, label: str):
+    """Pipeline step for a single view (TOP or SIDE): decode, coin detect, stone segment."""
+    img = decode_image(raw_bytes)
+    coin = detect_coin(img)
+    if coin is None:
+        raise ValueError(f"Coin not found in the {label} image. Use a plain background and keep the whole coin in frame.")
+    
+    ppm = (2.0 * coin[2]) / coin_diameter_mm
+    rect = segment_stone(img, coin, label)
+    return coin, ppm, rect
 
 
 def estimate_carat(
@@ -165,26 +202,20 @@ def estimate_carat(
 
     warnings = []
 
-    top_img = decode_image(top_bytes)
-    side_img = decode_image(side_bytes)
+    # Process TOP and SIDE images concurrently using ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        f_top = executor.submit(_process_image_view, top_bytes, coin_diameter_mm, "TOP")
+        f_side = executor.submit(_process_image_view, side_bytes, coin_diameter_mm, "SIDE")
+        
+        # Exception handling will raise original ValueErrors directly
+        top_coin, top_ppm, top_rect = f_top.result()
+        side_coin, side_ppm, side_rect = f_side.result()
 
-    top_coin = detect_coin(top_img)
-    side_coin = detect_coin(side_img)
-    if top_coin is None:
-        raise ValueError("Coin not found in the TOP image. Use a plain background and keep the whole coin in frame.")
-    if side_coin is None:
-        raise ValueError("Coin not found in the SIDE image. Use a plain background and keep the whole coin in frame.")
-
-    top_ppm = (2.0 * top_coin[2]) / coin_diameter_mm
-    side_ppm = (2.0 * side_coin[2]) / coin_diameter_mm
     for lbl, ppm in (("TOP", top_ppm), ("SIDE", side_ppm)):
         if ppm < MIN_PPM:
             warnings.append(f"{lbl} resolution low ({ppm:.0f} px/mm); fill more of the frame for a reliable result.")
     if abs(top_ppm - side_ppm) / min(top_ppm, side_ppm) > 0.5:
         warnings.append("TOP and SIDE scales differ a lot — likely a coin misdetection; verify the photos.")
-
-    top_rect = segment_stone(top_img, top_coin, "TOP")
-    side_rect = segment_stone(side_img, side_coin, "SIDE")
 
     long_px, short_px = _rect_sides(top_rect)
     L_mm = long_px / top_ppm
@@ -219,3 +250,4 @@ def estimate_carat(
         "scale_px_per_mm": {"top": round(top_ppm, 2), "side": round(side_ppm, 2)},
         "warnings": warnings,
     }
+

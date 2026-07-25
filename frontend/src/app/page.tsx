@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';;
 import { useRouter } from 'next/navigation';
-import { Gem,  Layers } from 'lucide-react';
+import { Gem, Layers } from 'lucide-react';
 import CutPredictionPage from '@/app/cut-prediction/page';
 
 export default function Home() {
@@ -41,24 +41,24 @@ export default function Home() {
       <section className="mb-16 sm:mb-24 text-center">
         <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs tracking-wide font-semibold bg-slate-900 text-blue-400 border border-slate-800 mb-6 shadow-sm">
           <Gem className="w-4 h-4 text-blue-400" />
-          <span>Precision Gemstone Analytics</span>
+          <span>ML-Driven Gemstone Analytics Platform</span>
         </span>
-        <h1 
+        <h1
           className="mb-6 text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight text-white w-full text-center"
           style={{ textAlign: 'center' }}
         >
-          True Value Estimation &
+          Authentication, 4C's Identification, Valuation
           <br />
           <span className="text-blue-400">
-            AI Authentication
+            & Cut Prediction
           </span>
         </h1>
-        <p 
+        <p
           className="mx-auto mb-10 max-w-2xl text-sm sm:text-base text-slate-400 leading-relaxed font-normal text-center"
           style={{ textAlign: 'center' }}
         >
-          GemIntel uses state-of-the-art DINOv2 vision models, 3D visual hull reconstruction, 
-          and ensemble ML regression to classify, authenticate, and value raw and finished gemstones.
+          GemIntel uses state-of-the-art vision transformer models, transfer learning models, 3D visual hull reconstruction,
+          and ensemble ML regression to classify, authenticate, and evaluate faceted gemstones and rough gemstones.
         </p>
       </section>
 
@@ -69,14 +69,14 @@ export default function Home() {
             Select Gemstone Category
           </h2>
           <p className="text-sm text-slate-400 max-w-lg mx-auto leading-relaxed">
-            Our system is tailored for two distinct states of gemstone lifecycle. 
+            Our system is tailored for two distinct states of gemstone lifecycle.
             Choose the category to unlock appropriate analytics models.
           </p>
         </div>
 
         <div className="grid gap-8 md:grid-cols-2 max-w-4xl mx-auto">
           {/* Rough Gems Panel */}
-          <div 
+          <div
             onClick={() => setActivePortal('rough')}
             className="group p-8 flex flex-col justify-between items-start transition-all duration-200 border border-slate-800 hover:border-slate-700 rounded-2xl relative overflow-hidden bg-slate-900/90 hover:bg-slate-900 cursor-pointer shadow-lg"
           >
@@ -85,20 +85,20 @@ export default function Home() {
                 <Layers className="w-5 h-5" />
               </div>
               <h3 className="mb-3 text-lg font-bold text-slate-100 group-hover:text-blue-400 transition-colors">
-                Rough Gems Portal
+                Portal for Rough Gems
               </h3>
               <p className="text-xs leading-relaxed text-slate-400 mb-8 min-h-[64px]">
                 Designed for uncut, raw gemstone crystals. Perform 3D visual hull reconstruction from multi-angle snapshots, calculate volume metrics, and predict the optimal cutting configuration and raw yield percentage.
               </p>
-              
+
               <div className="space-y-3 mb-8 border-t border-slate-800/80 pt-6">
                 <div className="flex items-center gap-2.5 text-xs text-slate-300">
                   <div className="w-2 h-2 rounded-full bg-blue-500" />
-                  <span>3D Voxel Hull Visualizer</span>
+                  <span>3D Visual Hull Reconstruction</span>
                 </div>
                 <div className="flex items-center gap-2.5 text-xs text-slate-300">
                   <div className="w-2 h-2 rounded-full bg-blue-500" />
-                  <span>Optimal Cut Predictions</span>
+                  <span>Optimal Cut Prediction</span>
                 </div>
                 <div className="flex items-center gap-2.5 text-xs text-slate-300">
                   <div className="w-2 h-2 rounded-full bg-blue-500" />
@@ -107,13 +107,13 @@ export default function Home() {
               </div>
             </div>
 
-            <button className="btn-secondary w-full py-3.5 text-xs tracking-wider uppercase">
-              Analyze Rough Gem →
+            <button className="btn-primary w-full py-3.5 text-xs tracking-wider uppercase">
+              Analyze Rough Gems →
             </button>
           </div>
 
           {/* Faceted Gems Panel */}
-          <div 
+          <div
             onClick={handleStartFacetedFlow}
             className="group p-8 flex flex-col justify-between items-start transition-all duration-200 border border-slate-800 hover:border-blue-600/50 rounded-2xl relative overflow-hidden bg-slate-900/90 hover:bg-slate-900 cursor-pointer shadow-lg"
           >
@@ -122,7 +122,7 @@ export default function Home() {
                 <Gem className="w-5 h-5" />
               </div>
               <h3 className="mb-3 text-lg font-bold text-slate-100 group-hover:text-blue-400 transition-colors">
-                Faceted Gems Portal
+                Portal for Faceted Gems
               </h3>
               <p className="text-xs leading-relaxed text-slate-400 mb-8 min-h-[64px]">
                 Designed for finished, cut gemstones. Start the multi-stage pipeline: authenticate microscopic features to detect lab-synthetics, execute DINOv2 color and shape classifiers, and estimate pricing based on live economic factors.
@@ -131,21 +131,21 @@ export default function Home() {
               <div className="space-y-3 mb-8 border-t border-slate-800/80 pt-6">
                 <div className="flex items-center gap-2.5 text-xs text-slate-300">
                   <div className="w-2 h-2 rounded-full bg-blue-500" />
-                  <span>AI Generated & Synthetic Check</span>
+                  <span>Gemstone Authentication - Natural / Synthetic</span>
                 </div>
                 <div className="flex items-center gap-2.5 text-xs text-slate-300">
                   <div className="w-2 h-2 rounded-full bg-blue-500" />
-                  <span>DINOv2 Shape & Hue Extraction</span>
+                  <span>Color, Cut, Carat, Shape, Clarity & Hue Extraction</span>
                 </div>
                 <div className="flex items-center gap-2.5 text-xs text-slate-300">
                   <div className="w-2 h-2 rounded-full bg-blue-500" />
-                  <span>CCPI-Adjusted Value Estimator</span>
+                  <span>Market-Oriented Value Estimation</span>
                 </div>
               </div>
             </div>
 
             <button className="btn-primary w-full py-3.5 text-xs tracking-wider uppercase">
-              Start Guided Pipeline →
+              Analyze Faceted Gems →
             </button>
           </div>
         </div>

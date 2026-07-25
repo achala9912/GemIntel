@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ImageUploader from '@/components/ImageUploader';
 import AuthPipelineModal, { StageState } from '@/components/AuthPipelineModal';
 
@@ -11,6 +11,7 @@ interface FeatureLayoutProps<T = unknown> {
   mockDelay?: number;
   apiEndpoint?: string;
   gemType?: string;
+  initialResult?: T | null;
   renderResult?: (result: T) => React.ReactNode;
   onSuccess?: (files: File[] | File, result: T) => void;
   customFooter?: (result: T, handleReset: () => void) => React.ReactNode;
@@ -24,6 +25,7 @@ export default function FeatureLayout<T = unknown>({
   mockDelay = 2500,
   apiEndpoint,
   gemType,
+  initialResult,
   renderResult,
   onSuccess,
   customFooter,
@@ -31,10 +33,17 @@ export default function FeatureLayout<T = unknown>({
 }: FeatureLayoutProps<T>) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStatus, setAnalysisStatus] = useState<string | null>(null);
-  const [showResult, setShowResult] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<T | null>(null);
+  const [showResult, setShowResult] = useState<boolean>(Boolean(initialResult));
+  const [analysisResult, setAnalysisResult] = useState<T | null>(initialResult || null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [resetKey, setResetKey] = useState(0);
+
+  useEffect(() => {
+    if (initialResult) {
+      setAnalysisResult(initialResult);
+      setShowResult(true);
+    }
+  }, [initialResult]);
 
   // Live stage tracking state
   const [currentStage, setCurrentStage] = useState<number>(1);
