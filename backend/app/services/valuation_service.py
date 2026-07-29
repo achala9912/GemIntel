@@ -136,7 +136,14 @@ def load_valuation_models(force: bool = False) -> None:
         try:
             loaded = joblib.load(VALUATION_BUNDLE_PATH)
         except Exception as exc:
-            raise ValuationModelError(f"Could not load valuation bundle: {exc}") from exc
+            import sklearn
+            sk_ver = getattr(sklearn, "__version__", "unknown")
+            sk_path = getattr(sklearn, "__file__", "unknown")
+            raise ValuationModelError(
+                f"Could not load valuation bundle: {exc}. "
+                f"Ensure backend is running in the virtual environment (venv with scikit-learn==1.6.1). "
+                f"Current scikit-learn: v{sk_ver} ({sk_path})."
+            ) from exc
         _bundle = _validate_bundle(loaded)
 
 
@@ -157,6 +164,15 @@ def valuation_model_metadata() -> dict[str, Any]:
         "test_metrics": _bundle.get("test_metrics", {}),
     }
 
+
+GEM_TYPE_SYNONYMS = {
+    "blue sapphire": "Ceylon Blue Sapphire",
+    "blue_sapphire": "Ceylon Blue Sapphire",
+    "blue spinel": "Ceylon Blue Spinel",
+    "blue_spinel": "Ceylon Blue Spinel",
+    "blue topaz": "Ceylon Blue Topaz",
+    "blue_topaz": "Ceylon Blue Topaz",
+}
 
 SHAPE_SYNONYMS = {
     "square": "Asscher",
@@ -194,7 +210,11 @@ def _normalize_category_value(field: str, value: str) -> str:
         return lower_map[clean.lower()]
 
     # 3. Synonym fallbacks
-    if field == "shape":
+    if field == "gem_type":
+        syn = GEM_TYPE_SYNONYMS.get(clean.lower())
+        if syn and syn in allowed:
+            return syn
+    elif field == "shape":
         syn = SHAPE_SYNONYMS.get(clean.lower())
         if syn and syn in allowed:
             return syn

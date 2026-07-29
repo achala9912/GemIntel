@@ -21,9 +21,9 @@ import type { PredictionResult, PipelineStatus } from "@/services/cutApi";
 const MIN_IMAGES = 8;
 const MAX_IMAGES = 16;
 const GEM_TYPES = [
-  { value: "blue_sapphire", label: "Blue Sapphire", dotColor: "#3b82f6"  },
-  { value: "spinel",        label: "Spinel",        dotColor: "#ec4899" },
-  { value: "topaz",         label: "Topaz",         dotColor: "#eab308" },
+  { value: "blue_sapphire", label: "Blue Sapphire", dotColor: "#3b82f6" },
+  { value: "spinel",        label: "Blue Spinel",   dotColor: "#6366f1" },
+  { value: "topaz",         label: "Blue Topaz",    dotColor: "#38bdf8" },
 ];
 
 interface ImageFile {
@@ -278,6 +278,9 @@ export default function CutPredictionPage({ onBack }: { onBack?: () => void }) {
           // 4. Fetch result
           const rData = await getPredictionResult(session_id);
           setResult(rData);
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('rough_flow_cut_result', JSON.stringify(rData));
+          }
           
           // Wait 1 second to show the completed/success state in the modal, then close it automatically
           await new Promise((r) => setTimeout(r, 1000));
@@ -344,411 +347,444 @@ export default function CutPredictionPage({ onBack }: { onBack?: () => void }) {
   const isProcessing = !["idle", "done", "error"].includes(status);
   const showPipelineHUD = status !== "idle";
 
-// getStepStatus helper has been extracted to components/ReconstructionModal
-
   return (
-    <div className="w-full text-white">
+    <>
       {result && (
-        <div className="fixed inset-0 z-[100] bg-[#0a0c1a]">
+        <div className="fixed inset-0 z-[100] bg-[#05070e]">
           <GemViewer3D data={result} onClose={reset} />
         </div>
       )}
 
-      <div className="max-width-container py-6 sm:py-12">
+      <div className="max-width-container py-8 sm:py-12 relative animate-fade-in">
         {onBack && (
           <button
             onClick={onBack}
-            className="mb-6 flex items-center gap-1.5 text-xs text-gray-400 hover:text-cyan-400 transition-colors bg-white/5 border border-white/10 px-3.5 py-2 rounded-xl active:scale-[0.98] cursor-pointer font-semibold shadow-lg"
+            className="mb-8 flex items-center gap-1.5 text-xs text-gray-400 hover:text-cyan-400 transition-colors bg-slate-950/60 border border-slate-800/80 px-3.5 py-2 rounded-xl active:scale-[0.98] cursor-pointer font-bold shadow-lg"
           >
             ← Back to Portal Selection
           </button>
         )}
-    
 
-        <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-center mb-2 leading-tight px-2">
-          Gem Cut Prediction &{" "}
-          <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            3D Visualizer
-          </span>
-        </h1>
-        <p className="text-center text-sm sm:text-base opacity-60 mb-8 sm:mb-12 px-4">
-          Let&apos;s find optimal cut shape and material yield.
-        </p>
+        <header className="text-center mb-12">
+          <h1 
+            className="text-2xl sm:text-4xl lg:text-5xl font-extrabold mb-2 leading-tight text-center"
+            style={{ textAlign: 'center' }}
+          >
+            Gem Cut Prediction &
+            <br />
+            <span className="text-blue-400">
+              3D Visualizer
+            </span>
+          </h1>
+          <p 
+            className="text-sm opacity-60 max-w-xl font-normal text-gray-300 mx-auto text-center"
+            style={{ textAlign: 'center' }}
+          >
+            Determine optimal cutting configurations and material yield percentage from multi-angle raw snapshots.
+          </p>
+        </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-          {/* ===== Parameters Card ===== */}
-          <div className="bg-[rgba(255,255,255,0.04)] border border-white/10 rounded-2xl p-4 sm:p-6">
-            <h2 className="text-base sm:text-lg font-medium mb-4 sm:mb-5">
-              <span className="opacity-50 mr-2">01</span> Parameters Config
-            </h2>
-
-            <div className="relative mb-5" ref={dropdownRef}>
-              <label className="block text-xs uppercase tracking-wide opacity-50 mt-2 mb-3 sm:my-4">
-                Gemstone type
-              </label>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full">
+          {/* ===== Left Side: Parameters Column ===== */}
+          <div className="col-span-1 lg:col-span-4 space-y-6 w-full">
+            <div className="bg-[#090d16]/75 border border-slate-800/80 rounded-2xl p-5 sm:p-6 shadow-2xl backdrop-blur-md relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-cyan-500/20" />
               
-              <button
-                type="button"
-                onClick={() => !isProcessing && setIsDropdownOpen(!isDropdownOpen)}
-                className={`w-full bg-[rgba(0,0,0,0.4)] border border-white/10 rounded-xl px-4 py-3.5 text-sm flex justify-between items-center text-left transition ${
-                  isProcessing ? "opacity-50 cursor-not-allowed" : "hover:bg-white/[0.02] active:scale-[0.99] cursor-pointer"
-                }`}
-                disabled={isProcessing}
-              >
-                {gemType ? (
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span 
-                      className="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_currentColor] shrink-0" 
-                      style={{ 
-                        backgroundColor: GEM_TYPES.find(g => g.value === gemType)?.dotColor,
-                        color: GEM_TYPES.find(g => g.value === gemType)?.dotColor 
-                      }} 
-                    />
-                    <span className="font-semibold text-white truncate">
-                      {GEM_TYPES.find((g) => g.value === gemType)?.label}
-                    </span>
-                  </div>
-                ) : (
-                  <span className="text-white/40 font-medium truncate">Select type...</span>
-                )}
+              <h2 className="text-xs uppercase tracking-widest text-cyan-400 font-extrabold mb-6 flex items-center gap-2">
+                <span className="opacity-50">01</span> Parameters Config
+              </h2>
+
+              <div className="relative mb-5" ref={dropdownRef}>
+                <label className="block text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-2">
+                  Gemstone type
+                </label>
                 
-                <div className="flex items-center gap-2 shrink-0">
-
-                  {gemType && !isProcessing ? (
-                    <span
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setGemType("");
-                      }}
-                      className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/10 text-white/40 hover:text-white/80 transition cursor-pointer"
-                      title="Clear selection"
-                      role="button"
-                      tabIndex={0}
-                    >
-                      <X className="w-3.5 h-3.5 hover:text-red-600" strokeWidth={3} />
-                    </span>
+                <button
+                  type="button"
+                  onClick={() => !isProcessing && setIsDropdownOpen(!isDropdownOpen)}
+                  className={`w-full bg-slate-950/60 border border-slate-800/85 rounded-xl px-4 py-3.5 text-sm flex justify-between items-center text-left transition ${
+                    isProcessing ? "opacity-50 cursor-not-allowed" : "hover:bg-slate-900/60 active:scale-[0.99] cursor-pointer"
+                  }`}
+                  disabled={isProcessing}
+                >
+                  {gemType ? (
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span 
+                        className="w-2 h-2 rounded-full shrink-0 shadow-[0_0_8px_currentColor]" 
+                        style={{ 
+                          backgroundColor: GEM_TYPES.find(g => g.value === gemType)?.dotColor,
+                          color: GEM_TYPES.find(g => g.value === gemType)?.dotColor 
+                        }} 
+                      />
+                      <span className="font-semibold text-white truncate">
+                        {GEM_TYPES.find((g) => g.value === gemType)?.label}
+                      </span>
+                    </div>
                   ) : (
-                    <ChevronDown
-                      className={`w-4 h-4 text-white/50 transition-transform duration-200 ${
-                        isDropdownOpen ? "rotate-180" : ""
-                      }`}
-                    />
+                    <span className="text-white/40 font-medium truncate">Select type...</span>
                   )}
-                </div>
-              </button>
+                  
+                  <div className="flex items-center gap-2 shrink-0">
+                    {gemType && !isProcessing ? (
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setGemType("");
+                        }}
+                        className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/10 text-white/40 hover:text-white/80 transition cursor-pointer"
+                        title="Clear selection"
+                        role="button"
+                        tabIndex={0}
+                      >
+                        <X className="w-3.5 h-3.5 hover:text-red-500" strokeWidth={3} />
+                      </span>
+                    ) : (
+                      <ChevronDown
+                        className={`w-4 h-4 text-white/50 transition-transform duration-200 ${
+                          isDropdownOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                    )}
+                  </div>
+                </button>
 
-              {isDropdownOpen && (
-                <div className="absolute top-[calc(100%+6px)] left-0 w-full bg-[#0a0c1a]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden py-1.5 animate-fade-in">
-                  {GEM_TYPES.map((g) => (
-                    <button
-                      key={g.value}
-                      type="button"
-                      onClick={() => {
-                        setGemType(g.value);
-                        setIsDropdownOpen(false);
-                      }}
-                      className={`w-full px-4 py-3 text-left hover:bg-white/5 transition flex items-center justify-between group cursor-pointer ${
-                        gemType === g.value ? "bg-white/[0.03]" : ""
-                      }`}
-                    >
-                      <div className="flex flex-col min-w-0">
-                        <div className="flex items-center gap-2.5">
-                          <span 
-                            className="w-2.5 h-2.5 rounded-full transition-transform group-hover:scale-110 shrink-0" 
-                            style={{ backgroundColor: g.dotColor }}
-                          />
-                          <span className="font-semibold text-white text-sm truncate">{g.label}</span>
+                {isDropdownOpen && (
+                  <div className="absolute top-[calc(100%+6px)] left-0 w-full bg-[#07090f]/95 backdrop-blur-xl border border-slate-800 rounded-xl shadow-2xl z-50 overflow-hidden py-1.5 animate-fade-in-pure">
+                    {GEM_TYPES.map((g) => (
+                      <button
+                        key={g.value}
+                        type="button"
+                        onClick={() => {
+                          setGemType(g.value);
+                          setIsDropdownOpen(false);
+                        }}
+                        className={`w-full px-4 py-3 text-left hover:bg-white/5 transition flex items-center justify-between group cursor-pointer ${
+                          gemType === g.value ? "bg-white/[0.03]" : ""
+                        }`}
+                      >
+                        <div className="flex flex-col min-w-0">
+                          <div className="flex items-center gap-2.5">
+                            <span 
+                              className="w-2 h-2 rounded-full transition-transform group-hover:scale-110 shrink-0" 
+                              style={{ backgroundColor: g.dotColor }}
+                            />
+                            <span className="font-semibold text-white text-sm truncate">{g.label}</span>
+                          </div>
                         </div>
+                        {gemType === g.value && (
+                          <svg className="w-4 h-4 text-cyan-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-                      </div>
-                      
-                      {gemType === g.value && (
-                        <svg className="w-4 h-4 text-blue-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </button>
+              <label className="block text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-2">
+                Actual weight (carats)
+              </label>
+              <div className="flex items-center gap-2 mb-6">
+                <button
+                  onClick={() => {
+                    const currentWeight = parseFloat(String(weight)) || 0;
+                    setWeight(Math.max(0, +(currentWeight - 0.1).toFixed(2)));
+                  }}
+                  className="w-10 h-10 shrink-0 rounded-lg border border-slate-800/80 hover:bg-slate-900/60 active:scale-95 transition text-white font-bold cursor-pointer"
+                  disabled={isProcessing}
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                  onWheel={(e) => e.currentTarget.blur()}
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  className="flex-1 min-w-0 text-center bg-slate-950/60 border border-slate-800/85 rounded-lg px-3 py-2 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-sm font-semibold text-white font-mono"
+                  disabled={isProcessing}
+                />
+                <span className="text-xs opacity-50 px-3 py-2 border border-slate-800 rounded shrink-0 font-mono">ct</span>
+                <button
+                  onClick={() => {
+                    const currentWeight = parseFloat(String(weight)) || 0;
+                    setWeight(+(currentWeight + 0.1).toFixed(2));
+                  }}
+                  className="w-10 h-10 shrink-0 rounded-lg border border-slate-800/80 hover:bg-slate-900/60 active:scale-95 transition text-white font-bold cursor-pointer"
+                  disabled={isProcessing}
+                >
+                  +
+                </button>
+              </div>
+
+              {/* Checklist */}
+              <div className="border-t border-slate-900 pt-5">
+                <h3 className="text-xs uppercase tracking-wider text-gray-400 font-bold mb-4 flex items-center gap-2">
+                  <svg className="w-4 h-4 text-cyan-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                  </svg>
+                  <span>Reconstruction Checklist</span>
+                </h3>
+                <div className="space-y-3">
+                  {checklistItems.map((c, i) => (
+                    <div key={i} className="flex justify-between items-center py-2 text-xs border-b border-slate-900 last:border-0 gap-3">
+                      <span className="flex items-center gap-2 min-w-0">
+                        {c.done ? (
+                          <svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          <div className="w-3.5 h-3.5 rounded-full border border-amber-500/40 bg-amber-500/10 flex items-center justify-center shrink-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                          </div>
+                        )}
+                        <span className={`leading-snug truncate ${c.done ? "text-gray-300 font-medium" : "text-gray-500"}`}>{c.label}</span>
+                      </span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded shrink-0 uppercase tracking-wide ${
+                        c.done ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20" : "text-amber-400 bg-amber-500/10 border border-amber-500/20"
+                      }`}>
+                        {c.detail ? c.detail.split(" required")[0] : (c.done ? "Done" : "Pending")}
+                      </span>
+                    </div>
                   ))}
                 </div>
-              )}
-            </div>
-
-            <label className="block text-xs uppercase tracking-wide opacity-50 mb-2">
-              Actual weight (carats)
-            </label>
-            <div className="flex items-center gap-2 mb-6">
-              <button
-                onClick={() => {
-                  const currentWeight = parseFloat(String(weight)) || 0;
-                  setWeight(Math.max(0, +(currentWeight - 0.1).toFixed(2)));
-                }}
-                className="w-10 h-10 shrink-0 rounded-lg border border-white/10 hover:bg-white/5 active:scale-95 transition"
-                disabled={isProcessing}
-              >
-                −
-              </button>
-              <input
-                type="number"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                onWheel={(e) => e.currentTarget.blur()}
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                className="flex-1 min-w-0 text-center bg-[rgba(0,0,0,0.4)] border border-white/10 rounded-lg px-3 py-2 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                disabled={isProcessing}
-              />
-              <span className="text-xs opacity-50 px-2 py-1 border border-white/10 rounded shrink-0">ct</span>
-              <button
-                onClick={() => {
-                  const currentWeight = parseFloat(String(weight)) || 0;
-                  setWeight(+(currentWeight + 0.1).toFixed(2));
-                }}
-                className="w-10 h-10 shrink-0 rounded-lg border border-white/10 hover:bg-white/5 active:scale-95 transition"
-                disabled={isProcessing}
-              >
-                +
-              </button>
-            </div>
-
-            {/* Checklist */}
-            <div className="border-t border-white/10 pt-4">
-              <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                <svg className="w-4 h-4 text-purple-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                </svg>
-                <span>Reconstruction Checklist</span>
-              </h3>
-              {checklistItems.map((c, i) => (
-                <div key={i} className="flex justify-between items-start py-2.5 text-sm border-b border-white/[0.02] last:border-0 gap-3">
-                  <span className="flex items-start gap-2 min-w-0">
-                    {c.done ? (
-                      <svg className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    ) : (
-                      <div className="w-4 h-4 rounded-full border border-yellow-500/40 bg-yellow-500/10 flex items-center justify-center shrink-0 mt-0.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
-                      </div>
-                    )}
-                    <span className={`leading-snug break-words ${c.done ? "text-white/80" : "text-white/40"}`}>{c.label}</span>
-                  </span>
-                  <span className={`text-[10px] sm:text-xs font-medium px-2 py-0.5 rounded shrink-0 mt-0.5 text-right ${
-                    c.done ? "text-emerald-400 bg-emerald-500/5" : "text-yellow-400 bg-yellow-500/5"
-                  }`}>
-                    {c.detail || (c.done ? "Done" : "Pending")}
-                  </span>
-                </div>
-              ))}
+              </div>
             </div>
           </div>
 
-          {/* ===== Image Upload Card ===== */}
-          <div className="bg-[rgba(255,255,255,0.04)] border border-white/10 rounded-2xl p-4 sm:p-6">
-            <div className="flex justify-between items-center gap-2 mb-4 sm:mb-5">
-              <h2 className="text-base sm:text-lg font-medium">
-                <span className="opacity-50 mr-2">02</span> Angle Image Capture
-              </h2>
-              <span className="text-xs opacity-50 shrink-0 text-right">
-                {images.length} uploaded ({MIN_IMAGES}–{MAX_IMAGES} required)
-              </span>
-            </div>
+          {/* ===== Right Side: Angle Image Capture & Dropzone ===== */}
+          <div className="col-span-1 lg:col-span-8 space-y-6 w-full">
+            <div className="bg-[#090d16]/75 border border-slate-800/80 rounded-2xl p-5 sm:p-6 shadow-2xl backdrop-blur-md relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-blue-500/20" />
+              
+              <div className="flex justify-between items-center gap-2 mb-6">
+                <h2 className="text-xs uppercase tracking-widest text-blue-400 font-extrabold flex items-center gap-2">
+                  <span className="opacity-50">02</span> Angle Image Capture
+                </h2>
+                <span className="text-xs font-mono opacity-50 shrink-0 text-right">
+                  {images.length} uploaded ({MIN_IMAGES}–{MAX_IMAGES} required)
+                </span>
+              </div>
 
-            <div className="flex flex-col sm:flex-row gap-2 mb-3">
-              <button
-                type="button"
-                className={`flex-1 rounded-lg py-2.5 sm:py-2 text-sm transition ${
-                  !isCapturing
-                    ? "bg-blue-500/15 border border-blue-500/40 text-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.15)]"
-                    : "border border-white/10 text-white/60"
-                }`}
-                disabled={isProcessing}
-              >
-                ⬆ Upload Angle Photos
-              </button>
-              <button
-                onClick={isCapturing ? stopCamera : startCamera}
-                className={`flex-1 border rounded-lg py-2.5 sm:py-2 text-sm cursor-pointer active:scale-[0.99] transition ${
-                  isCapturing 
-                    ? "bg-red-500/20 border-red-500/30 text-red-300 hover:bg-red-500/30" 
-                    : "border-white/10 hover:bg-white/5"
-                }`}
-                disabled={isProcessing}
-              >
-                {isCapturing ? "📷 Close Camera" : "📷 Open Live Camera"}
-              </button>
-            </div>
+              <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex-1 rounded-xl py-3 text-xs font-bold uppercase tracking-wider transition bg-slate-950/60 border border-slate-800/80 hover:bg-slate-900/40 text-gray-300 shadow-lg cursor-pointer"
+                  disabled={isProcessing}
+                >
+                  ⬆ Upload Angle Photos
+                </button>
+                <button
+                  onClick={isCapturing ? stopCamera : startCamera}
+                  className={`flex-1 border rounded-xl py-3 text-xs font-bold uppercase tracking-wider cursor-pointer active:scale-[0.99] transition shadow-lg ${
+                    isCapturing 
+                      ? "bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20" 
+                      : "bg-slate-950/60 border-slate-800/80 hover:bg-slate-900/40 text-gray-300"
+                  }`}
+                  disabled={isProcessing}
+                >
+                  {isCapturing ? "📷 Close Camera" : "📷 Open Live Camera"}
+                </button>
+              </div>
 
-            {/* Live Camera View */}
-            {isCapturing && (
-              <div className="relative aspect-square sm:aspect-video bg-black rounded-xl overflow-hidden mb-4 border border-white/10 flex flex-col items-center justify-center">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  className="w-full h-full object-cover"
-                />
-                
-                {/* Visual Alignment Overlay */}
-                <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
-                  <div className="relative w-32 h-32 sm:w-44 sm:h-44 flex items-center justify-center animate-pulse">
-                    <svg
-                      className="w-full h-full text-blue-500/40 filter drop-shadow-[0_0_8px_rgba(59,130,246,0.4)]"
-                      viewBox="0 0 100 100"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                    >
-                      {/* Outer Gem Polygon */}
-                      <polygon points="50,10 85,25 90,65 50,90 10,65 15,25" />
-                      {/* Inner Facet Guide Lines */}
-                      <line x1="50" y1="10" x2="50" y2="90" />
-                      <line x1="15" y1="25" x2="85" y2="25" />
-                      <line x1="10" y1="65" x2="90" y2="65" />
-                      <line x1="15" y1="25" x2="50" y2="40" />
-                      <line x1="85" y1="25" x2="50" y2="40" />
-                      <line x1="10" y1="65" x2="50" y2="40" />
-                      <line x1="90" y1="65" x2="50" y2="40" />
-                    </svg>
+              {/* Live Camera View */}
+              {isCapturing && (
+                <div className="relative aspect-square sm:aspect-video bg-black rounded-xl overflow-hidden mb-6 border border-slate-850 flex flex-col items-center justify-center shadow-inner">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    className="w-full h-full object-cover"
+                  />
+                  
+                  {/* Visual Alignment Overlay */}
+                  <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
+                    <div className="relative w-32 h-32 sm:w-44 sm:h-44 flex items-center justify-center animate-pulse">
+                      <svg
+                        className="w-full h-full text-cyan-500/30 filter drop-shadow-[0_0_8px_rgba(6,182,212,0.4)]"
+                        viewBox="0 0 100 100"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1"
+                      >
+                        {/* Outer Gem Polygon */}
+                        <polygon points="50,10 85,25 90,65 50,90 10,65 15,25" />
+                        {/* Inner Facet Guide Lines */}
+                        <line x1="50" y1="10" x2="50" y2="90" />
+                        <line x1="15" y1="25" x2="85" y2="25" />
+                        <line x1="10" y1="65" x2="90" y2="65" />
+                        <line x1="15" y1="25" x2="50" y2="40" />
+                        <line x1="85" y1="25" x2="50" y2="40" />
+                        <line x1="10" y1="65" x2="50" y2="40" />
+                        <line x1="90" y1="65" x2="50" y2="40" />
+                      </svg>
 
-                    {/* Bounding Box Corner Marks */}
-                    <div className="absolute -top-2 -left-2 w-5 h-5 border-t-2 border-l-2 border-blue-400 rounded-tl" />
-                    <div className="absolute -top-2 -right-2 w-5 h-5 border-t-2 border-r-2 border-blue-400 rounded-tr" />
-                    <div className="absolute -bottom-2 -left-2 w-5 h-5 border-b-2 border-l-2 border-blue-400 rounded-bl" />
-                    <div className="absolute -bottom-2 -right-2 w-5 h-5 border-b-2 border-r-2 border-blue-400 rounded-br" />
+                      {/* Bounding Box Corner Marks */}
+                      <div className="absolute -top-1 -left-1 w-4 h-4 border-t border-l border-cyan-400 rounded-tl" />
+                      <div className="absolute -top-1 -right-1 w-4 h-4 border-t border-r border-cyan-400 rounded-tr" />
+                      <div className="absolute -bottom-1 -left-1 w-4 h-4 border-b border-l border-cyan-400 rounded-bl" />
+                      <div className="absolute -bottom-1 -right-1 w-4 h-4 border-b border-r border-cyan-400 rounded-br" />
+                    </div>
+                    
+                    {/* Bounding Helper Label */}
+                    <span className="mt-4 text-[9px] font-mono tracking-widest text-cyan-400/80 bg-black/80 px-3 py-1 rounded-full uppercase border border-cyan-500/10 backdrop-blur-sm shadow-md">
+                      Align Gem Within Frame
+                    </span>
                   </div>
                   
-                  {/* Bounding Helper Label */}
-                  <span className="mt-3 text-[9px] sm:text-[10px] font-mono tracking-widest text-blue-400/80 bg-black/60 px-2.5 py-0.5 rounded-full uppercase border border-blue-500/10 backdrop-blur-sm">
-                    Align Gem Within Frame
-                  </span>
-                </div>
-                
-                {/* Flash overlay */}
-                {flash && <div className="absolute inset-0 bg-white pointer-events-none z-20 animate-fade-out" />}
-                
-                <div className="absolute bottom-3 sm:bottom-4 left-0 right-0 z-10 flex flex-row justify-center items-center gap-3 px-4">
-                  <button
-                    type="button"
-                    onClick={capturePhoto}
-                    className="bg-blue-600 hover:bg-blue-500 text-white rounded-full px-4 py-2 font-semibold text-xs shadow-lg flex items-center gap-1 cursor-pointer transition active:scale-95"
-                  >
-                    📸 Take Photo
-                  </button>
-                  <button
-                    type="button"
-                    onClick={stopCamera}
-                    className="bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-full px-4 py-2 font-semibold text-xs cursor-pointer transition active:scale-95"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Live captured thumbnails (visible while camera is open) */}
-            {isCapturing && images.length > 0 && (
-              <div className="mb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs opacity-50">Captured</span>
-                  <span className="text-xs opacity-50">{images.length}/{MAX_IMAGES}</span>
-                </div>
-                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
-                  {images.map((img, i) => (
-                    <div
-                      key={img.previewUrl}
-                      className="relative aspect-square bg-black/40 rounded-md overflow-hidden border border-white/10"
+                  {/* Flash overlay */}
+                  {flash && <div className="absolute inset-0 bg-white pointer-events-none z-20 animate-fade-out" />}
+                  
+                  <div className="absolute bottom-4 left-0 right-0 z-10 flex flex-row justify-center items-center gap-3 px-4">
+                    <button
+                      type="button"
+                      onClick={capturePhoto}
+                      className="bg-cyan-600 hover:bg-cyan-500 text-white rounded-full px-5 py-2.5 font-bold text-xs shadow-lg flex items-center gap-1 cursor-pointer transition active:scale-95"
                     >
-                      <Image
-                        src={img.previewUrl}
-                        alt={`capture ${i}`}
-                        fill
-                        unoptimized
-                        className="object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(img.previewUrl)}
-                        className="absolute top-1 right-1 bg-black/70 rounded-full w-5 h-5 text-xs z-10 flex items-center justify-center"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept="image/png,image/jpeg,image/webp"
-              onChange={(e: ChangeEvent<HTMLInputElement>) => handleFiles(e.target.files)}
-              className="hidden"
-            />
-
-            {!isCapturing && (
-            <div
-              onDrop={onDrop}
-              onDragOver={(e) => e.preventDefault()}
-              className="border-2 border-dashed border-white/15 rounded-xl p-5 sm:p-8 text-center hover:border-white/30 transition cursor-pointer"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {images.length === 0 ? (
-                <>
-                  <Upload className="mx-auto mb-3 text-violet-400" />
-                  <div className="font-semibold text-sm sm:text-base">Drag and drop files here</div>
-                  <div className="text-xs opacity-50 mt-2 max-w-sm mx-auto">
-                    Upload between {MIN_IMAGES} to {MAX_IMAGES} high-definition side-angle
-                    gemstone snapshots to perform visual hull calculations.
+                      📸 Take Photo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={stopCamera}
+                      className="bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-full px-5 py-2.5 font-bold text-xs cursor-pointer transition active:scale-95"
+                    >
+                      Close
+                    </button>
                   </div>
-                </>
-              ) : (
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                  {images.map((img, i) => (
-                    <div
-                      key={img.previewUrl}
-                      className="relative aspect-square bg-black/40 rounded-md overflow-hidden"
-                    >
-                      <Image
-                        src={img.previewUrl}
-                        alt={`upload ${i}`}
-                        fill
-                        unoptimized
-                        className="object-cover"
-                      />
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeImage(img.previewUrl);
-                        }}
-                        className="absolute top-1 right-1 bg-black/70 rounded-full w-5 h-5 text-xs z-10 flex items-center justify-center"
+                </div>
+              )}
+
+              {/* Live captured thumbnails (visible while camera is open) */}
+              {isCapturing && images.length > 0 && (
+                <div className="mb-6 p-4 rounded-xl bg-slate-950/40 border border-slate-900 animate-fade-in">
+                  <div className="flex items-center justify-between mb-3 border-b border-slate-900 pb-2">
+                    <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Captured Snapshots</span>
+                    <span className="text-xs font-mono text-gray-400">{images.length}/{MAX_IMAGES}</span>
+                  </div>
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
+                    {images.map((img, i) => (
+                      <div
+                        key={img.previewUrl}
+                        className="relative aspect-square bg-slate-900 rounded-lg overflow-hidden border border-slate-800 shadow-md group"
                       >
-                        ×
-                      </button>
+                        <Image
+                          src={img.previewUrl}
+                          alt={`capture ${i}`}
+                          fill
+                          unoptimized
+                          className="object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(img.previewUrl)}
+                          className="absolute -top-1 -right-1 bg-red-600 hover:bg-red-500 text-white rounded-full w-5 h-5 text-xs z-10 flex items-center justify-center cursor-pointer transition shadow-md hover:scale-105"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(e: ChangeEvent<HTMLInputElement>) => handleFiles(e.target.files)}
+                className="hidden"
+              />
+
+              {!isCapturing && (
+                <div
+                  onDrop={onDrop}
+                  onDragOver={(e) => e.preventDefault()}
+                  className="border border-dashed border-slate-800 hover:border-cyan-500/30 rounded-xl p-6 sm:p-10 text-center bg-slate-950/20 hover:bg-slate-950/50 transition duration-300 cursor-pointer shadow-inner relative group"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {images.length === 0 ? (
+                    <div className="py-4">
+                      <div className="mb-4 flex justify-center">
+                        <div className="w-12 h-12 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-center group-hover:scale-105 transition-transform text-cyan-400">
+                          <Upload className="w-5 h-5" />
+                        </div>
+                      </div>
+                      <div className="font-semibold text-sm sm:text-base text-white">Drag and drop files here</div>
+                      <div className="text-xs text-gray-500 mt-2 max-w-sm mx-auto leading-relaxed">
+                        Upload between {MIN_IMAGES} to {MAX_IMAGES} high-definition side-angle
+                        gemstone snapshots to perform visual hull calculations.
+                      </div>
                     </div>
-                  ))}
+                  ) : (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3" onClick={(e) => e.stopPropagation()}>
+                      {images.map((img, i) => (
+                        <div
+                          key={img.previewUrl}
+                          className="relative aspect-square bg-slate-900 rounded-lg overflow-hidden border border-slate-800/80 shadow-md group"
+                        >
+                          <Image
+                            src={img.previewUrl}
+                            alt={`upload ${i}`}
+                            fill
+                            unoptimized
+                            className="object-cover"
+                          />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeImage(img.previewUrl);
+                            }}
+                            className="absolute -top-1 -right-1 bg-red-650 hover:bg-red-600 text-white rounded-full w-5 h-5 text-xs z-10 flex items-center justify-center cursor-pointer shadow-md transition hover:scale-105"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Clear All button */}
+              {images.length > 0 && !isProcessing && (
+                <div className="flex justify-end mt-4">
+                  <button
+                    onClick={() => {
+                      images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
+                      setImages([]);
+                      toast.success("All uploaded images cleared!");
+                    }}
+                    className="text-xs bg-red-950/40 hover:bg-red-950/60 border border-red-900/40 text-red-300 font-bold py-2 px-4 rounded-xl transition cursor-pointer flex items-center gap-1.5 active:scale-95 shadow-lg"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                    <span>Clear All Images</span>
+                  </button>
                 </div>
               )}
             </div>
-            )}
 
-            {/* Clear All button at the bottom-right of the card */}
-            {images.length > 0 && !isProcessing && (
-              <div className="flex justify-end mt-3">
-                <button
-                  onClick={() => {
-                    images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
-                    setImages([]);
-                    toast.success("All uploaded images cleared!");
-                  }}
-                  className="text-xs bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-rose-400 font-semibold py-1.5 px-4 rounded-lg transition cursor-pointer flex items-center gap-1.5 active:scale-95 shadow-lg"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Clear All Images</span>
-                </button>
-              </div>
-            )}
+            {/* ===== Action Buttons ===== */}
+            <div className="pt-2 flex flex-col sm:flex-row gap-4">
+              <button
+                onClick={runPipeline}
+                disabled={!canSubmit || isProcessing}
+                className={`w-full py-4 rounded-xl font-bold tracking-wider uppercase transition flex items-center justify-center gap-2.5 text-sm sm:text-base ${
+                  canSubmit && !isProcessing
+                    ? "btn-primary cursor-pointer active:scale-[0.98]"
+                    : "bg-slate-900 border border-slate-800 text-slate-500 opacity-55 cursor-not-allowed"
+                }`}
+              >
+                <svg className="w-5 h-5 opacity-90 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                </svg>
+                <span>Compute &amp; Generate 3D Cut Model</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -766,24 +802,6 @@ export default function CutPredictionPage({ onBack }: { onBack?: () => void }) {
             setFailedStep(null);
           }}
         />
-
-        {/* ===== Action Buttons ===== */}
-        <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3">
-          <button
-            onClick={runPipeline}
-            disabled={!canSubmit || isProcessing}
-            className={`flex-1 py-3.5 sm:py-4 rounded-xl font-medium transition flex items-center justify-center gap-2 text-sm sm:text-base ${
-              canSubmit && !isProcessing
-                ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-90 cursor-pointer"
-                : "bg-white/5 opacity-40 cursor-not-allowed"
-            }`}
-          >
-            <svg className="w-5 h-5 text-white/80 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-            </svg>
-            <span>Compute &amp; Generate 3D Cut Model</span>
-          </button>
-        </div>
       </div>
 
       {/* Toast Container */}
@@ -791,28 +809,30 @@ export default function CutPredictionPage({ onBack }: { onBack?: () => void }) {
         position="bottom-right"
         toastOptions={{
           style: {
-            background: "#161b30",
+            background: "#090d16",
             color: "#fff",
-            border: "1px solid rgba(255, 255, 255, 0.15)",
+            border: "1px solid rgba(255, 255, 255, 0.05)",
             borderRadius: "0.75rem",
-            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5)",
+            boxShadow: "0 10px 30px -5px rgba(0, 0, 0, 0.7)",
             padding: "12px 16px",
+            fontSize: "13px",
+            fontWeight: "500",
           },
           success: {
             style: {
-              border: "1px solid rgba(16, 185, 129, 0.4)",
-              background: "#0c2b20",
+              border: "1px solid rgba(16, 185, 129, 0.2)",
+              background: "#061e14",
             },
           },
           error: {
             style: {
-              border: "1px solid rgba(239, 68, 68, 0.4)",
-              background: "#2d1616",
+              border: "1px solid rgba(239, 68, 68, 0.2)",
+              background: "#1d0c0c",
             },
             duration: 6000,
           },
         }}
       />
-    </div>
+    </>
   );
 }

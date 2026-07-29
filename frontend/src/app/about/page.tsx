@@ -1,17 +1,17 @@
 import React from 'react';
-import { 
-  Gem, 
-  Shield, 
-  Code, 
-  Cpu, 
-  Award, 
-  GraduationCap, 
-  Target, 
-  Compass, 
-  TrendingUp, 
-  Sparkles, 
-  Scale, 
-  Eye, 
+import {
+  Gem,
+  Shield,
+  Code,
+  Cpu,
+  Award,
+  GraduationCap,
+  Target,
+  Compass,
+  TrendingUp,
+  Sparkles,
+  Scale,
+  Eye,
   Scissors,
   User,
   Phone,
@@ -45,20 +45,16 @@ const renderIcon = (iconName: string, className = "w-5 h-5") => {
 export default function AboutPage() {
   return (
     <>
-      {/* Background Ambient Decor */}
-      <div className="fixed -top-40 -right-40 h-96 w-96 rounded-full bg-purple-600/5 blur-[100px] pointer-events-none" />
-      <div className="fixed -bottom-40 -left-40 h-96 w-96 rounded-full bg-blue-600/5 blur-[100px] pointer-events-none" />
-
       <div className="max-width-container pt-4 sm:pt-6 pb-16 sm:pb-20 relative animate-fade-in z-10 space-y-16 sm:space-y-20">
 
         {/* Hero Header */}
         <header className="text-center">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-violet-500/15 to-cyan-500/15 text-cyan-300 border border-cyan-500/20 mb-5 shadow-sm">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-950/60 text-blue-400 border border-blue-800/60 mb-5 shadow-sm">
             <GraduationCap className="w-3.5 h-3.5" />
             <span>{ABOUT_PROJECT_INFO.university} Research Project</span>
           </span>
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight mb-4">
-            About <span className="gradient-text">{ABOUT_PROJECT_INFO.projectName}</span>
+            About <span className="text-blue-400">{ABOUT_PROJECT_INFO.projectName}</span>
           </h1>
           <p className="max-w-3xl mx-auto text-sm sm:text-base text-gray-300 leading-relaxed">
             {ABOUT_PROJECT_INFO.tagline}
@@ -80,8 +76,8 @@ export default function AboutPage() {
               {ABOUT_PROJECT_INFO.backgroundParagraphs.map((paragraph, idx) => {
                 const isHighlight = idx === ABOUT_PROJECT_INFO.backgroundParagraphs.length - 1;
                 return (
-                  <p 
-                    key={idx} 
+                  <p
+                    key={idx}
                     className={isHighlight ? "text-cyan-300 font-medium bg-cyan-500/5 p-4 rounded-xl border border-cyan-500/10" : ""}
                   >
                     {paragraph}
@@ -118,7 +114,7 @@ export default function AboutPage() {
 
         {/* Section 3: Aim & Scope */}
         <section className="max-w-5xl mx-auto">
-          <div className="glass-panel p-6 sm:p-10 border border-violet-500/20 bg-gradient-to-br from-violet-950/20 via-slate-950/40 to-cyan-950/20 shadow-2xl relative overflow-hidden">
+          <div className="glass-panel p-6 sm:p-10 border border-slate-800 bg-slate-900 shadow-xl relative overflow-hidden">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2.5 bg-purple-500/10 border border-purple-500/20 rounded-xl text-purple-400">
                 <Target className="w-5 h-5" />
@@ -200,7 +196,7 @@ export default function AboutPage() {
 
         {/* Section 6: Research Guidance & Project Team */}
         <section className="max-w-5xl mx-auto space-y-10">
-          
+
           {/* Supervisors Subsection */}
           <div className="space-y-4">
             <div className="text-center space-y-1">
@@ -244,7 +240,7 @@ export default function AboutPage() {
           <div className="space-y-4">
             <div className="text-center space-y-1">
               <h2 className="text-xl sm:text-3xl font-extrabold text-white">
-                {ABOUT_PROJECT_INFO.teamName} Members
+                {ABOUT_PROJECT_INFO.teamName}
               </h2>
               <p className="text-xs sm:text-sm text-gray-400">
                 Final Year Research Team • {ABOUT_PROJECT_INFO.department}, {ABOUT_PROJECT_INFO.university}
@@ -255,16 +251,16 @@ export default function AboutPage() {
               {TEAM_MEMBERS_DATA.map((mem) => (
                 <div key={mem.id} className="glass-panel p-4 border border-white/10 bg-slate-950/40 hover:border-white/20 transition-all rounded-2xl flex flex-col gap-4 shadow-xl">
                   {/* Enlarged Member Photo Container */}
-                  <div className="w-full h-48 sm:h-56 rounded-xl overflow-hidden bg-gradient-to-br from-violet-950/40 via-slate-900 to-cyan-950/40 border border-white/10 flex items-center justify-center relative shadow-inner group">
+                  <div className="w-full h-48 sm:h-56 rounded-xl overflow-hidden bg-slate-900 border border-slate-800 flex items-center justify-center relative shadow-inner group">
                     {mem.imageUrl ? (
                       <img src={mem.imageUrl} alt={mem.name} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="flex flex-col items-center gap-2 text-cyan-400/50 group-hover:scale-105 transition-transform duration-300">
+                      <div className="flex flex-col items-center gap-2 text-blue-400/50 group-hover:scale-105 transition-transform duration-300">
                         <User className="w-16 h-16 stroke-[1.2]" />
-                        <span className="text-[10px] text-gray-500 font-semibold uppercase tracking-wider">Photo</span>
+                        <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Photo</span>
                       </div>
                     )}
-                    <span className="absolute top-2.5 right-2.5 text-[10px] font-mono font-bold text-cyan-300 bg-slate-950/80 backdrop-blur-md border border-cyan-500/30 px-2.5 py-1 rounded-lg shadow-md">
+                    <span className="absolute top-2.5 right-2.5 text-[10px] font-mono font-bold text-blue-400 bg-slate-950 border border-blue-800/60 px-2.5 py-1 rounded-lg shadow-md">
                       {mem.indexNo}
                     </span>
                   </div>
@@ -272,7 +268,7 @@ export default function AboutPage() {
                   {/* Details Underneath */}
                   <div className="space-y-1 px-1 pb-1">
                     <h3 className="text-base font-bold text-white leading-snug">{mem.name}</h3>
-                    <p className="text-xs text-cyan-400 font-medium leading-relaxed">{mem.scope}</p>
+                    <p className="text-xs text-blue-400 font-medium leading-relaxed">{mem.scope}</p>
                   </div>
                 </div>
               ))}
@@ -281,11 +277,9 @@ export default function AboutPage() {
         </section>
 
         {/* Section 7: Team Ozone Footer Card */}
-        <section className="max-w-3xl mx-auto text-center glass-panel p-8 sm:p-12 border border-white/5 bg-slate-950/20 shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-cyan-500/5 blur-3xl pointer-events-none" />
-          
+        <section className="max-w-3xl mx-auto text-center glass-panel p-8 sm:p-12 border border-slate-800 bg-slate-900 shadow-xl relative overflow-hidden">
           <div className="flex justify-center mb-6">
-            <div className="p-4 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 rounded-2xl text-cyan-400">
+            <div className="p-4 bg-blue-950/60 border border-blue-800/60 rounded-2xl text-blue-400">
               <Code className="w-8 h-8" />
             </div>
           </div>
@@ -296,7 +290,7 @@ export default function AboutPage() {
           <p className="text-xs sm:text-sm text-cyan-400 font-semibold mb-6 uppercase tracking-wider">
             {ABOUT_PROJECT_INFO.department} • {ABOUT_PROJECT_INFO.university}
           </p>
-          
+
           <p className="text-sm sm:text-base text-gray-300 leading-relaxed max-w-xl mx-auto">
             {ABOUT_PROJECT_INFO.projectName} is built as a Final Year Research Project by {ABOUT_PROJECT_INFO.teamName} at the {ABOUT_PROJECT_INFO.university}. The project focuses on bridging the gap between gemology and computer vision to deliver highly accurate, automated gemstone analytics.
           </p>

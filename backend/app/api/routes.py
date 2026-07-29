@@ -11,50 +11,75 @@ from app.services.cut_service import predict_cut_one, cut_classes
 from app.services.color_service import predict_color_one, summarize_color, color_classes
 from app.services.clarity_service import predict_clarity_one, clarity_classes
 
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Request
+
 router = APIRouter()
 
 @router.post("/authenticate")
 async def authenticate_gem(
-    file: UploadFile = File(...),
-    gem_type: str | None = Form(None)
+    files: list[UploadFile] = File(default=[]),
+    file: UploadFile | None = File(default=None),
+    gem_type: str | None = Form(default=None),
+    aggregation: str = Form(default="mean")
 ):
-    if not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="File must be an image.")
-    
+    upload_list = []
+    if files:
+        upload_list.extend([f for f in files if f and f.filename])
+    if file and file.filename and file not in upload_list:
+        upload_list.append(file)
+
+    if not upload_list:
+        raise HTTPException(status_code=400, detail="At least one image file is required.")
+
     try:
-        # Read image
-        image_bytes = await file.read()
-        base_image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-        
-        # --- Global Domain Filter check ---
         from app.services.domain_filter_service import validate_gem_image
-        is_valid, score = validate_gem_image(base_image)
-        print(f"[Telemetry] Score: {score}")
-        if not is_valid:
+        from app.services.ai_filter_service import analyze_image_origin
+
+        pil_images = []
+        domain_scores = []
+        invalid_count = 0
+        ai_count = 0
+        first_filter_result = None
+
+        for f in upload_list:
+            image_bytes = await f.read()
+            base_img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+            pil_images.append(base_img)
+
+            # Global Domain Filter check
+            is_valid, score = validate_gem_image(base_img)
+            domain_scores.append(score)
+            if not is_valid:
+                invalid_count += 1
+
+            # AI Filter check
+            filter_res = analyze_image_origin(base_img)
+            if first_filter_result is None:
+                first_filter_result = filter_res
+            if filter_res.get("is_ai_generated"):
+                ai_count += 1
+
+        if invalid_count > 0:
             return {
                 "status": "invalid input",
                 "message": "The image entered is not a gem. Please input a valid gem image.",
-                "score": score
+                "score": float(np.mean(domain_scores))
             }
-        
-        # --- AI Filter check ---
-        from app.services.ai_filter_service import analyze_image_origin
-        filter_result = analyze_image_origin(base_image)
-        print(f"AI Filter Result: {filter_result}")
-        if filter_result["is_ai_generated"]:
+
+        if ai_count > 0:
             return {
                 "status": "ai_generated",
                 "message": "The image is AI-generated. Please submit a real one.",
-                "filter_result": filter_result
+                "filter_result": first_filter_result
             }
-        
-        # Pass to our service
-        result = run_inference(base_image, gem_type=gem_type)
-        result["filter_result"] = filter_result
-        result["score"] = score
+
+        # Multi-image aggregation inference across all images
+        result = run_inference(pil_images, gem_type=gem_type, aggregation=aggregation)
+        result["filter_result"] = first_filter_result
+        result["score"] = float(np.mean(domain_scores))
+        result["image_count"] = len(pil_images)
         return result
 
-        
     except HTTPException as he:
         raise he
     except Exception as e:

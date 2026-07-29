@@ -37,13 +37,12 @@ const isActive = (path: string) => {
           <div className="flex h-full items-center justify-between">
 
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2.5 text-xl font-extrabold tracking-widest group">
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 text-cyan-400 group-hover:scale-105 transition-transform">
+            <Link href="/" className="flex items-center gap-2.5 text-xl font-bold tracking-widest group">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600/15 border border-blue-500/30 text-blue-400 group-hover:bg-blue-600/25 transition-all">
                 <Gem className="w-4.5 h-4.5" />
               </div>
               <span 
-                className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent group-hover:opacity-95 transition-opacity uppercase font-bold"
-                style={{ fontFamily: 'var(--font-orbitron), sans-serif' }}
+                className="text-slate-100 font-extrabold uppercase tracking-wider text-lg"
               >
                 GemIntel
               </span>
@@ -55,10 +54,10 @@ const isActive = (path: string) => {
                 <Link
                   key={item.path}
                   href={item.path}
-                  className={`flex items-center h-full text-sm font-medium transition-colors duration-200 ${
+                  className={`flex items-center h-full text-sm font-semibold transition-colors duration-200 ${
                     isActive(item.path)
-                      ? '!text-cyan-400'
-                      : '!text-gray-400 hover:!text-cyan-300'
+                      ? '!text-blue-400'
+                      : '!text-slate-400 hover:!text-slate-100'
                   }`}
                 >
                   {item.name}
@@ -100,10 +99,10 @@ const isActive = (path: string) => {
               key={item.path}
               href={item.path}
               onClick={() => setIsOpen(false)}
-              className={`rounded-xl px-4 py-3.5 transition-all duration-200 font-medium ${
+              className={`rounded-xl px-4 py-3.5 transition-all duration-200 font-semibold ${
                 isActive(item.path)
-                  ? '!text-cyan-400 bg-white/5'
-                  : '!text-gray-300 hover:!text-cyan-300 hover:bg-white/5'
+                  ? '!text-blue-400 bg-slate-800/60'
+                  : '!text-slate-300 hover:!text-white hover:bg-slate-800/40'
               }`}
             >
               {item.name}

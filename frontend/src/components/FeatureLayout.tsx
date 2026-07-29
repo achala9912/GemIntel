@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ImageUploader from '@/components/ImageUploader';
+import AuthPipelineModal, { StageState } from '@/components/AuthPipelineModal';
 
 interface FeatureLayoutProps<T = unknown> {
   title: React.ReactNode;
@@ -10,8 +11,9 @@ interface FeatureLayoutProps<T = unknown> {
   mockDelay?: number;
   apiEndpoint?: string;
   gemType?: string;
+  initialResult?: T | null;
   renderResult?: (result: T) => React.ReactNode;
-  onSuccess?: (file: File, result: T) => void;
+  onSuccess?: (files: File[] | File, result: T) => void;
   customFooter?: (result: T, handleReset: () => void) => React.ReactNode;
   children?: React.ReactNode;
 }
@@ -23,6 +25,7 @@ export default function FeatureLayout<T = unknown>({
   mockDelay = 2500,
   apiEndpoint,
   gemType,
+  initialResult,
   renderResult,
   onSuccess,
   customFooter,
@@ -30,10 +33,29 @@ export default function FeatureLayout<T = unknown>({
 }: FeatureLayoutProps<T>) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStatus, setAnalysisStatus] = useState<string | null>(null);
-  const [showResult, setShowResult] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<T | null>(null);
+  const [showResult, setShowResult] = useState<boolean>(Boolean(initialResult));
+  const [analysisResult, setAnalysisResult] = useState<T | null>(initialResult || null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [resetKey, setResetKey] = useState(0);
+
+  useEffect(() => {
+    if (initialResult) {
+      setAnalysisResult(initialResult);
+      setShowResult(true);
+    }
+  }, [initialResult]);
+
+  // Live stage tracking state
+  const [currentStage, setCurrentStage] = useState<number>(1);
+  const [stageStatuses, setStageStatuses] = useState<{
+    stage1: StageState;
+    stage2: StageState;
+    stage3: StageState;
+  }>({
+    stage1: 'pending',
+    stage2: 'pending',
+    stage3: 'pending',
+  });
 
   const handleReset = () => {
     setResetKey(prev => prev + 1);
@@ -42,28 +64,39 @@ export default function FeatureLayout<T = unknown>({
     setErrorMessage(null);
     setIsAnalyzing(false);
     setAnalysisStatus(null);
+    setCurrentStage(1);
+    setStageStatuses({ stage1: 'pending', stage2: 'pending', stage3: 'pending' });
   };
 
-  const handleAnalyze = async (file?: File | null) => {
+  const handleAnalyze = async (filesInput?: File[] | File | null) => {
     setErrorMessage(null);
     setShowResult(false);
 
     if (apiEndpoint) {
-      if (!file) {
-        setErrorMessage('Please upload a gemstone image before authenticating.');
+      const fileList = Array.isArray(filesInput)
+        ? filesInput
+        : filesInput
+        ? [filesInput]
+        : [];
+
+      if (fileList.length === 0) {
+        setErrorMessage('Please upload gemstone image(s) before authenticating.');
         return;
       }
 
       setIsAnalyzing(true);
+      setCurrentStage(1);
+      setStageStatuses({ stage1: 'processing', stage2: 'pending', stage3: 'pending' });
+      setAnalysisStatus('Stage 1: Validating gemstone image domain features...');
 
-      // Step 1: Validation filter phase (Total 1.8s, rotating messages every 600ms)
-      setAnalysisStatus('Scanning pixel grids for synthetic artifacts...');
-
-      // Trigger API fetch in the background immediately
+      // Trigger API fetch in the background
       const fetchPromise = (async () => {
         const endpoint = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000'}${apiEndpoint}`;
         const formData = new FormData();
-        formData.append('file', file);
+        fileList.forEach((f) => formData.append('files', f));
+        if (fileList.length > 0) {
+          formData.append('file', fileList[0]);
+        }
         if (gemType) {
           formData.append('gem_type', gemType);
         }
@@ -73,7 +106,6 @@ export default function FeatureLayout<T = unknown>({
           body: formData,
         });
 
-
         if (!response.ok) {
           const errorBody = await response.json().catch(() => null);
           throw new Error(errorBody?.detail || response.statusText || 'Authentication request failed.');
@@ -82,14 +114,8 @@ export default function FeatureLayout<T = unknown>({
         return response.json();
       })();
 
-      // Rotate messages with 600ms delays to enforce the 1.8s minimum validation time
-      await new Promise(resolve => setTimeout(resolve, 600));
-      setAnalysisStatus('Analyzing frequency spectrum distribution (FFT/DCT)...');
-
-      await new Promise(resolve => setTimeout(resolve, 600));
-      setAnalysisStatus('Running EfficientNet-B0 CNN validation filter...');
-
-      await new Promise(resolve => setTimeout(resolve, 600));
+      // Stage 1 visual step delay
+      await new Promise(resolve => setTimeout(resolve, 700));
 
       try {
         const result = await fetchPromise;
@@ -99,39 +125,54 @@ export default function FeatureLayout<T = unknown>({
         }
 
         if (result.status === 'invalid input') {
+          setStageStatuses({ stage1: 'error', stage2: 'pending', stage3: 'pending' });
+          await new Promise(resolve => setTimeout(resolve, 500));
           setErrorMessage(result.message || 'The image entered is not a gem. Please input a valid gem image.');
           setIsAnalyzing(false);
           setAnalysisStatus(null);
           return;
         }
 
+        // Stage 1 passed, move to Stage 2
+        setStageStatuses({ stage1: 'done', stage2: 'processing', stage3: 'pending' });
+        setCurrentStage(2);
+        setAnalysisStatus('Stage 2: Scanning pixel frequency spectrum (FFT/DCT)...');
+        await new Promise(resolve => setTimeout(resolve, 600));
+
+        setAnalysisStatus('Stage 2: Evaluating CNN detector model & camera metadata...');
+        await new Promise(resolve => setTimeout(resolve, 600));
+
         const isAi = result.status === 'ai_generated' || result.filter_result?.is_ai_generated;
 
         if (isAi) {
-          // If AI origin detected, validation fails - show results immediately
+          setStageStatuses({ stage1: 'done', stage2: 'error', stage3: 'pending' });
+          await new Promise(resolve => setTimeout(resolve, 500));
           setAnalysisResult(result);
           setShowResult(true);
-          if (onSuccess && file) {
-            onSuccess(file, result);
+          if (onSuccess) {
+            onSuccess(fileList, result);
           }
         } else {
-          // Step 2: Gemstone Authentication phase (Total 1.8s, rotating messages every 600ms)
-          setAnalysisStatus('Initializing deep feature extractors...');
-          await new Promise(resolve => setTimeout(resolve, 600));
+          // Stage 2 passed, move to Stage 3
+          setStageStatuses({ stage1: 'done', stage2: 'done', stage3: 'processing' });
+          setCurrentStage(3);
+          setAnalysisStatus('Stage 3: Extracting inclusion features (EfficientNet-B4 + XGBoost)...');
+          await new Promise(resolve => setTimeout(resolve, 700));
 
-          setAnalysisStatus('Evaluating inclusions (EfficientNet-B4 + XGBoost)...');
-          await new Promise(resolve => setTimeout(resolve, 600));
+          setAnalysisStatus('Stage 3: Finalizing ensemble origin probability...');
+          await new Promise(resolve => setTimeout(resolve, 700));
 
-          setAnalysisStatus('Finalizing origin classification payload...');
-          await new Promise(resolve => setTimeout(resolve, 600));
+          setStageStatuses({ stage1: 'done', stage2: 'done', stage3: 'done' });
+          await new Promise(resolve => setTimeout(resolve, 400));
 
           setAnalysisResult(result);
           setShowResult(true);
-          if (onSuccess && file) {
-            onSuccess(file, result);
+          if (onSuccess) {
+            onSuccess(fileList, result);
           }
         }
       } catch (error) {
+        setStageStatuses({ stage1: 'error', stage2: 'error', stage3: 'error' });
         setErrorMessage(error instanceof Error ? error.message : String(error));
       } finally {
         setIsAnalyzing(false);
@@ -172,6 +213,20 @@ export default function FeatureLayout<T = unknown>({
               analysisStatus={analysisStatus}
               buttonText={buttonText}
             />
+
+            {isAnalyzing && apiEndpoint === '/authenticate' && (
+              <AuthPipelineModal
+                isOpen={isAnalyzing}
+                currentStage={currentStage}
+                stageStatuses={stageStatuses}
+                statusMessage={analysisStatus}
+                error={errorMessage}
+                onCancel={() => {
+                  setIsAnalyzing(false);
+                  setAnalysisStatus(null);
+                }}
+              />
+            )}
           </div>
         )}
 

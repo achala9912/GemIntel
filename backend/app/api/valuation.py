@@ -29,6 +29,9 @@ def factor_options():
         model_metadata = valuation_model_metadata()
         history_metadata = economic_history_metadata()
     except (ValuationModelError, EconomicHistoryError) as exc:
+        import traceback
+        print(f"[Error] Failed in factor-options: {exc}")
+        traceback.print_exc()
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     return {
@@ -77,4 +80,7 @@ def valuation_prediction(request: ValuationRequest):
     except ValuationInputError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except ValuationModelError as exc:
+        import traceback
+        print(f"[Error] Failed in predict-price: {exc}")
+        traceback.print_exc()
         raise HTTPException(status_code=503, detail=str(exc)) from exc

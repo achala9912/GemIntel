@@ -137,16 +137,16 @@ export default function ReconstructionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[99999999] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-fade-in-pure">
+    <div className="fixed inset-0 z-[99999999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in-pure">
       <div className="hide-nav-footer-trigger hidden" />
-      <div className="bg-[#0c0d18]/98 border border-white/30 rounded-2xl p-6 w-full max-w-lg relative overflow-hidden shadow-[0_0_50px_-12px_rgba(0,0,0,0.8),0_0_20px_rgba(255,255,255,0.05)] animate-fade-in">
-        {/* Glowing top line */}
-        <div className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r ${
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-lg relative overflow-hidden shadow-2xl animate-fade-in">
+        {/* Top status indicator line */}
+        <div className={`absolute top-0 left-0 right-0 h-[3px] ${
           status === "error" 
-            ? "from-rose-500 via-red-500 to-amber-500" 
+            ? "bg-red-500" 
             : status === "done" 
-            ? "from-emerald-500 via-teal-500 to-cyan-500"
-            : "from-blue-500 via-purple-500 to-cyan-500 animate-pulse"
+            ? "bg-emerald-500"
+            : "bg-blue-500 animate-pulse"
         }`} />
 
         <h3 className="text-xs font-semibold uppercase tracking-widest pb-4 mb-3 border-b border-white/5 flex items-center justify-between">
