@@ -165,6 +165,51 @@ async def identify_gem(
     if gem_type not in GEM_TYPES:
         raise HTTPException(status_code=400, detail=f"Unknown gem_type '{gem_type}'.")
 
+    import asyncio
+    import concurrent.futures
+    loop = asyncio.get_running_loop()
+
+    raw_images = []
+    for f in files:
+        if not f.content_type or not f.content_type.startswith("image/"):
+            raise HTTPException(status_code=400, detail=f"{f.filename}: not an image.")
+
+        raw = await f.read()
+        try:
+            image = Image.open(io.BytesIO(raw)).convert("RGB")
+            raw_images.append((f.filename, image))
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"{f.filename}: {e}")
+
+    # Validate global domain filter
+    from app.services.domain_filter_service import validate_gem_image
+    for filename, image in raw_images:
+        is_valid, score = validate_gem_image(image)
+        if not is_valid:
+            return {
+                "status": "invalid input",
+                "message": f"The image entered is not a gem: {filename}. Please input a valid gem image.",
+                "score": score
+            }
+
+    # Parallel inference helper: runs Cut, Color, Clarity models concurrently in threads
+    def _run_models_for_img(img: Image.Image):
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+            fut_cut = executor.submit(predict_cut_one, img)
+            fut_color = executor.submit(predict_color_one, img)
+            fut_clarity = executor.submit(predict_clarity_one, img)
+
+            cut_res = fut_cut.result()
+            color_raw = fut_color.result()
+            clarity_res = fut_clarity.result()
+
+        color = summarize_color(color_raw, gem_type)
+        return cut_res, color, clarity_res
+
+    # Run predictions concurrently across all uploaded images
+    image_tasks = [loop.run_in_executor(None, _run_models_for_img, img) for _, img in raw_images]
+    results_per_img = await asyncio.gather(*image_tasks)
+
     per_image = []
     sum_shape: dict[str, float] = defaultdict(float)
     sum_cut: dict[str, float] = defaultdict(float)
@@ -175,34 +220,7 @@ async def identify_gem(
     def _round(d: dict) -> dict:
         return {k: round(v, 4) for k, v in d.items()}
 
-    for f in files:
-        if not f.content_type or not f.content_type.startswith("image/"):
-            raise HTTPException(status_code=400, detail=f"{f.filename}: not an image.")
-
-        raw = await f.read()
-        try:
-            image = Image.open(io.BytesIO(raw)).convert("RGB")
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"{f.filename}: {e}")
-
-        # --- Global Domain Filter check ---
-        from app.services.domain_filter_service import validate_gem_image
-        is_valid, score = validate_gem_image(image)
-        print(f"[Telemetry] Score: {score}")
-        if not is_valid:
-            return {
-                "status": "invalid input",
-                "message": f"The image entered is not a gem: {f.filename}. Please input a valid gem image.",
-                "score": score
-            }
-
-        try:
-            cut_res = predict_cut_one(image)
-            color = summarize_color(predict_color_one(image), gem_type)
-            clarity_res = predict_clarity_one(image)
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
-
+    for (filename, _), (cut_res, color, clarity_res) in zip(raw_images, results_per_img):
         hue_probs = color["hue_probs"]
         intensity_probs = color["intensity_probs"]
         clarity_probs = clarity_res["clarity_probs"]
@@ -214,7 +232,7 @@ async def identify_gem(
         clarity_top, clarity_p = _top(clarity_probs)
 
         per_image.append({
-            "filename": f.filename,
+            "filename": filename,
             "cut": {
                 "shape": {"label": shape_top, "confidence": round(shape_p, 4)},
                 "cut_style": {"label": cut_top, "confidence": round(cut_p, 4)},

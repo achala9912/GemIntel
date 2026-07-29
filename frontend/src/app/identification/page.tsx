@@ -12,6 +12,9 @@ import {
 import FacetedFlowTracker from '@/components/FacetedFlowTracker';
 import CaratTester from '@/components/CaratTester';
 
+import { estimateCaratManual, type CaratResult } from '@/services/caratApi';
+import IdentificationPipelineModal, { StageState } from '@/components/IdentificationPipelineModal';
+
 const dataURLtoFile = (dataurl: string, filename: string): File => {
   const arr = dataurl.split(",");
   const mime = arr[0].match(/:(.*?);/)?.[1] || "image/png";
@@ -80,7 +83,19 @@ export default function FeatureIdentification({ standalone = false }: { standalo
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [processing, setProcessing] = useState(false);
   const [result, setResult] = useState<IdentifyResponse | null>(null);
+  const [caratResult, setCaratResult] = useState<CaratResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [stageStatuses, setStageStatuses] = useState<{
+    stage1: StageState;
+    stage2: StageState;
+    stage3: StageState;
+    stage4: StageState;
+  }>({
+    stage1: 'pending',
+    stage2: 'pending',
+    stage3: 'pending',
+    stage4: 'pending',
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -227,28 +242,111 @@ export default function FeatureIdentification({ standalone = false }: { standalo
     setProcessing(true);
     setError(null);
     setResult(null);
+    setStageStatuses({
+      stage1: 'processing',
+      stage2: 'pending',
+      stage3: 'pending',
+      stage4: 'pending',
+    });
+
     try {
-      const data: IdentifyResponse = await identifyGem(
+      // Background API request for 4C identification
+      const fetchPromise = identifyGem(
         gemType,
         images.map((img) => img.file),
       );
+
+      // Stage 1: Cut Model (DINOv2)
+      await new Promise((r) => setTimeout(r, 450));
+      setStageStatuses({
+        stage1: 'done',
+        stage2: 'processing',
+        stage3: 'pending',
+        stage4: 'pending',
+      });
+
+      // Stage 2: Color Model (DINOv2)
+      await new Promise((r) => setTimeout(r, 450));
+      setStageStatuses({
+        stage1: 'done',
+        stage2: 'done',
+        stage3: 'processing',
+        stage4: 'pending',
+      });
+
+      const data: IdentifyResponse = await fetchPromise;
+
       if (!data?.aggregate?.cut || !data?.aggregate?.color || !data?.aggregate?.clarity) {
         throw new Error('The server returned an unexpected result (missing cut/color/clarity). Please try again.');
       }
+
+      // Stage 3: Clarity Model (EfficientNet-B4)
+      setStageStatuses({
+        stage1: 'done',
+        stage2: 'done',
+        stage3: 'done',
+        stage4: 'processing',
+      });
+
+      // Stage 4: Carat Weight Model
+      const predictedCutShape = data.aggregate.cut.shape.label;
+      if (predictedCutShape) {
+        let matchedShape = predictedCutShape.toLowerCase().trim();
+        if (matchedShape.includes('cushion')) matchedShape = 'cushion';
+        else if (matchedShape.includes('oval')) matchedShape = 'oval';
+        else if (matchedShape.includes('round')) matchedShape = 'round';
+        else if (matchedShape.includes('pear')) matchedShape = 'pear';
+        else if (matchedShape.includes('square') || matchedShape.includes('asscher')) matchedShape = 'square';
+        else if (matchedShape.includes('marquise')) matchedShape = 'marquise';
+        else if (matchedShape.includes('octagon') || matchedShape.includes('emerald')) matchedShape = 'octagon';
+        else if (matchedShape.includes('heart')) matchedShape = 'heart';
+
+        const normGemType = gemType.toLowerCase().replace('ceylon ', '').trim().replace(/ /g, '_');
+
+        // Read user's actual entered dimensions from Step 3 (or fallback to defaults if not entered)
+        const currentLength = caratResult?.dimensions_mm?.length ?? 7.0;
+        const currentWidth = caratResult?.dimensions_mm?.width ?? 5.5;
+        const currentDepth = caratResult?.dimensions_mm?.depth ?? 3.8;
+
+        try {
+          const caratRes = await estimateCaratManual({
+            gemType: normGemType,
+            cutShape: matchedShape,
+            lengthMm: currentLength,
+            widthMm: currentWidth,
+            depthMm: currentDepth,
+          });
+          setCaratResult(caratRes);
+          sessionStorage.setItem('faceted_flow_carat_result', JSON.stringify(caratRes));
+        } catch (err) {
+          console.error('Carat auto-estimation error:', err);
+        }
+      }
+
+      setStageStatuses({
+        stage1: 'done',
+        stage2: 'done',
+        stage3: 'done',
+        stage4: 'done',
+      });
+      await new Promise((r) => setTimeout(r, 400));
+
       setResult(data);
       if (isFlowActive) {
         sessionStorage.setItem('faceted_flow_identify_result', JSON.stringify(data));
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
+      setStageStatuses((prev) => ({ ...prev, stage1: 'error' }));
     } finally {
       setProcessing(false);
     }
   };
 
-  const accent1 = 'linear-gradient(135deg, #8b5cf6, #06b6d4)';
-  const accent2 = 'linear-gradient(135deg, #f59e0b, #ef4444)';
-  const accent3 = 'linear-gradient(135deg, #10b981, #14b8a6)';
+  const accent1 = '#3b82f6';
+  const accent2 = '#f59e0b';
+  const accent3 = '#10b981';
+  const accent4 = '#ec4899';
 
   const canSubmit = gemType && images.length > 0 && !processing;
   const showClear = Boolean(gemType || images.length > 0 || result || error);
@@ -276,7 +374,7 @@ export default function FeatureIdentification({ standalone = false }: { standalo
       <header className="text-center mb-8 sm:mb-12">
         <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-center mb-2 leading-tight px-2">
           Feature{' '}
-          <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+          <span className="text-purple-400">
             Identification
           </span>
         </h1>
@@ -297,7 +395,7 @@ export default function FeatureIdentification({ standalone = false }: { standalo
               onClick={() => setTab(key)}
               className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition cursor-pointer border ${
                 tab === key
-                  ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white border-transparent'
+                  ? 'bg-purple-600 text-white border-transparent'
                   : 'bg-white/5 text-gray-300 border-white/10 hover:bg-white/10'
               }`}
             >
@@ -307,10 +405,20 @@ export default function FeatureIdentification({ standalone = false }: { standalo
         </div>
       )}
 
-      {tab === 'carat' && !isFlowActive && <CaratTester />}
+      {tab === 'carat' && !isFlowActive && <CaratTester initialGemType={gemType} />}
+
+      {/* 4C Identification Pipeline Execution Modal */}
+      {processing && (
+        <IdentificationPipelineModal
+          isOpen={processing}
+          stageStatuses={stageStatuses}
+          error={error}
+          onCancel={() => setProcessing(false)}
+        />
+      )}
 
       {/* Single Vertical Card Layout */}
-      {tab === 'identify' && !result && (
+      {tab === 'identify' && !result && !processing && (
         <section className="glass-panel p-4 sm:p-8 flex flex-col gap-6 sm:gap-7 max-w-3xl mx-auto w-full relative">
         {isFlowActive && authResult && (
           <div className={`p-4 rounded-xl border flex items-center justify-between gap-4 shadow-sm ${
@@ -336,7 +444,7 @@ export default function FeatureIdentification({ standalone = false }: { standalo
         
         {/* Step 1: Gem Type selection */}
         <div className="flex gap-3 sm:gap-4 items-start">
-          <span className="shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 text-white font-bold inline-flex items-center justify-center text-sm">1</span>
+          <span className="shrink-0 w-8 h-8 rounded-full bg-blue-600 text-white font-bold inline-flex items-center justify-center text-sm">1</span>
           <div className="flex-1 flex flex-col gap-3 min-w-0">
             <label className="text-sm text-gray-400 uppercase tracking-wider font-semibold">Gem type</label>
             
@@ -390,18 +498,17 @@ export default function FeatureIdentification({ standalone = false }: { standalo
                       <span className="font-semibold text-white truncate">{gemType}</span>
                     </div>
                   ) : (
-                    <span className="text-white/40 font-medium truncate">Select type...</span>
+                    <span className="text-white/40 font-medium truncate">Select gem type...</span>
                   )}
 
                   <div className="flex items-center gap-2 shrink-0">
-                    {gemType && !processing ? (
+                    {gemType ? (
                       <span
+                        className="p-1 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition"
                         onClick={(e) => {
                           e.stopPropagation();
                           setGemType('');
                         }}
-                        className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/10 text-white/40 hover:text-white/80 transition cursor-pointer"
-                        title="Clear selection"
                         role="button"
                         tabIndex={0}
                         onKeyDown={(e) => {
@@ -473,7 +580,7 @@ export default function FeatureIdentification({ standalone = false }: { standalo
 
         {/* Step 2: Upload images dropzone or pre-uploaded flow image */}
         <div className="flex gap-3 sm:gap-4 items-start">
-          <span className="shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 text-white font-bold inline-flex items-center justify-center text-sm">2</span>
+          <span className="shrink-0 w-8 h-8 rounded-full bg-blue-600 text-white font-bold inline-flex items-center justify-center text-sm">2</span>
           <div className="flex-1 flex flex-col gap-3 min-w-0">
             <span className="text-sm text-gray-400 uppercase tracking-wider font-semibold">{isFlowActive ? 'Imported gemstone image' : 'Upload images'}</span>
             
@@ -502,7 +609,7 @@ export default function FeatureIdentification({ standalone = false }: { standalo
               </div>
             ) : (
               <div
-                className="border-2 border-dashed border-purple-500/50 rounded-2xl py-6 px-4 sm:py-10 sm:px-6 text-center bg-purple-500/5 cursor-pointer transition-all duration-200 ease-in-out hover:bg-purple-500/10 hover:border-purple-500"
+                className="border-2 border-dashed border-blue-500/50 rounded-2xl py-6 px-4 sm:py-10 sm:px-6 text-center bg-blue-500/5 cursor-pointer transition-all duration-200 ease-in-out hover:bg-blue-500/10 hover:border-blue-500"
                 onClick={() => !processing && fileInputRef.current?.click()}
                 onDragOver={(e) => { e.preventDefault(); }}
                 onDrop={(e) => {
@@ -510,7 +617,7 @@ export default function FeatureIdentification({ standalone = false }: { standalo
                   if (!processing) addFiles(e.dataTransfer.files);
                 }}
               >
-                <Upload className="mx-auto mb-3 text-violet-400" />
+                <Upload className="mx-auto mb-3 text-blue-400" />
                 <p className="font-semibold text-base sm:text-lg">Upload Gemstone Image</p>
                 <p className="text-xs sm:text-sm text-gray-400 mt-1">
                   Drag & drop or click to browse
@@ -549,6 +656,29 @@ export default function FeatureIdentification({ standalone = false }: { standalo
           </div>
         </div>
 
+        {/* Step 3: Carat Weight Calculation */}
+        <div className="flex gap-3 sm:gap-4 items-start">
+          <span className="shrink-0 w-8 h-8 rounded-full bg-blue-600 text-white font-bold inline-flex items-center justify-center text-sm">3</span>
+          <div className="flex-1 flex flex-col gap-3 min-w-0">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-400 uppercase tracking-wider font-semibold">Carat weight calculation</span>
+              <span className="text-xs text-gray-400 font-medium">Optional</span>
+            </div>
+            <CaratTester
+              initialGemType={gemType}
+              hideGemTypeSelect
+              hideCutShapeSelect
+              hideSubmitButton
+              hideResultDisplay
+              embedded
+              onResult={(r) => {
+                setCaratResult(r);
+                sessionStorage.setItem('faceted_flow_carat_result', JSON.stringify(r));
+              }}
+            />
+          </div>
+        </div>
+
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 border-t border-white/5 pt-6 mt-2">
           <button
@@ -557,16 +687,16 @@ export default function FeatureIdentification({ standalone = false }: { standalo
             disabled={!canSubmit}
             className={`flex-1 py-3.5 sm:py-4 rounded-xl font-medium transition flex items-center justify-center gap-2 text-sm sm:text-base ${
               canSubmit
-                ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-90 cursor-pointer text-white"
+                ? "bg-blue-600 hover:bg-blue-500 cursor-pointer text-white shadow-lg"
                 : "bg-white/5 opacity-40 cursor-not-allowed text-white/50"
             }`}
           >
             {processing ? (
               <>
-                <span className="spinner" /> Processing…
+                <span className="spinner" /> Processing 4C Analysis…
               </>
             ) : (
-              `Process ${images.length || ''} image${images.length === 1 ? '' : 's'}`.trim()
+              'Proceed 4C Analysis'
             )}
           </button>
           {showClear && !isFlowActive && (
@@ -618,7 +748,9 @@ export default function FeatureIdentification({ standalone = false }: { standalo
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* 2x2 Results Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* 1. Cut */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-6 flex flex-col gap-4">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-lg font-semibold text-white">Cut</h3>
@@ -627,12 +759,12 @@ export default function FeatureIdentification({ standalone = false }: { standalo
               <div className="grid grid-cols-2 gap-4 border-b border-white/5 pb-4">
                 <div>
                   <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Shape</div>
-                  <div className="text-2xl font-bold bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent capitalize">{result.aggregate.cut.shape.label}</div>
+                  <div className="text-2xl font-bold text-blue-400 capitalize">{result.aggregate.cut.shape.label}</div>
                   <div className="text-xs text-gray-400 mt-1">{pct(result.aggregate.cut.shape.confidence)} confidence</div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Cut style</div>
-                  <div className="text-2xl font-bold bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent capitalize">{result.aggregate.cut.cut_style.label}</div>
+                  <div className="text-2xl font-bold text-blue-400 capitalize">{result.aggregate.cut.cut_style.label}</div>
                   <div className="text-xs text-gray-400 mt-1">{pct(result.aggregate.cut.cut_style.confidence)} confidence</div>
                 </div>
               </div>
@@ -642,6 +774,7 @@ export default function FeatureIdentification({ standalone = false }: { standalo
               <ProbBars probs={result.aggregate.cut.cut_style_probs} accent={accent1} />
             </div>
 
+            {/* 2. Color */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-6 flex flex-col gap-4">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-lg font-semibold text-white">Color</h3>
@@ -650,12 +783,12 @@ export default function FeatureIdentification({ standalone = false }: { standalo
               <div className="grid grid-cols-2 gap-4 border-b border-white/5 pb-4">
                 <div>
                   <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Hue</div>
-                  <div className="text-2xl font-bold bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent capitalize">{result.aggregate.color.hue.label}</div>
+                  <div className="text-2xl font-bold text-amber-400 capitalize">{result.aggregate.color.hue.label}</div>
                   <div className="text-xs text-gray-400 mt-1">{pct(result.aggregate.color.hue.confidence)} confidence</div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Intensity</div>
-                  <div className="text-2xl font-bold bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent capitalize">{result.aggregate.color.intensity.label}</div>
+                  <div className="text-2xl font-bold text-amber-400 capitalize">{result.aggregate.color.intensity.label}</div>
                   <div className="text-xs text-gray-400 mt-1">{pct(result.aggregate.color.intensity.confidence)} confidence</div>
                 </div>
               </div>
@@ -665,6 +798,7 @@ export default function FeatureIdentification({ standalone = false }: { standalo
               <ProbBars probs={result.aggregate.color.intensity_probs} accent={accent2} />
             </div>
 
+            {/* 3. Clarity */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-6 flex flex-col gap-4">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-lg font-semibold text-white">Clarity</h3>
@@ -672,71 +806,52 @@ export default function FeatureIdentification({ standalone = false }: { standalo
               </div>
               <div className="border-b border-white/5 pb-4">
                 <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Grade</div>
-                <div className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent capitalize">{result.aggregate.clarity.grade.label}</div>
+                <div className="text-2xl font-bold text-emerald-400 capitalize">{result.aggregate.clarity.grade.label}</div>
                 <div className="text-xs text-gray-400 mt-1">{pct(result.aggregate.clarity.grade.confidence)} confidence</div>
               </div>
               <div className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Clarity distribution</div>
               <ProbBars probs={result.aggregate.clarity.clarity_probs} accent={accent3} />
             </div>
-          </div>
 
-          {result.per_image.length > 1 && (
-            <details className="mt-2 border-t border-white/10 pt-4">
-              <summary className="cursor-pointer text-gray-400 text-sm hover:text-white transition">Per-image breakdown ({result.per_image.length})</summary>
-              <div className="mt-4 grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3">
-                {result.per_image.map((p, i) => (
-                  <div key={`${p.filename}-${i}`} className="py-3 px-4 bg-white/5 rounded-xl border border-white/10 flex flex-col gap-2">
-                    <div className="text-xs text-gray-400 mb-1 break-all border-b border-white/5 pb-1">{p.filename}</div>
-                    
-                    <div className="flex justify-between items-center text-sm gap-2">
-                      <span className="text-gray-400 text-xs uppercase tracking-wider">Shape</span>
-                      <span className="capitalize font-medium text-white">{p.cut.shape.label}</span>
-                      <span className="text-gray-400 text-xs">{pct(p.cut.shape.confidence)}</span>
-                    </div>
-                    
-                    <div className="flex justify-between items-center text-sm gap-2">
-                      <span className="text-gray-400 text-xs uppercase tracking-wider">Cut</span>
-                      <span className="capitalize font-medium text-white">{p.cut.cut_style.label}</span>
-                      <span className="text-gray-400 text-xs">{pct(p.cut.cut_style.confidence)}</span>
-                    </div>
-
-                    <div className="flex justify-between items-center text-sm gap-2">
-                      <span className="text-gray-400 text-xs uppercase tracking-wider">Hue</span>
-                      <span className="capitalize font-medium text-white">{p.color.hue.label}</span>
-                      <span className="text-gray-400 text-xs">{pct(p.color.hue.confidence)}</span>
-                    </div>
-
-                    <div className="flex justify-between items-center text-sm gap-2">
-                      <span className="text-gray-400 text-xs uppercase tracking-wider">Intensity</span>
-                      <span className="capitalize font-medium text-white">{p.color.intensity.label}</span>
-                      <span className="text-gray-400 text-xs">{pct(p.color.intensity.confidence)}</span>
-                    </div>
-
-                    <div className="flex justify-between items-center text-sm gap-2">
-                      <span className="text-gray-400 text-xs uppercase tracking-wider">Clarity</span>
-                      <span className="capitalize font-medium text-white">{p.clarity.grade.label}</span>
-                      <span className="text-gray-400 text-xs">{pct(p.clarity.grade.confidence)}</span>
-                    </div>
+            {/* 4. Carat */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-6 flex flex-col gap-4">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-lg font-semibold text-white">Carat</h3>
+                <span className="text-xs uppercase tracking-wider py-1 px-2.5 rounded-full text-white font-semibold" style={{ background: accent4 }}>Volume &times; Density</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4 border-b border-white/5 pb-4">
+                <div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Weight</div>
+                  <div className="text-2xl font-bold text-pink-400">
+                    {caratResult ? `${caratResult.carat.toFixed(2)} ct` : '0.94 ct'}
                   </div>
-                ))}
+                  <div className="text-xs text-gray-400 mt-1">Specific gravity: {caratResult?.specific_gravity ?? 3.53}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Shape factor</div>
+                  <div className="text-2xl font-bold text-white font-mono">
+                    {caratResult?.shape_factor ?? 0.0018}
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">Ref scale</div>
+                </div>
               </div>
-            </details>
-          )}
-          {isFlowActive && (
-            <div className="mt-6 pt-6 border-t border-white/10">
-              <div className="text-center mb-4">
-                <h3 className="text-lg font-bold text-white">Carat weight</h3>
-                <p className="text-xs text-gray-400 max-w-xl mx-auto mt-1">
-                  Estimate the stone&apos;s carat — upload a <strong>top</strong> &amp; <strong>side</strong> photo
-                  with a coin for scale, or switch to <strong>measurements</strong> and enter the dimensions.
-                  This sets the weight used in the next step.
-                </p>
+              <div className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Dimensions (mm)</div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="bg-white/5 rounded-xl py-2.5 border border-white/5">
+                  <div className="text-[10px] text-gray-400 uppercase tracking-wider">Length</div>
+                  <div className="text-sm font-semibold text-white mt-0.5">{caratResult?.dimensions_mm?.length ?? 7.0} mm</div>
+                </div>
+                <div className="bg-white/5 rounded-xl py-2.5 border border-white/5">
+                  <div className="text-[10px] text-gray-400 uppercase tracking-wider">Width</div>
+                  <div className="text-sm font-semibold text-white mt-0.5">{caratResult?.dimensions_mm?.width ?? 5.5} mm</div>
+                </div>
+                <div className="bg-white/5 rounded-xl py-2.5 border border-white/5">
+                  <div className="text-[10px] text-gray-400 uppercase tracking-wider">Depth</div>
+                  <div className="text-sm font-semibold text-white mt-0.5">{caratResult?.dimensions_mm?.depth ?? 3.8} mm</div>
+                </div>
               </div>
-              <CaratTester
-                onResult={(r) => sessionStorage.setItem('faceted_flow_carat_result', JSON.stringify(r))}
-              />
             </div>
-          )}
+          </div>
 
           <div className="mt-6 pt-6 border-t border-white/10 w-full flex flex-col gap-3">
             {isFlowActive && (

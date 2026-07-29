@@ -33,9 +33,18 @@ except Exception:
 # Specific gravity per species (point values within the accepted ranges).
 # Keyed by the API's gem_type values.
 SG = {
-    "blue_sapphire": 4.00,
-    "spinel":        3.60,
-    "topaz":         3.53,
+    "blue_sapphire":        4.00,
+    "ceylon_blue_sapphire": 4.00,
+    "sapphire":             4.00,
+    "blue_spinel":          3.60,
+    "ceylon_blue_spinel":   3.60,
+    "spinel":               3.60,
+    "blue_topaz":           3.53,
+    "ceylon_blue_topaz":    3.53,
+    "topaz":                3.53,
+    "ruby":                 4.00,
+    "emerald":              2.72,
+    "diamond":              3.52,
 }
 
 # International Gem Society weight-estimation shape factors (dimensions in mm,

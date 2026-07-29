@@ -416,8 +416,8 @@ export default function Valuation() {
           if (caratStr) {
             try {
               const caratRes = JSON.parse(caratStr);
-              if (caratRes && typeof caratRes.carat === 'number') {
-                mappedWeight = +((caratRes.carat * 0.01).toFixed(2));
+              if (caratRes && typeof caratRes.carat === 'number' && caratRes.carat > 0) {
+                mappedWeight = +((caratRes.carat).toFixed(2));
               }
             } catch (err) {
               console.error('Error parsing carat result in valuation page', err);
@@ -620,7 +620,7 @@ export default function Valuation() {
       {isFlowActive && <FacetedFlowTracker currentStep={3} />}
 
       {isFlowActive && (
-        <div className="flex items-center justify-between mb-6 max-w-3xl mx-auto w-full animate-fade-in">
+        <div className="flex items-center justify-between mb-6 max-w-6xl mx-auto w-full transition-all duration-300 animate-fade-in">
           <button
             onClick={handleBack}
             className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-cyan-400 transition-colors bg-white/5 border border-white/10 px-3.5 py-2 rounded-xl active:scale-[0.98] cursor-pointer font-semibold shadow-lg"
@@ -908,7 +908,7 @@ export default function Valuation() {
                 </div>
               </div>
 
-              {/* Price-per-carat breakdown */}
+              {/* Price-per-carat breakdown (commented out for now)
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-white/5 rounded-xl p-4 border border-white/10 shadow-lg">
                   <p className="text-xs text-gray-400 uppercase tracking-wider mb-2 font-semibold">
@@ -933,6 +933,7 @@ export default function Valuation() {
               <p className="text-xs text-gray-500 text-center leading-relaxed">
                 The total price and its interval are calculated by multiplying the predicted price per carat and interval bounds by {gemFactors.weight_ct} ct.
               </p>
+              */}
 
               {result && (
                 <div className="space-y-6 border-t border-white/10 pt-6">
@@ -997,6 +998,7 @@ export default function Valuation() {
                     })}
                   </div>
 
+                  {/* Ensemble baseline price per carat (commented out for now)
                   <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div>
                       <p className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
@@ -1010,6 +1012,7 @@ export default function Valuation() {
                       LKR {formatLkr(result.explanation.baseline_price_per_carat_lkr)}
                     </p>
                   </div>
+                  */}
 
                   <div className="space-y-3">
                     <div>

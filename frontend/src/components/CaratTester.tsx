@@ -72,12 +72,32 @@ function ImagePicker({ label, hint, onPick }: PickerProps) {
   );
 }
 
+interface CaratTesterProps {
+  onResult?: (r: CaratResult) => void;
+  initialGemType?: string;
+  initialCutShape?: string;
+  embedded?: boolean;
+  hideGemTypeSelect?: boolean;
+  hideCutShapeSelect?: boolean;
+  hideSubmitButton?: boolean;
+  hideResultDisplay?: boolean;
+}
+
 /**
  * Carat estimation tester. Two coin-referenced photos (top + side) ->
  * measured mm dimensions -> carat = volume x density. This is a measurement
  * pipeline, not a trained model; the coin is the scale reference.
  */
-export default function CaratTester({ onResult }: { onResult?: (r: CaratResult) => void } = {}) {
+export default function CaratTester({
+  onResult,
+  initialGemType,
+  initialCutShape,
+  embedded = false,
+  hideGemTypeSelect = false,
+  hideCutShapeSelect = false,
+  hideSubmitButton = false,
+  hideResultDisplay = false,
+}: CaratTesterProps = {}) {
   const [gemTypes, setGemTypes] = useState<string[]>([]);
   const [cutShapes, setCutShapes] = useState<string[]>([]);
   const [topImage, setTopImage] = useState<File | null>(null);
@@ -99,17 +119,124 @@ export default function CaratTester({ onResult }: { onResult?: (r: CaratResult) 
       .then((o) => {
         setGemTypes(o.gem_types);
         setCutShapes(o.cut_shapes);
-        setGemType(o.gem_types[0] ?? '');
-        setCutShape(o.cut_shapes[0] ?? '');
+
+        const defaultGem = o.gem_types[0] ?? '';
+        const defaultCut = o.cut_shapes[0] ?? '';
+
+        if (initialGemType) {
+          const normGem = initialGemType.toLowerCase().replace('ceylon ', '').trim().replace(/ /g, '_');
+          const matchedGem =
+            o.gem_types.find((g) => g.toLowerCase() === normGem) ||
+            o.gem_types.find((g) => normGem.includes(g)) ||
+            defaultGem;
+          setGemType(matchedGem);
+        } else {
+          setGemType(defaultGem);
+        }
+
+        if (initialCutShape) {
+          const normShape = initialCutShape.toLowerCase().trim();
+          let matchedShape = o.cut_shapes.find((s) => s.toLowerCase() === normShape);
+          if (!matchedShape) {
+            if (normShape.includes('cushion')) matchedShape = 'cushion';
+            else if (normShape.includes('oval')) matchedShape = 'oval';
+            else if (normShape.includes('round')) matchedShape = 'round';
+            else if (normShape.includes('pear')) matchedShape = 'pear';
+            else if (normShape.includes('square') || normShape.includes('asscher')) matchedShape = 'square';
+            else if (normShape.includes('marquise')) matchedShape = 'marquise';
+            else if (normShape.includes('octagon') || normShape.includes('emerald')) matchedShape = 'octagon';
+            else if (normShape.includes('heart')) matchedShape = 'heart';
+          }
+          setCutShape(matchedShape || defaultCut);
+        } else {
+          setCutShape(defaultCut);
+        }
       })
       .catch(() => {
-        // Fallback so the form still works if the options endpoint is unreachable.
-        setGemTypes(['blue_sapphire', 'blue_spinel', 'blue_topaz']);
-        setCutShapes(['round', 'oval', 'cushion', 'pear', 'square', 'marquise', 'octagon', 'heart']);
-        setGemType('blue_sapphire');
-        setCutShape('oval');
+        const fallbackGems = ['blue_sapphire', 'blue_spinel', 'blue_topaz'];
+        const fallbackCuts = ['round', 'oval', 'cushion', 'pear', 'square', 'marquise', 'octagon', 'heart'];
+        setGemTypes(fallbackGems);
+        setCutShapes(fallbackCuts);
+        setGemType(fallbackGems[0]);
+        setCutShape(fallbackCuts[0]);
       });
-  }, []);
+  }, [initialGemType, initialCutShape]);
+
+  useEffect(() => {
+    if (!initialGemType || gemTypes.length === 0) return;
+    const normGem = initialGemType.toLowerCase().replace('ceylon ', '').trim().replace(/ /g, '_');
+    const matchedGem =
+      gemTypes.find((g) => g.toLowerCase() === normGem) ||
+      gemTypes.find((g) => normGem.includes(g));
+    if (matchedGem) setGemType(matchedGem);
+  }, [initialGemType, gemTypes]);
+
+  useEffect(() => {
+    if (!initialCutShape || cutShapes.length === 0) return;
+    const normShape = initialCutShape.toLowerCase().trim();
+    let matchedShape = cutShapes.find((s) => s.toLowerCase() === normShape);
+    if (!matchedShape) {
+      if (normShape.includes('cushion')) matchedShape = 'cushion';
+      else if (normShape.includes('oval')) matchedShape = 'oval';
+      else if (normShape.includes('round')) matchedShape = 'round';
+      else if (normShape.includes('pear')) matchedShape = 'pear';
+      else if (normShape.includes('square') || normShape.includes('asscher')) matchedShape = 'square';
+      else if (normShape.includes('marquise')) matchedShape = 'marquise';
+      else if (normShape.includes('octagon') || normShape.includes('emerald')) matchedShape = 'octagon';
+      else if (normShape.includes('heart')) matchedShape = 'heart';
+    }
+    if (matchedShape) setCutShape(matchedShape);
+  }, [initialCutShape, cutShapes]);
+
+  // Auto-calculate for manual measurements
+  useEffect(() => {
+    if (mode !== 'measurements') return;
+    const L = parseFloat(lengthMm);
+    const W = parseFloat(widthMm);
+    const D = parseFloat(depthMm);
+    if (L > 0 && W > 0 && D > 0 && gemType && cutShape) {
+      const timer = setTimeout(() => {
+        estimateCaratManual({
+          gemType,
+          cutShape,
+          lengthMm: L,
+          widthMm: W,
+          depthMm: D,
+        })
+          .then((res) => {
+            setResult(res);
+            onResult?.(res);
+          })
+          .catch(() => {});
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [lengthMm, widthMm, depthMm, gemType, cutShape, mode, onResult]);
+
+  // Auto-calculate for photos
+  useEffect(() => {
+    if (mode !== 'photos' || !topImage || !sideImage) return;
+    const coin = parseFloat(coinDiameter);
+    if (coin > 0 && gemType && cutShape) {
+      const timer = setTimeout(() => {
+        setLoading(true);
+        estimateCarat({
+          topImage,
+          sideImage,
+          gemType,
+          cutShape,
+          coinDiameterMm: coin,
+        })
+          .then((res) => {
+            setResult(res);
+            onResult?.(res);
+          })
+          .catch(() => {})
+          .finally(() => setLoading(false));
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [topImage, sideImage, coinDiameter, gemType, cutShape, mode, onResult]);
 
   const handleSubmit = async () => {
     if (!topImage || !sideImage) {
@@ -173,7 +300,13 @@ export default function CaratTester({ onResult }: { onResult?: (r: CaratResult) 
     'w-full bg-slate-950/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/25 focus:border-cyan-500/50';
 
   return (
-    <div className="glass-panel p-5 sm:p-8 flex flex-col gap-6 max-w-3xl mx-auto w-full">
+    <div
+      className={
+        embedded
+          ? 'bg-black/30 border border-white/10 rounded-2xl p-4 sm:p-6 flex flex-col gap-6 w-full'
+          : 'glass-panel p-5 sm:p-8 flex flex-col gap-6 max-w-3xl mx-auto w-full'
+      }
+    >
       {/* Mode toggle: estimate from photos, or from typed measurements */}
       <div className="flex justify-center gap-2">
         {([['photos', 'From photos'], ['measurements', 'From measurements']] as const).map(([key, label]) => (
@@ -228,25 +361,31 @@ export default function CaratTester({ onResult }: { onResult?: (r: CaratResult) 
         </div>
       )}
 
-      {/* Shared: gem type + cut shape */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-        <div className="flex flex-col gap-2 text-left">
-          <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Gem type</label>
-          <select className={selectClass} value={gemType} onChange={(e) => setGemType(e.target.value)}>
-            {gemTypes.map((g) => (
-              <option key={g} value={g} className="bg-slate-950">{prettify(g)}</option>
-            ))}
-          </select>
+      {/* Shared: cut shape & gem type dropdowns */}
+      {hideGemTypeSelect && hideCutShapeSelect ? null : (
+        <div className={`grid grid-cols-1 ${!hideGemTypeSelect && !hideCutShapeSelect ? 'sm:grid-cols-2' : ''} gap-5`}>
+          {!hideGemTypeSelect && (
+            <div className="flex flex-col gap-2 text-left">
+              <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Gem type</label>
+              <select className={selectClass} value={gemType} onChange={(e) => setGemType(e.target.value)}>
+                {gemTypes.map((g) => (
+                  <option key={g} value={g} className="bg-slate-950">{prettify(g)}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {!hideCutShapeSelect && (
+            <div className="flex flex-col gap-2 text-left">
+              <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Cut shape</label>
+              <select className={selectClass} value={cutShape} onChange={(e) => setCutShape(e.target.value)}>
+                {cutShapes.map((c) => (
+                  <option key={c} value={c} className="bg-slate-950">{prettify(c)}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
-        <div className="flex flex-col gap-2 text-left">
-          <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Cut shape</label>
-          <select className={selectClass} value={cutShape} onChange={(e) => setCutShape(e.target.value)}>
-            {cutShapes.map((c) => (
-              <option key={c} value={c} className="bg-slate-950">{prettify(c)}</option>
-            ))}
-          </select>
-        </div>
-      </div>
+      )}
 
       {mode === 'photos' ? (
         <>
@@ -287,21 +426,25 @@ export default function CaratTester({ onResult }: { onResult?: (r: CaratResult) 
         </div>
       )}
 
-      <button
-        onClick={mode === 'photos' ? handleSubmit : handleManualSubmit}
-        disabled={loading}
-        className="btn-secondary w-full py-3.5 sm:py-4 text-sm sm:text-base disabled:opacity-50"
-      >
-        {loading ? 'Estimating…' : 'Estimate Carat'}
-      </button>
+      {!hideSubmitButton && !embedded && (
+        <button
+          onClick={mode === 'photos' ? handleSubmit : handleManualSubmit}
+          disabled={loading}
+          className="btn-primary w-full py-3.5 sm:py-4 text-sm sm:text-base disabled:opacity-50"
+        >
+          {loading ? 'Estimating…' : 'Estimate Carat'}
+        </button>
+      )}
 
-      {result && (
+      {!hideResultDisplay && result && (
         <div className="animate-fade-in flex flex-col gap-5 border-t border-white/10 pt-6">
           <div className="text-center">
             <div className="text-xs uppercase tracking-wider text-gray-400">Estimated weight</div>
             <div className="text-4xl font-bold text-cyan-400">{result.carat.toFixed(2)} ct</div>
             <div className="text-xs text-gray-500 mt-1">
-              {prettify(result.gem_type)} &middot; {prettify(result.cut_shape)} &middot; SG {result.specific_gravity}
+              {hideGemTypeSelect && hideCutShapeSelect
+                ? `SG ${result.specific_gravity}`
+                : `${prettify(result.gem_type)} \u00B7 ${prettify(result.cut_shape)} \u00B7 SG ${result.specific_gravity}`}
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3 text-center">
