@@ -77,7 +77,7 @@ function ImagePicker({ label, hint, onPick }: PickerProps) {
  * measured mm dimensions -> carat = volume x density. This is a measurement
  * pipeline, not a trained model; the coin is the scale reference.
  */
-export default function CaratTester() {
+export default function CaratTester({ onResult }: { onResult?: (r: CaratResult) => void } = {}) {
   const [gemTypes, setGemTypes] = useState<string[]>([]);
   const [cutShapes, setCutShapes] = useState<string[]>([]);
   const [topImage, setTopImage] = useState<File | null>(null);
@@ -132,6 +132,7 @@ export default function CaratTester() {
         coinDiameterMm: coin,
       });
       setResult(res);
+      onResult?.(res);
       res.warnings?.forEach((w) => toast(w, { icon: '⚠️' }));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : String(e));
@@ -159,6 +160,7 @@ export default function CaratTester() {
         depthMm: D,
       });
       setResult(res);
+      onResult?.(res);
       res.warnings?.forEach((w) => toast(w, { icon: '⚠️' }));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : String(e));

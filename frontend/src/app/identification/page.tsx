@@ -722,6 +722,22 @@ export default function FeatureIdentification({ standalone = false }: { standalo
               </div>
             </details>
           )}
+          {isFlowActive && (
+            <div className="mt-6 pt-6 border-t border-white/10">
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-bold text-white">Carat weight</h3>
+                <p className="text-xs text-gray-400 max-w-xl mx-auto mt-1">
+                  Estimate the stone&apos;s carat — upload a <strong>top</strong> &amp; <strong>side</strong> photo
+                  with a coin for scale, or switch to <strong>measurements</strong> and enter the dimensions.
+                  This sets the weight used in the next step.
+                </p>
+              </div>
+              <CaratTester
+                onResult={(r) => sessionStorage.setItem('faceted_flow_carat_result', JSON.stringify(r))}
+              />
+            </div>
+          )}
+
           <div className="mt-6 pt-6 border-t border-white/10 w-full flex flex-col gap-3">
             {isFlowActive && (
               <button

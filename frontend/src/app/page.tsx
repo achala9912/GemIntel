@@ -25,6 +25,7 @@ export default function Home() {
     sessionStorage.removeItem('faceted_flow_image_name');
     sessionStorage.removeItem('faceted_flow_auth_result');
     sessionStorage.removeItem('faceted_flow_identify_result');
+    sessionStorage.removeItem('faceted_flow_carat_result');
     router.push('/authentication');
   };
 
