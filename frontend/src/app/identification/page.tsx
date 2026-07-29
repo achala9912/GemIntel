@@ -43,6 +43,13 @@ interface UploadedImage {
   previewUrl: string;
 }
 
+interface AuthenticationResult {
+  ensemble_result?: {
+    prediction?: string;
+    confidence?: number;
+  };
+}
+
 function pct(v: number): string {
   return `${(v * 100).toFixed(1)}%`;
 }
@@ -85,7 +92,7 @@ export default function FeatureIdentification({ standalone = false }: { standalo
   // Flow states
   const router = useRouter();
   const [isFlowActive, setIsFlowActive] = useState(false);
-  const [authResult, setAuthResult] = useState<any>(null);
+  const [authResult, setAuthResult] = useState<AuthenticationResult | null>(null);
   const [flowImageName, setFlowImageName] = useState<string>('gem.png');
 
   useEffect(() => {

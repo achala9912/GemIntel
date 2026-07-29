@@ -104,7 +104,7 @@ export default function CaratTester() {
       })
       .catch(() => {
         // Fallback so the form still works if the options endpoint is unreachable.
-        setGemTypes(['blue_sapphire', 'spinel', 'topaz']);
+        setGemTypes(['blue_sapphire', 'blue_spinel', 'blue_topaz']);
         setCutShapes(['round', 'oval', 'cushion', 'pear', 'square', 'marquise', 'octagon', 'heart']);
         setGemType('blue_sapphire');
         setCutShape('oval');

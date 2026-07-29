@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';;
 import { useRouter } from 'next/navigation';
 import { Gem, Layers } from 'lucide-react';
 import CutPredictionPage from '@/app/cut-prediction/page';
+import Link from "next/link";
 
 export default function Home() {
   const router = useRouter();
@@ -47,7 +48,7 @@ export default function Home() {
           className="mb-6 text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight text-white w-full text-center"
           style={{ textAlign: 'center' }}
         >
-          Authentication, 4C's Identification, Valuation
+          Authentication, 4C&apos;s Identification, Valuation
           <br />
           <span className="text-blue-400">
             & Cut Prediction
