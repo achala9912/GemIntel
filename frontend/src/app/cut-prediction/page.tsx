@@ -157,6 +157,62 @@ export default function CutPredictionPage({ onBack }: { onBack?: () => void }) {
   }, []);
 
   useEffect(() => {
+    if (result) {
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      document.body.style.overflow = 'hidden';
+      window.scrollTo(0, 0);
+      
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [result]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedResult = sessionStorage.getItem('rough_flow_cut_result');
+      const savedGemType = sessionStorage.getItem('rough_flow_gem_type');
+      const savedWeight = sessionStorage.getItem('rough_flow_weight');
+
+      setTimeout(() => {
+        if (savedResult) {
+          try {
+            setResult(JSON.parse(savedResult));
+          } catch (e) {
+            console.error("Error parsing saved prediction result", e);
+          }
+        }
+        if (savedGemType) {
+          setGemType(savedGemType);
+        }
+        if (savedWeight) {
+          setWeight(savedWeight);
+        }
+      }, 0);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (gemType) {
+        sessionStorage.setItem('rough_flow_gem_type', gemType);
+      } else {
+        sessionStorage.removeItem('rough_flow_gem_type');
+      }
+    }
+  }, [gemType]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (weight !== undefined && weight !== "") {
+        sessionStorage.setItem('rough_flow_weight', String(weight));
+      } else {
+        sessionStorage.removeItem('rough_flow_weight');
+      }
+    }
+  }, [weight]);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
@@ -341,6 +397,12 @@ export default function CutPredictionPage({ onBack }: { onBack?: () => void }) {
     setStatus("idle");
     setFailedStep(null);
     stopCamera();
+
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('rough_flow_cut_result');
+      sessionStorage.removeItem('rough_flow_gem_type');
+      sessionStorage.removeItem('rough_flow_weight');
+    }
   };
 
 
@@ -350,7 +412,7 @@ export default function CutPredictionPage({ onBack }: { onBack?: () => void }) {
   return (
     <>
       {result && (
-        <div className="fixed inset-0 z-[100] bg-[#05070e]">
+        <div className="fixed inset-0 z-[100] bg-[#05070e] overflow-hidden">
           <GemViewer3D data={result} onClose={reset} />
         </div>
       )}
@@ -358,7 +420,10 @@ export default function CutPredictionPage({ onBack }: { onBack?: () => void }) {
       <div className="max-width-container py-8 sm:py-12 relative animate-fade-in">
         {onBack && (
           <button
-            onClick={onBack}
+            onClick={() => {
+              reset();
+              onBack();
+            }}
             className="mb-8 flex items-center gap-1.5 text-xs text-gray-400 hover:text-cyan-400 transition-colors bg-slate-950/60 border border-slate-800/80 px-3.5 py-2 rounded-xl active:scale-[0.98] cursor-pointer font-bold shadow-lg"
           >
             ← Back to Portal Selection
@@ -394,7 +459,7 @@ export default function CutPredictionPage({ onBack }: { onBack?: () => void }) {
                 <span className="opacity-50">01</span> Parameters Config
               </h2>
 
-              <div className="relative mb-5" ref={dropdownRef}>
+              <div className="relative my-5" ref={dropdownRef}>
                 <label className="block text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-2">
                   Gemstone type
                 </label>

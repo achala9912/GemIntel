@@ -9,14 +9,35 @@ import Link from "next/link";
 export default function Home() {
   const router = useRouter();
   const [activePortal, setActivePortal] = useState<'home' | 'rough'>('home');
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedPortal = sessionStorage.getItem('active_portal') as 'home' | 'rough';
+      setTimeout(() => {
+        if (savedPortal) {
+          setActivePortal(savedPortal);
+        }
+        setIsInitialized(true);
+      }, 0);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('active_portal', activePortal);
+    }
     // Make sure we clear any stale flow state when arriving back on the main landing page
     if (activePortal === 'home') {
       sessionStorage.removeItem('faceted_flow_active');
       sessionStorage.removeItem('faceted_flow_step');
+      sessionStorage.removeItem('rough_flow_cut_result');
+      sessionStorage.removeItem('rough_flow_gem_type');
+      sessionStorage.removeItem('rough_flow_weight');
     }
-  }, [activePortal]);
+  }, [activePortal, isInitialized]);
 
   const handleStartFacetedFlow = () => {
     sessionStorage.setItem('faceted_flow_active', 'true');

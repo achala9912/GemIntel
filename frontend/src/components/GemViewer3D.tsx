@@ -267,6 +267,8 @@ export default function GemViewer3D({
   const [autoRotate, setAutoRotate] = useState(true);
   const [bloomEnabled, setBloomEnabled] = useState(true);
   const [dispersionEnabled, setDispersionEnabled] = useState(false);
+  const [showInfo, setShowInfo] = useState(true);
+
 
   const sceneRef     = useRef<THREE.Scene | null>(null);
   const cutMeshRef   = useRef<THREE.Mesh | null>(null);
@@ -512,11 +514,15 @@ export default function GemViewer3D({
     floor.position.y = -3;
     scene.add(floor);
 
-    // Fit camera
+    // Fit camera based on aspect ratio to prevent clipping and offset on mobile
     const maxDim = Math.max(bbox.x, bbox.y, bbox.z, 1);
-    const dist = maxDim * 2.5;
+    const aspect = container.clientWidth / container.clientHeight;
+    // If screen is portrait (mobile), scale camera distance to fit the narrower horizontal span
+    const fitFactor = aspect < 1 ? Math.min(1.8, 1.0 / aspect) : 1.0;
+    const dist = maxDim * 2.6 * fitFactor;
+
     camera.position.set(dist * 0.7, dist * 0.5, dist);
-    controls.target.set(0, 0, 0);
+    controls.target.set(0, 0.2, 0);
     controls.update();
 
     let animId: number;
@@ -548,11 +554,15 @@ export default function GemViewer3D({
       renderer.setSize(w, h);
       composer.setSize(w, h);
     };
-    window.addEventListener("resize", onResize);
+
+    const resizeObserver = new ResizeObserver(() => {
+      onResize();
+    });
+    resizeObserver.observe(container);
 
     return () => {
       cancelAnimationFrame(animId);
-      window.removeEventListener("resize", onResize);
+      resizeObserver.disconnect();
 
       // Deep GPU Memory Disposal
       scene.traverse((obj) => {
@@ -652,15 +662,46 @@ export default function GemViewer3D({
   const lw = W > 0 ? (L / W).toFixed(2) : "1.00";
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full overflow-hidden">
       <div className="hide-nav-footer-trigger hidden" />
-      <div ref={containerRef} className="absolute inset-0" />
+      <div
+        ref={containerRef}
+        className="absolute inset-0 [&>canvas]:absolute [&>canvas]:top-0 [&>canvas]:left-0 [&>canvas]:w-full [&>canvas]:h-full [&>canvas]:block"
+      />
+
+      {/* Info panel toggle button (mobile only) */}
+      {!showInfo && (
+        <button
+          onClick={() => setShowInfo(true)}
+          className="absolute top-3 left-3 sm:hidden bg-[rgba(15,18,30,0.85)] hover:bg-[rgba(20,25,45,0.9)] backdrop-blur-md border border-white/10 rounded-xl p-2.5 z-10 text-white shadow-lg active:scale-95 transition"
+          aria-label="Show Info"
+        >
+          <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
+      )}
 
       {/* Info panel */}
-      <div className="absolute top-3 left-3 sm:top-6 sm:left-6 bg-[rgba(15,18,30,0.82)] backdrop-blur-md border border-white/10 rounded-xl sm:rounded-2xl p-3 sm:p-5 max-w-[11rem] sm:max-w-xs z-10 shadow-2xl">
-        <span className="inline-block text-[10px] sm:text-xs px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-blue-600 mb-1.5 sm:mb-2 font-medium">
-          AI Predicted
-        </span>
+      <div className={`absolute top-3 left-3 sm:top-6 sm:left-6 bg-[rgba(15,18,30,0.85)] backdrop-blur-md border border-white/10 rounded-xl sm:rounded-2xl p-3 sm:p-5 max-w-[12rem] sm:max-w-xs z-10 shadow-2xl transition-all duration-300 ${
+        showInfo
+          ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
+          : "opacity-0 -translate-y-4 scale-95 pointer-events-none sm:opacity-100 sm:translate-y-0 sm:scale-100 sm:pointer-events-auto"
+      }`}>
+        <div className="flex justify-between items-start mb-2">
+          <span className="inline-block text-[10px] sm:text-xs px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-blue-600 font-medium">
+            AI Predicted
+          </span>
+          <button
+            onClick={() => setShowInfo(false)}
+            className="sm:hidden text-white/50 hover:text-white p-0.5 rounded-lg hover:bg-white/10 transition"
+            aria-label="Hide Info"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
         <p className="font-semibold text-xs sm:text-sm opacity-60">Gem Type:</p>
         <p className="text-[11px] sm:text-sm mb-1 sm:mb-3 truncate font-bold text-white">
           {preset.name}
@@ -693,8 +734,8 @@ export default function GemViewer3D({
       )}
 
       {/* Controls bar */}
-      <div className="absolute bottom-3 sm:bottom-8 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] max-w-4xl sm:w-auto bg-[rgba(15,18,30,0.85)] backdrop-blur-md border border-white/10 rounded-xl px-3 sm:px-6 py-2.5 sm:py-3.5 z-10 shadow-2xl">
-        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4">
+      <div className="absolute bottom-4 sm:bottom-8 left-3 right-3 sm:left-1/2 sm:-translate-x-1/2 sm:w-auto bg-[rgba(15,18,30,0.85)] backdrop-blur-md border border-white/10 rounded-xl px-3 sm:px-6 py-2.5 sm:py-3.5 z-30 shadow-2xl overflow-x-auto scrollbar-none">
+        <div className="flex sm:flex-wrap items-center justify-start sm:justify-center gap-3 sm:gap-4 flex-nowrap sm:flex-wrap min-w-max sm:min-w-0">
           {/* View controls */}
           <div className="flex gap-1.5 sm:gap-2 items-center text-[11px] sm:text-sm">
             <span className="opacity-60 text-[10px] sm:text-xs font-medium uppercase tracking-wider">View:</span>
