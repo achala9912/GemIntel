@@ -37,7 +37,14 @@ const isActive = (path: string) => {
           <div className="flex h-full items-center justify-between">
 
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2.5 text-xl font-bold tracking-widest group">
+            <Link 
+              href="/" 
+              className="flex items-center gap-2.5 text-xl font-bold tracking-widest group"
+              onClick={() => {
+                sessionStorage.setItem('active_portal', 'home');
+                window.dispatchEvent(new CustomEvent('nav-home'));
+              }}
+            >
               <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600/15 border border-blue-500/30 text-blue-400 group-hover:bg-blue-600/25 transition-all">
                 <Gem className="w-4.5 h-4.5" />
               </div>
@@ -54,6 +61,12 @@ const isActive = (path: string) => {
                 <Link
                   key={item.path}
                   href={item.path}
+                  onClick={() => {
+                    if (item.path === '/') {
+                      sessionStorage.setItem('active_portal', 'home');
+                      window.dispatchEvent(new CustomEvent('nav-home'));
+                    }
+                  }}
                   className={`flex items-center h-full text-sm font-semibold transition-colors duration-200 ${
                     isActive(item.path)
                       ? '!text-blue-400'
@@ -98,7 +111,13 @@ const isActive = (path: string) => {
             <Link
               key={item.path}
               href={item.path}
-              onClick={() => setIsOpen(false)}
+              onClick={() => {
+                setIsOpen(false);
+                if (item.path === '/') {
+                  sessionStorage.setItem('active_portal', 'home');
+                  window.dispatchEvent(new CustomEvent('nav-home'));
+                }
+              }}
               className={`rounded-xl px-4 py-3.5 transition-all duration-200 font-semibold ${
                 isActive(item.path)
                   ? '!text-blue-400 bg-slate-800/60'

@@ -21,6 +21,15 @@ export default function Home() {
         }
         setIsInitialized(true);
       }, 0);
+
+      const handleNavHome = () => {
+        setActivePortal('home');
+      };
+      window.addEventListener('nav-home', handleNavHome);
+
+      return () => {
+        window.removeEventListener('nav-home', handleNavHome);
+      };
     }
   }, []);
 
