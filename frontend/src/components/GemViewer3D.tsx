@@ -330,6 +330,53 @@ function makeZoningTexture(baseColorHex: number, boost: number = 1.0): THREE.Can
   return tex;
 }
 
+const CUT_ICONS: Record<string, React.ReactNode> = {
+  Round: (
+    <svg viewBox="0 0 24 24" className="w-5 h-5 sm:w-6 sm:h-6 stroke-current fill-none" strokeWidth="1.5">
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="4.5" />
+      <polygon points="12,3 15.5,8.5 12,12 8.5,8.5" />
+      <polygon points="21,12 15.5,15.5 12,12 15.5,8.5" />
+      <polygon points="12,21 8.5,15.5 12,12 15.5,15.5" />
+      <polygon points="3,12 8.5,8.5 12,12 8.5,15.5" />
+    </svg>
+  ),
+  Oval: (
+    <svg viewBox="0 0 24 24" className="w-5 h-5 sm:w-6 sm:h-6 stroke-current fill-none" strokeWidth="1.5">
+      <ellipse cx="12" cy="12" rx="7" ry="9.5" />
+      <ellipse cx="12" cy="12" rx="3.5" ry="5" />
+      <polygon points="12,2.5 15,7.5 12,12 9,7.5" />
+      <polygon points="19,12 15,16.5 12,12 15,7.5" />
+      <polygon points="12,21.5 9,16.5 12,12 15,16.5" />
+      <polygon points="5,12 9,7.5 12,12 9,16.5" />
+    </svg>
+  ),
+  Cushion: (
+    <svg viewBox="0 0 24 24" className="w-5 h-5 sm:w-6 sm:h-6 stroke-current fill-none" strokeWidth="1.5">
+      <rect x="3.5" y="3.5" width="17" height="17" rx="5" />
+      <rect x="7" y="7" width="10" height="10" rx="3" />
+      <line x1="3.5" y1="8" x2="7" y2="9" />
+      <line x1="3.5" y1="16" x2="7" y2="15" />
+      <line x1="20.5" y1="8" x2="17" y2="9" />
+      <line x1="20.5" y1="16" x2="17" y2="15" />
+      <line x1="8" y1="3.5" x2="9" y2="7" />
+      <line x1="16" y1="3.5" x2="15" y2="7" />
+      <line x1="8" y1="20.5" x2="9" y2="17" />
+      <line x1="16" y1="20.5" x2="15" y2="17" />
+    </svg>
+  ),
+  Emerald: (
+    <svg viewBox="0 0 24 24" className="w-5 h-5 sm:w-6 sm:h-6 stroke-current fill-none" strokeWidth="1.5">
+      <polygon points="5,3 19,3 21,5 21,19 19,21 5,21 3,19 3,5" />
+      <polygon points="7,6 17,6 18,7 18,17 17,18 7,18 6,17 6,7" />
+      <line x1="3" y1="5" x2="6" y2="7" />
+      <line x1="21" y1="5" x2="18" y2="7" />
+      <line x1="21" y1="19" x2="18" y2="17" />
+      <line x1="3" y1="19" x2="6" y2="17" />
+    </svg>
+  ),
+};
+
 export default function GemViewer3D({
   data,
   onClose,
@@ -342,15 +389,17 @@ export default function GemViewer3D({
   const [look, setLook] = useState<LookMode>("clean");
   const [autoRotate, setAutoRotate] = useState(true);
   const [bloomEnabled, setBloomEnabled] = useState(true);
-  const [dispersionEnabled, setDispersionEnabled] = useState(false);
-  const [showInfo, setShowInfo] = useState(true);
+  const [dispersionEnabled, setDispersionEnabled] = useState(true);
+  const [prevCut, setPrevCut] = useState<string | undefined>(data.prediction.cut);
   const [selectedCut, setSelectedCut] = useState<string>(data.prediction.cut || "Oval");
+
+  if (data.prediction.cut !== prevCut) {
+    setPrevCut(data.prediction.cut);
+    setSelectedCut(data.prediction.cut || "Oval");
+  }
 
   const preset = GEM_PRESETS[data.gem_type] || GEM_PRESETS.blue_sapphire;
   const { length_mm: L, width_mm: W, depth_mm: D } = data.dimensions;
-  const maxDim = Math.max(L, W);
-  const minDim = Math.min(L, W);
-  const lw = minDim > 0 ? (maxDim / minDim).toFixed(2) : "1.00";
 
   const sceneRef     = useRef<THREE.Scene | null>(null);
   const cutMeshRef   = useRef<THREE.Mesh | null>(null);
@@ -594,12 +643,14 @@ export default function GemViewer3D({
     // Fit camera based on aspect ratio to prevent clipping and offset on mobile
     const maxDim = Math.max(bbox.x, bbox.y, bbox.z, 1);
     const aspect = container.clientWidth / container.clientHeight;
-    // If screen is portrait (mobile), scale camera distance to fit the narrower horizontal span
-    const fitFactor = aspect < 1 ? Math.min(1.8, 1.0 / aspect) : 1.0;
-    const dist = maxDim * 2.6 * fitFactor;
+    const isMobile = aspect < 1;
+    // Scale distance based on screen aspect ratio so the gem is fully visible inside viewport
+    const fitFactor = isMobile ? Math.max(1.35, 1.45 / aspect) : 1.0;
+    const dist = maxDim * 2.8 * fitFactor;
 
-    camera.position.set(dist * 0.7, dist * 0.5, dist);
-    controls.target.set(0, 0.2, 0);
+    camera.position.set(dist * 0.65, dist * (isMobile ? 0.42 : 0.5), dist * 0.95);
+    // Center gem in the available visible space between top card and bottom toolbar
+    controls.target.set(0, isMobile ? -0.2 : 0.1, 0);
     controls.update();
 
     let animId: number;
@@ -630,6 +681,14 @@ export default function GemViewer3D({
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
       composer.setSize(w, h);
+
+      const curAspect = w / h;
+      const curIsMobile = curAspect < 1;
+      const curFit = curIsMobile ? Math.max(1.35, 1.45 / curAspect) : 1.0;
+      const curDist = maxDim * 2.8 * curFit;
+      camera.position.set(curDist * 0.65, curDist * (curIsMobile ? 0.42 : 0.5), curDist * 0.95);
+      controls.target.set(0, curIsMobile ? -0.2 : 0.1, 0);
+      controls.update();
     };
 
     const resizeObserver = new ResizeObserver(() => {
@@ -749,207 +808,267 @@ export default function GemViewer3D({
   }, [autoRotate]);
 
   return (
-    <div className="relative w-full h-full overflow-hidden">
+    <div className="relative w-full h-full flex flex-col bg-[#05070e] text-white overflow-hidden select-none">
       <div className="hide-nav-footer-trigger hidden" />
-      <div
-        ref={containerRef}
-        className="absolute inset-0 [&>canvas]:absolute [&>canvas]:top-0 [&>canvas]:left-0 [&>canvas]:w-full [&>canvas]:h-full [&>canvas]:block"
-      />
 
-      {/* Info panel toggle button (mobile only) */}
-      {!showInfo && (
-        <button
-          onClick={() => setShowInfo(true)}
-          className="absolute top-3 left-3 sm:hidden bg-[rgba(15,18,30,0.85)] hover:bg-[rgba(20,25,45,0.9)] backdrop-blur-md border border-white/10 rounded-xl p-2.5 z-10 text-white shadow-lg active:scale-95 transition"
-          aria-label="Show Info"
-        >
-          <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </button>
-      )}
+      {/* Floating Top Glass Island Bar */}
+      <div className="absolute top-2.5 sm:top-5 left-1/2 -translate-x-1/2 z-30 w-[95%] sm:w-[96%] max-w-5xl pointer-events-auto">
+        <div className="relative bg-[rgba(13,18,32,0.88)] backdrop-blur-2xl border border-white/10 rounded-2xl sm:rounded-3xl shadow-[0_12px_40px_rgba(0,0,0,0.6)] p-2.5 sm:p-3 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2 sm:gap-3">
+          
+          {/* Mobile/Desktop Left Section: Gem Info & Close Button */}
+          <div className="flex items-center justify-between gap-2">
+            {/* 1. Left Card: Gem Info & Dimensions */}
+            <div className="flex items-center gap-2.5 sm:gap-3 flex-1 min-w-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-blue-600/20 border border-blue-400/30 flex items-center justify-center text-base sm:text-xl shadow-[0_0_12px_rgba(59,130,246,0.25)] flex-shrink-0">
+                💎
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-extrabold text-xs sm:text-sm text-white tracking-tight leading-tight truncate">
+                    {preset.name}
+                  </span>
+                  <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-400/30 hidden sm:inline-block">
+                    AI Analyzed
+                  </span>
+                </div>
+                <div className="text-[10px] sm:text-xs text-slate-400 font-medium leading-tight mt-0.5">
+                  {L.toFixed(2)} × {W.toFixed(2)} × {D.toFixed(2)} mm
+                </div>
+                <div className="inline-flex items-center gap-1 bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md mt-1 shadow-sm">
+                  <span>★ Optimal:</span>
+                  <span className="text-white font-extrabold">{data.prediction.cut}</span>
+                  <span className="text-emerald-400 font-extrabold">({data.prediction.yield_pct.toFixed(1)}%)</span>
+                </div>
+              </div>
+            </div>
 
-      {/* Info panel */}
-      <div className={`absolute top-3 left-3 sm:top-6 sm:left-6 bg-[rgba(15,18,30,0.85)] backdrop-blur-md border border-white/10 rounded-xl sm:rounded-2xl p-3 sm:p-5 max-w-[12rem] sm:max-w-xs z-10 shadow-2xl transition-all duration-300 ${
-        showInfo
-          ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
-          : "opacity-0 -translate-y-4 scale-95 pointer-events-none sm:opacity-100 sm:translate-y-0 sm:scale-100 sm:pointer-events-auto"
-      }`}>
-        <div className="flex justify-between items-start mb-2">
-          <span className="inline-block text-[10px] sm:text-xs px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-blue-600 font-medium">
-            AI Predicted
-          </span>
-          <button
-            onClick={() => setShowInfo(false)}
-            className="sm:hidden text-white/50 hover:text-white p-0.5 rounded-lg hover:bg-white/10 transition"
-            aria-label="Hide Info"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <p className="font-semibold text-xs sm:text-sm opacity-60">Gem Type:</p>
-        <p className="text-[11px] sm:text-sm mb-1 sm:mb-2 truncate font-bold text-white">
-          {preset.name}
-        </p>
-
-        <div className="mb-2 sm:mb-3 p-2 sm:p-2.5 rounded-xl bg-blue-500/10 border border-blue-400/20">
-          <div className="flex items-center justify-between gap-1 mb-1">
-            <span className="text-[10px] sm:text-xs font-semibold text-blue-300 flex items-center gap-1">
-            Optimal Cut
-            </span>
-            {data.prediction.confidence !== undefined && (
-              <span className="text-[9px] sm:text-[10px] font-bold text-blue-200 bg-blue-500/20 px-1.5 py-0.5 rounded-full">
-                {data.prediction.confidence.toFixed(0)}% Conf.
-              </span>
+            {/* Close button (Mobile top-right) */}
+            {onClose && (
+              <button
+                onClick={onClose}
+                aria-label="Close"
+                className="text-slate-400 hover:text-white bg-white/5 hover:bg-red-500/20 border border-white/10 p-1.5 rounded-xl transition cursor-pointer md:hidden flex-shrink-0"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             )}
           </div>
-          <div className="flex items-baseline justify-between mb-1">
-            <span className="text-sm sm:text-base font-extrabold text-white">
-              {data.prediction.cut}
-            </span>
-            <span className="text-xs sm:text-sm font-bold text-emerald-400">
-              {data.prediction.yield_pct.toFixed(1)}% Yield
-            </span>
-          </div>
-       
-        </div>
 
-        {/* All Cuts Yield Comparison */}
-        {data.prediction.cut_yields && Object.keys(data.prediction.cut_yields).length > 0 && (
-          <div className="mb-2 sm:mb-3">
-            <div className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider opacity-60 mb-1.5">
-              Yield by Cut Shape (Click to 3D Preview):
-            </div>
-            <div className="grid grid-cols-2 gap-1 sm:gap-1.5">
-              {["Round", "Oval", "Cushion", "Emerald"].map((cutName) => {
-                const yieldVal = data.prediction.cut_yields?.[cutName];
-                const isOptimal = cutName.toLowerCase() === data.prediction.cut?.toLowerCase();
-                const isSelected = cutName.toLowerCase() === selectedCut?.toLowerCase();
+          {/* Divider (Desktop Only) */}
+          <div className="hidden md:block w-px h-10 bg-white/10 flex-shrink-0" />
 
-                return (
-                  <button
-                    key={cutName}
-                    type="button"
-                    onClick={() => setSelectedCut(cutName)}
-                    className={`flex flex-col text-left px-2 py-1.5 rounded-lg border transition cursor-pointer ${
+          {/* 2. Center: 4 Cut Shape Cards (Responsive 4-Col Grid on Mobile, Flex on Desktop) */}
+          <div className="grid grid-cols-4 md:flex md:items-center gap-1.5 sm:gap-2 w-full md:w-auto pt-1 sm:pt-1">
+            {["Round", "Oval", "Cushion", "Emerald"].map((cutName) => {
+              const yieldVal = data.prediction.cut_yields?.[cutName];
+              const isOptimal = cutName.toLowerCase() === data.prediction.cut?.toLowerCase();
+              const isSelected = cutName.toLowerCase() === selectedCut?.toLowerCase();
+
+              return (
+                <button
+                  key={cutName}
+                  type="button"
+                  onClick={() => setSelectedCut(cutName)}
+                  className={`relative flex flex-col items-center justify-center py-1.5 sm:py-2.5 px-1 sm:px-2 md:w-20 rounded-xl sm:rounded-2xl border transition-all cursor-pointer ${
+                    isSelected
+                      ? "bg-blue-600/25 border-blue-400 text-white shadow-[0_0_15px_rgba(59,130,246,0.35)] ring-1 ring-blue-400/60 scale-[1.02]"
+                      : isOptimal
+                        ? "bg-emerald-950/20 border-emerald-500/40 text-slate-200 hover:border-emerald-400/70"
+                        : "bg-white/[0.04] border-white/[0.06] hover:bg-white/[0.08] text-slate-300 hover:text-white"
+                  }`}
+                >
+                  {/* Highlighted Optimal Cut Badge */}
+                  {isOptimal && (
+                    <span className={`absolute -top-2 px-1 sm:px-1.5 py-0.5 rounded-full text-[7px] sm:text-[8px] font-black uppercase tracking-wider shadow-sm transition-all whitespace-nowrap ${
                       isSelected
-                        ? "bg-blue-600/30 border-blue-400 text-white shadow-sm ring-1 ring-blue-400/40"
-                        : "bg-white/5 border-white/10 hover:bg-white/10 text-white/80"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="text-[11px] sm:text-xs font-semibold">{cutName}</span>
-                      {isOptimal && (
-                        <span className="text-[8px] bg-emerald-500/20 text-emerald-300 font-bold px-1 rounded">
-                          Optimal
-                        </span>
-                      )}
-                    </div>
-                    <span className={`text-[10px] sm:text-[11px] font-bold ${isOptimal ? "text-emerald-400" : "text-slate-300"}`}>
-                      {yieldVal !== undefined ? `${yieldVal.toFixed(1)}%` : "—"}
+                        ? "bg-emerald-400 text-slate-950 ring-1 ring-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.6)]"
+                        : "bg-emerald-500/25 text-emerald-300 border border-emerald-400/40"
+                    }`}>
+                      ★ Optimal
                     </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+                  )}
 
-        <div className="grid grid-cols-2 gap-1.5 sm:gap-2.5 text-[11px] sm:text-sm border-t border-white/10 pt-2">
-          <div><div className="text-[9px] sm:text-xs opacity-50 uppercase">Length</div><div className="font-semibold">{L.toFixed(2)} mm</div></div>
-          <div><div className="text-[9px] sm:text-xs opacity-50 uppercase">Width</div><div className="font-semibold">{W.toFixed(2)} mm</div></div>
-          <div><div className="text-[9px] sm:text-xs opacity-50 uppercase">Depth</div><div className="font-semibold">{D.toFixed(2)} mm</div></div>
-          <div><div className="text-[9px] sm:text-xs opacity-50 uppercase">L/W Ratio</div><div className="font-semibold">{lw}</div></div>
+                  {/* Selected Checkmark Badge */}
+                  {isSelected && (
+                    <span className="absolute top-1 right-1 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-blue-500 text-white flex items-center justify-center text-[7px] sm:text-[8px] font-black shadow-sm">
+                      ✓
+                    </span>
+                  )}
+
+                  <div className={`mb-0.5 sm:mb-1 transition-transform ${isSelected ? "text-blue-400 scale-110" : isOptimal ? "text-emerald-300" : "text-slate-400"}`}>
+                    {CUT_ICONS[cutName] || CUT_ICONS.Oval}
+                  </div>
+                  <span className="text-[10px] sm:text-xs font-bold leading-tight truncate">{cutName}</span>
+                  <span className={`text-[9px] sm:text-[11px] font-bold leading-tight mt-0.5 ${
+                    isSelected ? "text-blue-200" : isOptimal ? "text-emerald-400" : "text-slate-400"
+                  }`}>
+                    {yieldVal !== undefined ? `${yieldVal.toFixed(1)}%` : "—"}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Divider (Desktop Only) */}
+          <div className="hidden md:block w-px h-10 bg-white/10 flex-shrink-0" />
+
+          {/* 3. Right: Desktop View Mode & Quick Toggles */}
+          <div className="hidden md:flex flex-col items-end gap-1.5 flex-shrink-0 pr-6 sm:pr-8">
+            
+            {/* View Mode Toggle Capsule */}
+            <div className="flex items-center bg-black/40 border border-white/10 rounded-full p-0.5">
+              {(["cut", "overlay", "rough"] as ViewMode[]).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  className={`px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold transition cursor-pointer ${
+                    view === v
+                      ? "bg-white/20 text-white shadow-sm font-bold"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  {v === "cut" ? "Cut" : v === "overlay" ? "Overlay" : "Rough"}
+                </button>
+              ))}
+            </div>
+
+            {/* Look & FX Text Toggles */}
+            <div className="flex items-center gap-2.5 text-[10px] sm:text-xs font-medium text-slate-400">
+              <button
+                onClick={() => setLook(look === "clean" ? "natural" : "clean")}
+                className="hover:text-white transition cursor-pointer"
+              >
+                Look: <span className="text-blue-400 font-bold">{look === "clean" ? "Clean" : "Natural"}</span>
+              </button>
+
+              <button
+                onClick={() => setBloomEnabled(!bloomEnabled)}
+                className="hover:text-white transition cursor-pointer"
+              >
+                Bloom: <span className="text-blue-400 font-bold">{bloomEnabled ? "On" : "Off"}</span>
+              </button>
+
+              <button
+                onClick={() => setDispersionEnabled(!dispersionEnabled)}
+                className="hover:text-white transition cursor-pointer"
+              >
+                Fire: <span className="text-blue-400 font-bold">{dispersionEnabled ? "On" : "Off"}</span>
+              </button>
+
+              <button
+                onClick={() => setAutoRotate(!autoRotate)}
+                className="hover:text-white transition cursor-pointer"
+              >
+                Auto: <span className="text-blue-400 font-bold">{autoRotate ? "On" : "Off"}</span>
+              </button>
+            </div>
+
+          </div>
+
+          {/* Desktop Close Button (Top right corner of pill) */}
+          {onClose && (
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              className="hidden md:block absolute top-2.5 right-2.5 sm:top-3 sm:right-3.5 text-slate-400 hover:text-white hover:bg-white/10 p-1 rounded-full transition cursor-pointer z-10"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+
         </div>
       </div>
 
-      {/* Close button */}
-      {onClose && (
-        <button
-          onClick={onClose}
-          aria-label="Close"
-          className="absolute top-4 right-4 sm:top-6 sm:right-6 bg-black/40 hover:bg-red-600 backdrop-blur-md border border-white/20 text-white rounded-full w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center text-sm sm:text-base transition-all z-10 cursor-pointer shadow-lg active:scale-95"
-        >
-          ✕
-        </button>
-      )}
-
-      {/* Controls bar */}
-      <div className="absolute bottom-4 sm:bottom-8 left-3 right-3 sm:left-1/2 sm:-translate-x-1/2 sm:w-auto bg-[rgba(15,18,30,0.85)] backdrop-blur-md border border-white/10 rounded-xl px-3 sm:px-6 py-2.5 sm:py-3.5 z-30 shadow-2xl overflow-x-auto scrollbar-none">
-        <div className="flex sm:flex-wrap items-center justify-start sm:justify-center gap-3 sm:gap-4 flex-nowrap sm:flex-wrap min-w-max sm:min-w-0">
-          {/* View controls */}
-          <div className="flex gap-1.5 sm:gap-2 items-center text-[11px] sm:text-sm">
-            <span className="opacity-60 text-[10px] sm:text-xs font-medium uppercase tracking-wider">View:</span>
+      {/* Floating Bottom Toolbar (Mobile Only: Easy Thumb Access) */}
+      <div className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-30 w-[92%] max-w-xs pointer-events-auto">
+        <div className="bg-[rgba(13,18,32,0.92)] backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl px-3 py-2 flex items-center justify-between gap-2">
+          
+          {/* View Mode Toggle Capsule */}
+          <div className="flex items-center bg-black/40 border border-white/10 rounded-full p-0.5">
             {(["cut", "overlay", "rough"] as ViewMode[]).map((v) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
-                className={`px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-lg whitespace-nowrap transition cursor-pointer font-medium ${
-                  view === v ? "bg-blue-600 text-white shadow-md" : "border border-white/15 hover:bg-white/10 text-white/80"
+                className={`px-2 py-1 rounded-full text-[10px] font-bold transition cursor-pointer ${
+                  view === v
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white"
                 }`}
               >
-                {v === "cut" ? "Cut" : v === "overlay" ? "R+Cut" : "Rough"}
-                <span className="hidden sm:inline">{v === "cut" ? " Only" : v === "overlay" ? "" : " Only"}</span>
+                {v === "cut" ? "Cut" : v === "overlay" ? "Overlay" : "Rough"}
               </button>
             ))}
           </div>
 
-          <div className="hidden sm:block w-px h-6 bg-white/10" />
+          {/* Mobile Quick Toggles */}
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setLook(look === "clean" ? "natural" : "clean")}
+              className={`px-2 py-1 rounded-lg border text-[10px] font-bold transition cursor-pointer ${
+                look === "natural"
+                  ? "bg-blue-500/20 border-blue-400/40 text-blue-300"
+                  : "bg-white/5 border-white/10 text-slate-300"
+              }`}
+            >
+              {look === "clean" ? "Clean" : "Natural"}
+            </button>
 
-          {/* Look controls */}
-          <div className="flex gap-1.5 sm:gap-2 items-center text-[11px] sm:text-sm">
-            <span className="opacity-60 text-[10px] sm:text-xs font-medium uppercase tracking-wider">Look:</span>
-            {(["clean", "natural"] as LookMode[]).map((l) => (
-              <button
-                key={l}
-                onClick={() => setLook(l)}
-                className={`px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-lg transition cursor-pointer font-medium ${
-                  look === l ? "bg-blue-600 text-white shadow-md" : "border border-white/15 hover:bg-white/10 text-white/80"
-                }`}
-              >
-                {l === "clean" ? "Clean" : "Natural"}
-              </button>
-            ))}
             <button
               onClick={() => setAutoRotate(!autoRotate)}
-              className={`px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-lg transition cursor-pointer font-medium ${
-                autoRotate ? "bg-blue-600 text-white shadow-md" : "border border-white/15 hover:bg-white/10 text-white/80"
+              title="Toggle Auto-Rotation"
+              className={`p-1.5 rounded-lg border text-[10px] font-bold transition cursor-pointer ${
+                autoRotate
+                  ? "bg-blue-500/20 border-blue-400/40 text-blue-300"
+                  : "bg-white/5 border-white/10 text-slate-400"
               }`}
             >
-              {autoRotate ? "Auto" : "Manual"}
+              🔄
             </button>
-          </div>
 
-          <div className="hidden sm:block w-px h-6 bg-white/10" />
-
-          {/* FX controls */}
-          <div className="flex gap-1.5 sm:gap-2 items-center text-[11px] sm:text-sm">
-            <span className="opacity-60 text-[10px] sm:text-xs font-medium uppercase tracking-wider">Bloom:</span>
             <button
               onClick={() => setBloomEnabled(!bloomEnabled)}
-              className={`px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg transition cursor-pointer font-medium ${
-                bloomEnabled ? "bg-blue-600 text-white shadow-md" : "border border-white/15 hover:bg-white/10 text-white/80"
+              title="Toggle Bloom Glow"
+              className={`p-1.5 rounded-lg border text-[10px] font-bold transition cursor-pointer ${
+                bloomEnabled
+                  ? "bg-blue-500/20 border-blue-400/40 text-blue-300"
+                  : "bg-white/5 border-white/10 text-slate-400"
               }`}
             >
-              {bloomEnabled ? "On" : "Off"}
+              ✨
+            </button>
+
+            <button
+              onClick={() => setDispersionEnabled(!dispersionEnabled)}
+              title="Toggle Fire / Spectral Dispersion"
+              className={`p-1.5 rounded-lg border text-[10px] font-bold transition cursor-pointer ${
+                dispersionEnabled
+                  ? "bg-blue-500/20 border-blue-400/40 text-blue-300"
+                  : "bg-white/5 border-white/10 text-slate-400"
+              }`}
+            >
+              🌈
             </button>
           </div>
 
-          <div className="flex gap-1.5 sm:gap-2 items-center text-[11px] sm:text-sm">
-            <span className="opacity-60 text-[10px] sm:text-xs font-medium uppercase tracking-wider">Dispersion:</span>
-            <button
-              onClick={() => setDispersionEnabled(!dispersionEnabled)}
-              className={`px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg transition cursor-pointer font-medium ${
-                dispersionEnabled ? "bg-blue-600 text-white shadow-md" : "border border-white/15 hover:bg-white/10 text-white/80"
-              }`}
-            >
-              {dispersionEnabled ? "On" : "Off"}
-            </button>
-          </div>
         </div>
       </div>
+
+      {/* 3D Canvas Viewport */}
+      <main className="flex-1 w-full h-full relative min-h-0">
+        <div
+          ref={containerRef}
+          className="absolute inset-0 w-full h-full [&>canvas]:absolute [&>canvas]:top-0 [&>canvas]:left-0 [&>canvas]:w-full [&>canvas]:h-full [&>canvas]:block"
+        />
+
+        {/* Small subtle helper text at bottom corner (Desktop only) */}
+        <div className="hidden md:flex absolute bottom-3 left-3 pointer-events-none bg-black/40 backdrop-blur-sm border border-white/10 rounded-lg px-2.5 py-1 text-[10px] text-slate-400 items-center gap-1.5">
+          <span>🖱️</span> Drag to rotate • Scroll to zoom • Right-click to pan
+        </div>
+      </main>
     </div>
   );
 }

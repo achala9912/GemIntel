@@ -412,7 +412,7 @@ export default function CutPredictionPage({ onBack }: { onBack?: () => void }) {
   return (
     <>
       {result && (
-        <div className="fixed inset-0 z-[100] bg-[#05070e] overflow-hidden">
+        <div className="fixed inset-0 h-[100dvh] w-full z-[100] bg-[#05070e] overflow-hidden">
           <GemViewer3D data={result} onClose={reset} />
         </div>
       )}
