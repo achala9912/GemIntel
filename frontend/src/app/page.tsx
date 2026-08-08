@@ -186,43 +186,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Supported Gems Section */}
-        <div className="mt-24 mb-16">
-          <div className="text-center mb-10">
-            <h2 className="text-sm uppercase tracking-widest text-blue-400 font-bold mb-3">
-              Specialized For Premium Gems
-            </h2>
-            <p className="text-sm text-slate-400 max-w-lg mx-auto leading-relaxed">
-              Our models are specifically optimized for identifying, authenticating, and evaluating world-class Sapphires, Topaz, and Spinels.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            {/* Sapphire */}
-            <div className="group rounded-2xl border border-slate-800/60 bg-slate-900/40 overflow-hidden flex flex-col items-center p-6 hover:border-blue-500/50 transition-colors shadow-xl">
-              <div className="relative w-32 h-32 mb-4 rounded-full overflow-hidden bg-black/40 group-hover:scale-110 transition-transform duration-700 ease-out border border-slate-800/50">
-                <Image src="/sapphire.png" alt="Blue Sapphire" fill sizes="128px" className="object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
-              </div>
-              <h4 className="text-slate-200 font-bold mb-1">Blue Sapphire</h4>
-              <p className="text-xs text-slate-400 text-center font-medium">Corundum Family</p>
-            </div>
-            {/* Topaz */}
-            <div className="group rounded-2xl border border-slate-800/60 bg-slate-900/40 overflow-hidden flex flex-col items-center p-6 hover:border-cyan-500/50 transition-colors shadow-xl">
-              <div className="relative w-32 h-32 mb-4 rounded-full overflow-hidden bg-black/40 group-hover:scale-110 transition-transform duration-700 ease-out border border-slate-800/50">
-                <Image src="/topaz.png" alt="Blue Topaz" fill sizes="128px" className="object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
-              </div>
-              <h4 className="text-slate-200 font-bold mb-1">Blue Topaz</h4>
-              <p className="text-xs text-slate-400 text-center font-medium">Silicate Mineral</p>
-            </div>
-            {/* Spinel */}
-            <div className="group rounded-2xl border border-slate-800/60 bg-slate-900/40 overflow-hidden flex flex-col items-center p-6 hover:border-indigo-500/50 transition-colors shadow-xl">
-              <div className="relative w-32 h-32 mb-4 rounded-full overflow-hidden bg-black/40 group-hover:scale-110 transition-transform duration-700 ease-out border border-slate-800/50">
-                <Image src="/spinel.png" alt="Blue Spinel" fill sizes="128px" className="object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
-              </div>
-              <h4 className="text-slate-200 font-bold mb-1">Blue Spinel</h4>
-              <p className="text-xs text-slate-400 text-center font-medium">Oxide Mineral</p>
-            </div>
-          </div>
-        </div>
+
 
         {/* Direct shortcut: skip the guided auth flow, go straight to Feature Identification */}
         <div className="text-center mt-6">
