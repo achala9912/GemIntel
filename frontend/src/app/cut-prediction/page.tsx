@@ -417,7 +417,7 @@ export default function CutPredictionPage({ onBack }: { onBack?: () => void }) {
         </div>
       )}
 
-      <div className="max-width-container py-8 sm:py-12 relative animate-fade-in">
+      <div className={`max-width-container py-8 sm:py-12 relative animate-fade-in ${result ? "hidden" : ""}`}>
         {onBack && (
           <button
             onClick={() => {
