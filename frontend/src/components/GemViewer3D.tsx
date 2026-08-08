@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
@@ -154,39 +153,115 @@ function buildSmooth6Ring(
   return geom;
 }
 
-function buildCutGeometry(
-  cutType: string, L: number, W: number, D: number
-): THREE.BufferGeometry {
-  const scaleMap: Record<string, number> = {
-    Round: 0.72, Oval: 0.78, Cushion: 0.80, Emerald: 0.82,
+function getIntelligentCutFit(
+  cutType: string,
+  dimensions: { length_mm: number; width_mm: number; depth_mm: number },
+  rough_bbox?: { x: number; y: number; z: number },
+  yieldPct?: number
+): { L: number; W: number; D: number; s: number; exp?: number; cornerFactor: number } {
+  const bbox = rough_bbox ?? {
+    x: dimensions.length_mm,
+    y: dimensions.depth_mm,
+    z: dimensions.width_mm,
   };
-  const s = scaleMap[cutType] ?? 0.80;
+
+  // 1. Dynamic yield-based cubic linear calibration:
+  // In physics/gemology, linear volume scales with (yield_pct / 100)^(1/3).
+  // Calibrated to the balanced lapidary envelope (~68-70% effective fill)
+  const baseYield = yieldPct && yieldPct > 0 ? yieldPct : 28.0;
+  const dynamicLinearScale = Math.cbrt(baseYield / 100) * 1.25;
+  const FIT_XZ = Math.min(0.85, Math.max(0.78, dynamicLinearScale));
+
+  const L = bbox.x * FIT_XZ;
+  const W = bbox.z * FIT_XZ;
+
+  // 2. Per-Cut optimal facet proportion and corner normalization:
+  let s = 0.80;
+  let exp: number | undefined = undefined;
+  let cornerFactor = 1.0;
 
   if (cutType === "Cushion") {
-    const a = (L/2)*s, b = (W/2)*s, dS = D*s, exp = 3.5;
+    exp = 3.2;
+    // Super-ellipse corner expansion normalization factor ~1.14
+    cornerFactor = Math.pow(2, 0.5 - 1 / exp);
+    s = 0.80;
+  } else if (cutType === "Emerald") {
+    exp = 6.0;
+    // Rectangular/octagonal corner factor ~1.26
+    cornerFactor = Math.pow(2, 0.5 - 1 / exp);
+    s = 0.78;
+  } else if (cutType === "Round") {
+    cornerFactor = 1.0;
+    s = 0.80;
+  } else {
+    // Oval / Brilliant
+    cornerFactor = 1.0;
+    s = 0.81;
+  }
+
+  // 3. Proportional depth constraint (ideal pavilion 41° + crown 34° ~ 56% of width)
+  const propDepth = W * 0.56;
+  const maxDepth = bbox.y * 0.74;
+  const D = Math.min(propDepth, maxDepth);
+
+  return { L, W, D, s, exp, cornerFactor };
+}
+
+function buildCutGeometry(
+  cutType: string,
+  fit: { L: number; W: number; D: number; s: number; exp?: number; cornerFactor: number }
+): THREE.BufferGeometry {
+  const { L, W, D, s, exp, cornerFactor } = fit;
+
+  if (cutType === "Cushion" && exp) {
+    const a = ((L / 2) * s) / cornerFactor;
+    const b = ((W / 2) * s) / cornerFactor;
+    const dS = D * s;
     return buildSmooth6Ring(
-      t => { const c = Math.cos(t); return Math.sign(c) * Math.pow(Math.abs(c), 2/exp); },
-      t => { const c = Math.sin(t); return Math.sign(c) * Math.pow(Math.abs(c), 2/exp); },
-      a, b, dS
+      (t) => {
+        const c = Math.cos(t);
+        return Math.sign(c) * Math.pow(Math.abs(c), 2 / exp);
+      },
+      (t) => {
+        const c = Math.sin(t);
+        return Math.sign(c) * Math.pow(Math.abs(c), 2 / exp);
+      },
+      a,
+      b,
+      dS
     );
   }
-  if (cutType === "Emerald") {
-    // Octagonal / rectangular step cut shape
-    const a = (L/2)*s, b = (W/2)*s, dS = D*s, exp = 8.0;
+
+  if (cutType === "Emerald" && exp) {
+    const a = ((L / 2) * s) / cornerFactor;
+    const b = ((W / 2) * s) / cornerFactor;
+    const dS = D * s;
     return buildSmooth6Ring(
-      t => { const c = Math.cos(t); return Math.sign(c) * Math.pow(Math.abs(c), 2/exp); },
-      t => { const c = Math.sin(t); return Math.sign(c) * Math.pow(Math.abs(c), 2/exp); },
-      a, b, dS
+      (t) => {
+        const c = Math.cos(t);
+        return Math.sign(c) * Math.pow(Math.abs(c), 2 / exp);
+      },
+      (t) => {
+        const c = Math.sin(t);
+        return Math.sign(c) * Math.pow(Math.abs(c), 2 / exp);
+      },
+      a,
+      b,
+      dS
     );
   }
+
   if (cutType === "Round") {
-    const r = (Math.min(L, W)/2)*s, dS = D*s;
-    return buildSmooth6Ring(t => Math.cos(t), t => Math.sin(t), r, r, dS, 16);
+    const r = (Math.min(L, W) / 2) * s;
+    const dS = D * s;
+    return buildSmooth6Ring((t) => Math.cos(t), (t) => Math.sin(t), r, r, dS, 16);
   }
- 
+
   // Oval or default
-  const a = (L/2)*s, b = (W/2)*s, dS = D*s;
-  return buildSmooth6Ring(t => Math.cos(t), t => Math.sin(t), a, b, dS);
+  const a = (L / 2) * s;
+  const b = (W / 2) * s;
+  const dS = D * s;
+  return buildSmooth6Ring((t) => Math.cos(t), (t) => Math.sin(t), a, b, dS);
 }
 
 // ZONING TEXTURE (natural color banding + silk inclusions)
@@ -271,6 +346,11 @@ export default function GemViewer3D({
   const [showInfo, setShowInfo] = useState(true);
   const [selectedCut, setSelectedCut] = useState<string>(data.prediction.cut || "Oval");
 
+  const preset = GEM_PRESETS[data.gem_type] || GEM_PRESETS.blue_sapphire;
+  const { length_mm: L, width_mm: W, depth_mm: D } = data.dimensions;
+  const maxDim = Math.max(L, W);
+  const minDim = Math.min(L, W);
+  const lw = minDim > 0 ? (maxDim / minDim).toFixed(2) : "1.00";
 
   const sceneRef     = useRef<THREE.Scene | null>(null);
   const cutMeshRef   = useRef<THREE.Mesh | null>(null);
@@ -407,14 +487,9 @@ export default function GemViewer3D({
       z: data.dimensions.width_mm,
     };
 
-    const FIT_XZ = 0.85;
-    const L = bbox.x * FIT_XZ;
-    const W = bbox.z * FIT_XZ;
-    const propDepth = W * 0.58;
-    const maxDepth  = bbox.y * 0.80;
-    const D = Math.min(propDepth, maxDepth);
-
-    const cutGeom = buildCutGeometry(data.prediction.cut, L, W, D);
+    const initialYield = data.prediction.cut_yields?.[data.prediction.cut] ?? data.prediction.yield_pct;
+    const fit = getIntelligentCutFit(data.prediction.cut, data.dimensions, data.rough_bbox, initialYield);
+    const cutGeom = buildCutGeometry(data.prediction.cut, fit);
     const zoningTex = makeZoningTexture(preset.color, preset.saturationBoost);
     zoningTexRef.current = zoningTex;
 
@@ -602,7 +677,7 @@ export default function GemViewer3D({
       }
       rendererRef.current = null;
     };
-  }, [data]);
+  }, [D, L, W, data]);
 
   useEffect(() => {
     if (cutMeshRef.current)   cutMeshRef.current.visible   = view !== "rough";
@@ -616,19 +691,11 @@ export default function GemViewer3D({
 
   useEffect(() => {
     if (!cutMeshRef.current || !cutEdgesRef.current) return;
-    const bbox = data.rough_bbox ?? {
-      x: data.dimensions.length_mm,
-      y: data.dimensions.depth_mm,
-      z: data.dimensions.width_mm,
-    };
-    const FIT_XZ = 0.85;
-    const L = bbox.x * FIT_XZ;
-    const W = bbox.z * FIT_XZ;
-    const propDepth = W * 0.58;
-    const maxDepth = bbox.y * 0.80;
-    const D = Math.min(propDepth, maxDepth);
+  
+    const activeYield = data.prediction.cut_yields?.[selectedCut] ?? data.prediction.yield_pct;
+    const fit = getIntelligentCutFit(selectedCut, data.dimensions, data.rough_bbox, activeYield);
+    const newCutGeom = buildCutGeometry(selectedCut, fit);
 
-    const newCutGeom = buildCutGeometry(selectedCut, L, W, D);
     if (cutMeshRef.current.geometry) cutMeshRef.current.geometry.dispose();
     cutMeshRef.current.geometry = newCutGeom;
 
@@ -681,12 +748,6 @@ export default function GemViewer3D({
     if (controlsRef.current) controlsRef.current.autoRotate = autoRotate;
   }, [autoRotate]);
 
-  const preset = GEM_PRESETS[data.gem_type] || GEM_PRESETS.blue_sapphire;
-  const { length_mm: L, width_mm: W, depth_mm: D } = data.dimensions;
-  const maxDim = Math.max(L, W);
-  const minDim = Math.min(L, W);
-  const lw = minDim > 0 ? (maxDim / minDim).toFixed(2) : "1.00";
-
   return (
     <div className="relative w-full h-full overflow-hidden">
       <div className="hide-nav-footer-trigger hidden" />
@@ -736,7 +797,7 @@ export default function GemViewer3D({
         <div className="mb-2 sm:mb-3 p-2 sm:p-2.5 rounded-xl bg-blue-500/10 border border-blue-400/20">
           <div className="flex items-center justify-between gap-1 mb-1">
             <span className="text-[10px] sm:text-xs font-semibold text-blue-300 flex items-center gap-1">
-              ✨ Optimal Cut
+            Optimal Cut
             </span>
             {data.prediction.confidence !== undefined && (
               <span className="text-[9px] sm:text-[10px] font-bold text-blue-200 bg-blue-500/20 px-1.5 py-0.5 rounded-full">
@@ -744,7 +805,7 @@ export default function GemViewer3D({
               </span>
             )}
           </div>
-          <div className="flex items-baseline justify-between">
+          <div className="flex items-baseline justify-between mb-1">
             <span className="text-sm sm:text-base font-extrabold text-white">
               {data.prediction.cut}
             </span>
@@ -752,6 +813,7 @@ export default function GemViewer3D({
               {data.prediction.yield_pct.toFixed(1)}% Yield
             </span>
           </div>
+       
         </div>
 
         {/* All Cuts Yield Comparison */}
@@ -781,7 +843,7 @@ export default function GemViewer3D({
                       <span className="text-[11px] sm:text-xs font-semibold">{cutName}</span>
                       {isOptimal && (
                         <span className="text-[8px] bg-emerald-500/20 text-emerald-300 font-bold px-1 rounded">
-                          AI
+                          Optimal
                         </span>
                       )}
                     </div>
