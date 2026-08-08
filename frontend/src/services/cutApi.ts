@@ -10,6 +10,7 @@ export interface PredictionResult {
     yield_pct: number;
     confidence: number;
     probabilities: Record<string, number>;
+    cut_yields?: Record<string, number>;
   };
   rough_bbox: { x: number; y: number; z: number };
   rough_mesh: {

@@ -245,6 +245,7 @@ def _run_pipeline(session_id: str):
                 "yield_pct":     prediction["yield_pct"],
                 "confidence":    prediction["confidence"],
                 "probabilities": prediction["probabilities"],
+                "cut_yields":    prediction.get("cut_yields", {}),
             },
             "rough_bbox": mesh["bbox"],
             "rough_mesh": {

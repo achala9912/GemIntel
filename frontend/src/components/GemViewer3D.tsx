@@ -17,6 +17,7 @@ export interface GemData {
     yield_pct: number;
     confidence?: number;
     probabilities?: Record<string, number>;
+    cut_yields?: Record<string, number>;
   };
   rough_bbox?: { x: number; y: number; z: number };
   rough_mesh?: {
@@ -268,6 +269,7 @@ export default function GemViewer3D({
   const [bloomEnabled, setBloomEnabled] = useState(true);
   const [dispersionEnabled, setDispersionEnabled] = useState(false);
   const [showInfo, setShowInfo] = useState(true);
+  const [selectedCut, setSelectedCut] = useState<string>(data.prediction.cut || "Oval");
 
 
   const sceneRef     = useRef<THREE.Scene | null>(null);
@@ -613,6 +615,28 @@ export default function GemViewer3D({
   }, [view, look]);
 
   useEffect(() => {
+    if (!cutMeshRef.current || !cutEdgesRef.current) return;
+    const bbox = data.rough_bbox ?? {
+      x: data.dimensions.length_mm,
+      y: data.dimensions.depth_mm,
+      z: data.dimensions.width_mm,
+    };
+    const FIT_XZ = 0.85;
+    const L = bbox.x * FIT_XZ;
+    const W = bbox.z * FIT_XZ;
+    const propDepth = W * 0.58;
+    const maxDepth = bbox.y * 0.80;
+    const D = Math.min(propDepth, maxDepth);
+
+    const newCutGeom = buildCutGeometry(selectedCut, L, W, D);
+    if (cutMeshRef.current.geometry) cutMeshRef.current.geometry.dispose();
+    cutMeshRef.current.geometry = newCutGeom;
+
+    if (cutEdgesRef.current.geometry) cutEdgesRef.current.geometry.dispose();
+    cutEdgesRef.current.geometry = new THREE.EdgesGeometry(newCutGeom, 8);
+  }, [selectedCut, data]);
+
+  useEffect(() => {
     const mat = materialRef.current;
     const tex = zoningTexRef.current;
     if (!mat) return;
@@ -659,7 +683,9 @@ export default function GemViewer3D({
 
   const preset = GEM_PRESETS[data.gem_type] || GEM_PRESETS.blue_sapphire;
   const { length_mm: L, width_mm: W, depth_mm: D } = data.dimensions;
-  const lw = W > 0 ? (L / W).toFixed(2) : "1.00";
+  const maxDim = Math.max(L, W);
+  const minDim = Math.min(L, W);
+  const lw = minDim > 0 ? (maxDim / minDim).toFixed(2) : "1.00";
 
   return (
     <div className="relative w-full h-full overflow-hidden">
@@ -703,22 +729,77 @@ export default function GemViewer3D({
           </button>
         </div>
         <p className="font-semibold text-xs sm:text-sm opacity-60">Gem Type:</p>
-        <p className="text-[11px] sm:text-sm mb-1 sm:mb-3 truncate font-bold text-white">
+        <p className="text-[11px] sm:text-sm mb-1 sm:mb-2 truncate font-bold text-white">
           {preset.name}
         </p>
-        <p className="font-semibold text-xs sm:text-sm opacity-60">Suggested Optimal Cut:</p>
-        <p className="text-[11px] sm:text-sm mb-2 sm:mb-4 truncate font-bold text-blue-300">
-          {data.prediction.cut}
-        </p>
-        <div className="grid grid-cols-2 gap-1.5 sm:gap-3 text-[11px] sm:text-sm border-t border-white/10 pt-2 sm:pt-3">
+
+        <div className="mb-2 sm:mb-3 p-2 sm:p-2.5 rounded-xl bg-blue-500/10 border border-blue-400/20">
+          <div className="flex items-center justify-between gap-1 mb-1">
+            <span className="text-[10px] sm:text-xs font-semibold text-blue-300 flex items-center gap-1">
+              ✨ Optimal Cut
+            </span>
+            {data.prediction.confidence !== undefined && (
+              <span className="text-[9px] sm:text-[10px] font-bold text-blue-200 bg-blue-500/20 px-1.5 py-0.5 rounded-full">
+                {data.prediction.confidence.toFixed(0)}% Conf.
+              </span>
+            )}
+          </div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-sm sm:text-base font-extrabold text-white">
+              {data.prediction.cut}
+            </span>
+            <span className="text-xs sm:text-sm font-bold text-emerald-400">
+              {data.prediction.yield_pct.toFixed(1)}% Yield
+            </span>
+          </div>
+        </div>
+
+        {/* All Cuts Yield Comparison */}
+        {data.prediction.cut_yields && Object.keys(data.prediction.cut_yields).length > 0 && (
+          <div className="mb-2 sm:mb-3">
+            <div className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider opacity-60 mb-1.5">
+              Yield by Cut Shape (Click to 3D Preview):
+            </div>
+            <div className="grid grid-cols-2 gap-1 sm:gap-1.5">
+              {["Round", "Oval", "Cushion", "Emerald"].map((cutName) => {
+                const yieldVal = data.prediction.cut_yields?.[cutName];
+                const isOptimal = cutName.toLowerCase() === data.prediction.cut?.toLowerCase();
+                const isSelected = cutName.toLowerCase() === selectedCut?.toLowerCase();
+
+                return (
+                  <button
+                    key={cutName}
+                    type="button"
+                    onClick={() => setSelectedCut(cutName)}
+                    className={`flex flex-col text-left px-2 py-1.5 rounded-lg border transition cursor-pointer ${
+                      isSelected
+                        ? "bg-blue-600/30 border-blue-400 text-white shadow-sm ring-1 ring-blue-400/40"
+                        : "bg-white/5 border-white/10 hover:bg-white/10 text-white/80"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-[11px] sm:text-xs font-semibold">{cutName}</span>
+                      {isOptimal && (
+                        <span className="text-[8px] bg-emerald-500/20 text-emerald-300 font-bold px-1 rounded">
+                          AI
+                        </span>
+                      )}
+                    </div>
+                    <span className={`text-[10px] sm:text-[11px] font-bold ${isOptimal ? "text-emerald-400" : "text-slate-300"}`}>
+                      {yieldVal !== undefined ? `${yieldVal.toFixed(1)}%` : "—"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-1.5 sm:gap-2.5 text-[11px] sm:text-sm border-t border-white/10 pt-2">
           <div><div className="text-[9px] sm:text-xs opacity-50 uppercase">Length</div><div className="font-semibold">{L.toFixed(2)} mm</div></div>
           <div><div className="text-[9px] sm:text-xs opacity-50 uppercase">Width</div><div className="font-semibold">{W.toFixed(2)} mm</div></div>
           <div><div className="text-[9px] sm:text-xs opacity-50 uppercase">Depth</div><div className="font-semibold">{D.toFixed(2)} mm</div></div>
-          <div><div className="text-[9px] sm:text-xs opacity-50 uppercase">L/W</div><div className="font-semibold">{lw}</div></div>
-          <div><div className="text-[9px] sm:text-xs opacity-50 uppercase">Yield</div><div className="font-semibold">{data.prediction.yield_pct.toFixed(1)}%</div></div>
-          {data.prediction.confidence !== undefined && (
-            <div><div className="text-[9px] sm:text-xs opacity-50 uppercase">Conf.</div><div className="font-semibold">{data.prediction.confidence.toFixed(0)}%</div></div>
-          )}
+          <div><div className="text-[9px] sm:text-xs opacity-50 uppercase">L/W Ratio</div><div className="font-semibold">{lw}</div></div>
         </div>
       </div>
 
