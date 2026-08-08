@@ -147,7 +147,7 @@ export default function FeatureIdentification({ standalone = false }: { standalo
         }
       }
     }
-  }, []);
+  }, [standalone]);
 
   const handleProceed = () => {
     sessionStorage.setItem('faceted_flow_step', '3');
@@ -374,7 +374,7 @@ export default function FeatureIdentification({ standalone = false }: { standalo
       <header className="text-center mb-8 sm:mb-12">
         <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-center mb-2 leading-tight px-2">
           Feature{' '}
-          <span className="text-purple-400">
+          <span className="text-blue-400">
             Identification
           </span>
         </h1>
@@ -387,21 +387,23 @@ export default function FeatureIdentification({ standalone = false }: { standalo
 
       {/* Sub-tabs: 4C identification vs carat tester (hidden inside the auth flow) */}
       {!isFlowActive && (
-        <div className="flex justify-center gap-2 mb-6 sm:mb-8">
-          {([['identify', 'Cut · Color · Clarity'], ['carat', 'Carat']] as const).map(([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setTab(key)}
-              className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition cursor-pointer border ${
-                tab === key
-                  ? 'bg-purple-600 text-white border-transparent'
-                  : 'bg-white/5 text-gray-300 border-white/10 hover:bg-white/10'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="flex justify-center mb-6 sm:mb-8">
+          <div className="bg-slate-900/60 p-1.5 rounded-xl inline-flex gap-1 border border-slate-800 shadow-inner">
+            {([['identify', 'Cut · Color · Clarity'], ['carat', 'Carat']] as const).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTab(key)}
+                className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                  tab === key
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
