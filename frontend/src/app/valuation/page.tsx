@@ -45,6 +45,8 @@ const DEFAULT_ECONOMIC_FACTORS: EconomicSnapshotDraft = {
   exchange_rate: 333.98,
 };
 
+const DEFAULT_CONFIDENCE_LEVEL = 0.5;
+
 const isCompleteSnapshot = (
   snapshot: EconomicSnapshotDraft
 ): snapshot is EconomicSnapshot =>
@@ -469,7 +471,7 @@ export default function Valuation() {
   const [valuationDate, setValuationDate] = useState(
     () => new Date().toISOString().slice(0, 10)
   );
-  const [confidenceLevel, setConfidenceLevel] = useState(0.9);
+  const [confidenceLevel, setConfidenceLevel] = useState(DEFAULT_CONFIDENCE_LEVEL);
 
   // Click outside to close dropdowns
   useEffect(() => {
@@ -560,7 +562,7 @@ export default function Valuation() {
     });
     setEconomicFactors({ ...DEFAULT_ECONOMIC_FACTORS });
     setValuationDate(new Date().toISOString().slice(0, 10));
-    setConfidenceLevel(0.9);
+    setConfidenceLevel(DEFAULT_CONFIDENCE_LEVEL);
   };
 
   if (loading) {
@@ -818,6 +820,7 @@ export default function Valuation() {
                       onChange={(event) => setConfidenceLevel(Number(event.target.value))}
                       className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-violet-500"
                     >
+                      <option value={0.5}>50% interval</option>
                       <option value={0.8}>80% interval</option>
                       <option value={0.9}>90% interval</option>
                       <option value={0.95}>95% interval</option>
