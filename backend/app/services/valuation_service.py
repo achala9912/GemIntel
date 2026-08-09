@@ -294,6 +294,7 @@ def resolve_economic_context(request: ValuationRequest) -> dict[str, Any]:
     return {
         "source": "manual",
         "valuation_month": str(valuation_month),
+        "current_month": str(valuation_month),
         "current": request.economic_factors,
         "lags": request.economic_lags,
         "lag_months": [str(valuation_month - offset) for offset in range(1, 4)],

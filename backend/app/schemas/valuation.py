@@ -35,7 +35,7 @@ class ValuationRequest(StrictSchema):
     economic_source: Literal["manual", "historical", "latest_available"] = "manual"
     economic_factors: Optional[EconomicSnapshot] = None
     economic_lags: Optional[List[EconomicSnapshot]] = None
-    confidence_level: float = Field(default=0.90, gt=0, lt=1)
+    confidence_level: float = Field(default=0.50, gt=0, lt=1)
 
     @field_validator("economic_lags")
     @classmethod
@@ -128,6 +128,7 @@ class LocalShapExplanation(BaseModel):
 class EconomicContextUsed(BaseModel):
     source: Literal["manual", "historical_database", "current_with_latest_history"]
     valuation_month: str
+    current_month: str
     current: EconomicSnapshot
     lags: List[EconomicSnapshot]
     lag_months: List[str]

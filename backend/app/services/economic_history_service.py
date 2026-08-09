@@ -96,24 +96,39 @@ def _snapshot(row: pd.Series) -> EconomicSnapshot:
 
 
 def economic_context_for_date(valuation_date) -> dict:
+    """Resolve the latest complete economic context on or before a date."""
     history = load_economic_history()
     valuation_month = pd.Period(valuation_date, freq="M")
-    required_months = [valuation_month - offset for offset in range(4)]
+
+    available_months = history.index[history.index <= valuation_month]
+    if len(available_months) == 0:
+        metadata = economic_history_metadata()
+        raise EconomicHistoryCoverageError(
+            "Automatic economic history is unavailable for "
+            f"{valuation_month}. No economic data is available on or before "
+            "that month. Complete automatic coverage starts at "
+            f"{metadata['earliest_complete_valuation_month']}."
+        )
+
+    current_month = available_months[-1]
+    required_months = [current_month - offset for offset in range(4)]
     missing = [str(month) for month in required_months if month not in history.index]
     if missing:
         metadata = economic_history_metadata()
         raise EconomicHistoryCoverageError(
             "Automatic economic history is unavailable for "
-            f"{valuation_month}. Missing months: {', '.join(missing)}. "
-            "Complete automatic coverage is "
-            f"{metadata['earliest_complete_valuation_month']} through "
-            f"{metadata['latest_month']}; use manual economic input outside this range."
+            f"{valuation_month}. The latest available economic month on or before "
+            f"that date is {current_month}, but the required current/lag months "
+            f"are missing: {', '.join(missing)}. Complete automatic coverage "
+            f"starts at {metadata['earliest_complete_valuation_month']}; use "
+            "manual economic input for earlier dates."
         )
 
     return {
         "source": "historical_database",
         "valuation_month": str(valuation_month),
-        "current": _snapshot(history.loc[valuation_month]),
+        "current_month": str(current_month),
+        "current": _snapshot(history.loc[current_month]),
         "lags": [_snapshot(history.loc[month]) for month in required_months[1:]],
         "lag_months": [str(month) for month in required_months[1:]],
     }
@@ -137,6 +152,7 @@ def latest_history_context_for_date(
     return {
         "source": "current_with_latest_history",
         "valuation_month": str(valuation_month),
+        "current_month": str(valuation_month),
         "current": current,
         "lags": [_snapshot(history.loc[month]) for month in selected_months],
         "lag_months": [str(month) for month in selected_months],
