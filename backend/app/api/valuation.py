@@ -59,7 +59,7 @@ def factor_options():
 
 @router.get("/economic-context")
 def economic_context(valuation_date: date):
-    """Return the current and three prior monthly snapshots for a date."""
+    """Return the latest available snapshot and its three prior months."""
     try:
         context = economic_context_for_date(valuation_date)
     except EconomicHistoryCoverageError as exc:

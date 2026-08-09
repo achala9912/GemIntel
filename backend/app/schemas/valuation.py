@@ -128,6 +128,7 @@ class LocalShapExplanation(BaseModel):
 class EconomicContextUsed(BaseModel):
     source: Literal["manual", "historical_database", "current_with_latest_history"]
     valuation_month: str
+    current_month: str
     current: EconomicSnapshot
     lags: List[EconomicSnapshot]
     lag_months: List[str]

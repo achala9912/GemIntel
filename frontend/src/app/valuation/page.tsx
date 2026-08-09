@@ -15,8 +15,10 @@ import {
 } from 'lucide-react';
 import FacetedFlowTracker from '@/components/FacetedFlowTracker';
 import {
+  fetchEconomicContext,
   fetchFactorOptions,
   predictPrice,
+  type EconomicContext,
   type EconomicSnapshot,
   type FactorOptions,
   type GemFactors,
@@ -36,23 +38,32 @@ type EconomicSnapshotDraft = {
   [K in keyof EconomicSnapshot]: number | '';
 };
 
-const DEFAULT_ECONOMIC_FACTORS: EconomicSnapshotDraft = {
-  ccpi: 203.4,
-  ccpi_yoy: 5.5,
-  slfr: 9.25,
-  gold_lkr: 1410706,
-  gdp_growth: 5.1,
-  exchange_rate: 333.98,
+const EMPTY_ECONOMIC_FACTORS: EconomicSnapshotDraft = {
+  ccpi: '',
+  ccpi_yoy: '',
+  slfr: '',
+  gold_lkr: '',
+  gdp_growth: '',
+  exchange_rate: '',
 };
 
 const DEFAULT_CONFIDENCE_LEVEL = 0.5;
 
-const isCompleteSnapshot = (
-  snapshot: EconomicSnapshotDraft
-): snapshot is EconomicSnapshot =>
-  Object.values(snapshot).every(
-    (value) => typeof value === 'number' && Number.isFinite(value)
-  );
+const getLocalDateString = () => {
+  const now = new Date();
+  const localTime = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
+  return localTime.toISOString().slice(0, 10);
+};
+
+const formatYearMonth = (value: string) => {
+  const [year, month] = value.split('-').map(Number);
+  if (!year || !month) return value;
+  return new Intl.DateTimeFormat('en', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(year, month - 1, 1)));
+};
 
 const formatLkr = (value: number) =>
   new Intl.NumberFormat('en-LK', { maximumFractionDigits: 0 }).format(value);
@@ -165,6 +176,7 @@ interface NumericInputProps {
   max?: number;
   unit: string;
   precision?: number;
+  readOnly?: boolean;
 }
 
 function NumericInput({
@@ -177,6 +189,7 @@ function NumericInput({
   max,
   unit,
   precision = 2,
+  readOnly = false,
 }: NumericInputProps) {
   const handleDecrement = () => {
     const currentVal = value === '' ? 0 : value;
@@ -219,8 +232,9 @@ function NumericInput({
       <div className="flex items-center gap-2">
         <button
           type="button"
+          disabled={readOnly}
           onClick={handleDecrement}
-          className="w-10 h-10 shrink-0 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 active:scale-95 transition flex items-center justify-center text-lg text-white/80 cursor-pointer"
+          className="w-10 h-10 shrink-0 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 active:scale-95 transition flex items-center justify-center text-lg text-white/80 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
         >
           −
         </button>
@@ -230,7 +244,9 @@ function NumericInput({
           min={min}
           max={max}
           value={value}
+          readOnly={readOnly}
           onChange={(e) => {
+            if (readOnly) return;
             const val = parseFloat(e.target.value);
             if (!isNaN(val)) {
               onChange(val);
@@ -239,15 +255,16 @@ function NumericInput({
             }
           }}
           onWheel={(e) => e.currentTarget.blur()}
-          className="flex-1 min-w-0 text-center bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-white focus:outline-none focus:border-violet-500 font-semibold text-sm"
+          className={`flex-1 min-w-0 text-center bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-white focus:outline-none focus:border-violet-500 font-semibold text-sm ${readOnly ? 'cursor-not-allowed opacity-80' : ''}`}
         />
         <span className="text-xs opacity-50 px-2.5 py-1.5 border border-white/10 rounded shrink-0 bg-white/5 font-semibold text-gray-300">
           {unit}
         </span>
         <button
           type="button"
+          disabled={readOnly}
           onClick={handleIncrement}
-          className="w-10 h-10 shrink-0 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 active:scale-95 transition flex items-center justify-center text-lg text-white/80 cursor-pointer"
+          className="w-10 h-10 shrink-0 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 active:scale-95 transition flex items-center justify-center text-lg text-white/80 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
         >
           +
         </button>
@@ -259,17 +276,18 @@ function NumericInput({
 interface EconomicInputsProps {
   values: EconomicSnapshotDraft;
   onChange: (field: keyof EconomicSnapshot, value: number | '') => void;
+  readOnly?: boolean;
 }
 
-function EconomicInputs({ values, onChange }: EconomicInputsProps) {
+function EconomicInputs({ values, onChange, readOnly = false }: EconomicInputsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <NumericInput label="CCPI" tooltip="The Colombo Consumer Price Index measures changes in consumer prices in Colombo." value={values.ccpi} onChange={(value) => onChange('ccpi', value)} step={0.5} min={0} max={500} unit="idx" precision={1} />
-      <NumericInput label="CCPI YoY" tooltip="The year-over-year CCPI shows the percentage change in consumer prices from the same month one year earlier." value={values.ccpi_yoy} onChange={(value) => onChange('ccpi_yoy', value)} step={0.1} min={-20} max={100} unit="%" precision={1} />
-      <NumericInput label="SLFR" tooltip="The Standing Lending Facility Rate is the overnight lending rate set by the Central Bank of Sri Lanka." value={values.slfr} onChange={(value) => onChange('slfr', value)} step={0.05} min={0} max={50} unit="%" precision={2} />
-      <NumericInput label="Gold Price" tooltip="The gold price is the prevailing market value of gold expressed in Sri Lankan rupees." value={values.gold_lkr} onChange={(value) => onChange('gold_lkr', value)} step={1000} min={0} max={5000000} unit="LKR" precision={0} />
-      <NumericInput label="GDP Growth" tooltip="GDP growth is the percentage change in the value of goods and services produced by Sri Lanka's economy." value={values.gdp_growth} onChange={(value) => onChange('gdp_growth', value)} step={0.1} min={-50} max={50} unit="%" precision={1} />
-      <NumericInput label="Exchange Rate" tooltip="The LKR/USD exchange rate is the number of Sri Lankan rupees required to purchase one US dollar." value={values.exchange_rate} onChange={(value) => onChange('exchange_rate', value)} step={0.5} min={0} max={1000} unit="LKR/USD" precision={2} />
+      <NumericInput label="CCPI" tooltip="The Colombo Consumer Price Index measures changes in consumer prices in Colombo." value={values.ccpi} onChange={(value) => onChange('ccpi', value)} step={0.5} min={0} max={500} unit="idx" precision={1} readOnly={readOnly} />
+      <NumericInput label="CCPI YoY" tooltip="The year-over-year CCPI shows the percentage change in consumer prices from the same month one year earlier." value={values.ccpi_yoy} onChange={(value) => onChange('ccpi_yoy', value)} step={0.1} min={-20} max={100} unit="%" precision={1} readOnly={readOnly} />
+      <NumericInput label="SLFR" tooltip="The Standing Lending Facility Rate is the overnight lending rate set by the Central Bank of Sri Lanka." value={values.slfr} onChange={(value) => onChange('slfr', value)} step={0.05} min={0} max={50} unit="%" precision={2} readOnly={readOnly} />
+      <NumericInput label="Average Gold Price" tooltip="The monthly average of the available daily XAU prices expressed in Sri Lankan rupees." value={values.gold_lkr} onChange={(value) => onChange('gold_lkr', value)} step={1000} min={0} max={5000000} unit="LKR" precision={0} readOnly={readOnly} />
+      <NumericInput label="GDP Growth" tooltip="GDP growth is the percentage change in the value of goods and services produced by Sri Lanka's economy." value={values.gdp_growth} onChange={(value) => onChange('gdp_growth', value)} step={0.1} min={-50} max={50} unit="%" precision={1} readOnly={readOnly} />
+      <NumericInput label="Average Exchange Rate" tooltip="The monthly average LKR/USD exchange rate is the number of Sri Lankan rupees required to purchase one US dollar." value={values.exchange_rate} onChange={(value) => onChange('exchange_rate', value)} step={0.5} min={0} max={1000} unit="LKR/USD" precision={2} readOnly={readOnly} />
     </div>
   );
 }
@@ -466,11 +484,13 @@ export default function Valuation() {
 
   // Economic Factors Form State
   const [economicFactors, setEconomicFactors] = useState<EconomicSnapshotDraft>(
-    { ...DEFAULT_ECONOMIC_FACTORS }
+    { ...EMPTY_ECONOMIC_FACTORS }
   );
-  const [valuationDate, setValuationDate] = useState(
-    () => new Date().toISOString().slice(0, 10)
-  );
+  const [valuationDate, setValuationDate] = useState(getLocalDateString);
+  const [economicContext, setEconomicContext] = useState<EconomicContext | null>(null);
+  const [economicContextLoading, setEconomicContextLoading] = useState(true);
+  const [economicContextError, setEconomicContextError] = useState<string | null>(null);
+  const [economicContextReloadKey, setEconomicContextReloadKey] = useState(0);
   const [confidenceLevel, setConfidenceLevel] = useState(DEFAULT_CONFIDENCE_LEVEL);
 
   // Click outside to close dropdowns
@@ -501,6 +521,42 @@ export default function Valuation() {
     loadOptions();
   }, []);
 
+  // Keep the displayed indicators synchronized with the backend's economic
+  // month resolution for the selected valuation date.
+  useEffect(() => {
+    if (!valuationDate) {
+      setEconomicContext(null);
+      setEconomicFactors({ ...EMPTY_ECONOMIC_FACTORS });
+      setEconomicContextError(null);
+      setEconomicContextLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    setEconomicContext(null);
+    setEconomicFactors({ ...EMPTY_ECONOMIC_FACTORS });
+    setEconomicContextError(null);
+    setEconomicContextLoading(true);
+
+    fetchEconomicContext(valuationDate, controller.signal)
+      .then((context) => {
+        setEconomicContext(context);
+        setEconomicFactors(context.current);
+      })
+      .catch((error) => {
+        if (controller.signal.aborted) return;
+        console.error('Error fetching economic context:', error);
+        setEconomicContextError(
+          error instanceof Error ? error.message : 'Failed to load economic indicators'
+        );
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setEconomicContextLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [valuationDate, economicContextReloadKey]);
+
   const handleGemFactorChange = (field: keyof typeof gemFactors, value: string | number) => {
     setGemFactors((prev) => ({ ...prev, [field]: value }));
   };
@@ -514,8 +570,12 @@ export default function Valuation() {
       toast.error('Please enter the valuation date.');
       return;
     }
-    if (!isCompleteSnapshot(economicFactors)) {
-      toast.error('Please enter all current economic indicators.');
+    if (economicContextLoading) {
+      toast.error('Economic indicators are still loading.');
+      return;
+    }
+    if (!economicContext || economicContextError) {
+      toast.error(economicContextError || 'Economic indicators are unavailable.');
       return;
     }
 
@@ -528,8 +588,7 @@ export default function Valuation() {
       };
       const data = await predictPrice({
         ...requestBase,
-        economic_source: 'latest_available',
-        economic_factors: economicFactors as EconomicSnapshot,
+        economic_source: 'historical',
       });
       setResult(data);
       setShowResult(true);
@@ -560,8 +619,8 @@ export default function Valuation() {
       natural_or_synthetic: 'Natural',
       heat_treatment: 'Not Heat Treated',
     });
-    setEconomicFactors({ ...DEFAULT_ECONOMIC_FACTORS });
-    setValuationDate(new Date().toISOString().slice(0, 10));
+    setValuationDate(getLocalDateString());
+    setEconomicContextReloadKey((value) => value + 1);
     setConfidenceLevel(DEFAULT_CONFIDENCE_LEVEL);
   };
 
@@ -649,7 +708,7 @@ export default function Valuation() {
         {/* Form / Results Column */}
         <div className="lg:col-span-4 space-y-6 sm:space-y-8" ref={formRef}>
           {!showResult ? (
-            <>
+            <fieldset disabled={predicting} className="contents">
               {/* Gem Factors */}
               <div className="glass-panel p-5 sm:p-6 space-y-5">
                 <h2 className="text-lg font-medium text-cyan-400 flex items-center gap-2">
@@ -831,31 +890,64 @@ export default function Valuation() {
                 <div className="space-y-4 border-t border-white/10 pt-5">
                   <div>
                     <h3 className="text-sm font-semibold text-white">Current indicators</h3>
-                    <p className="text-xs text-gray-500 mt-1">Use values applicable on the valuation date.</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {economicContextLoading
+                        ? 'Loading economic data for the selected date...'
+                        : economicContext
+                          ? `Loaded from ${formatYearMonth(economicContext.current_month)}.`
+                          : 'Economic data is unavailable for the selected date.'}
+                    </p>
                   </div>
-                  <EconomicInputs values={economicFactors} onChange={handleEconomicFactorChange} />
+                  <EconomicInputs
+                    values={economicFactors}
+                    onChange={handleEconomicFactorChange}
+                    readOnly
+                  />
                 </div>
 
-                <p className="text-xs text-amber-300/80 bg-amber-500/5 border border-amber-500/10 rounded-xl p-3 leading-relaxed">
-                  Verify that the current indicators match the selected valuation date before estimating a gemstone price.
-                </p>
+                {economicContextError ? (
+                  <div className="flex items-center justify-between gap-3 text-xs text-red-300/90 bg-red-500/5 border border-red-500/15 rounded-xl p-3 leading-relaxed">
+                    <p>{economicContextError}</p>
+                    <button
+                      type="button"
+                      onClick={() => setEconomicContextReloadKey((value) => value + 1)}
+                      className="shrink-0 rounded-lg border border-red-400/30 px-3 py-1.5 font-semibold hover:bg-red-500/10 transition-colors"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-amber-300/80 bg-amber-500/5 border border-amber-500/10 rounded-xl p-3 leading-relaxed">
+                    {economicContext
+                      ? economicContext.current_month !== valuationDate.slice(0, 7)
+                        ? `${formatYearMonth(economicContext.current_month)} is the latest available month for the ${formatYearMonth(valuationDate.slice(0, 7))} valuation. Lag months: ${economicContext.lag_months.map(formatYearMonth).join(', ')}.`
+                        : `Economic factors and lags were loaded automatically. Lag months: ${economicContext.lag_months.map(formatYearMonth).join(', ')}.`
+                      : 'Economic factors and their three monthly lags are loaded automatically by the backend.'}
+                  </p>
+                )}
               </div>
 
               {/* Action Button */}
               <button
                 onClick={handlePredict}
-                disabled={predicting}
+                disabled={predicting || economicContextLoading || !economicContext}
                 className="btn-primary w-full py-3.5 sm:py-4 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {predicting ? (
                   <>
                     <span className="spinner" /> Predicting...
                   </>
+                ) : economicContextLoading ? (
+                  <>
+                    <span className="spinner" /> Loading Economic Data...
+                  </>
+                ) : !economicContext ? (
+                  'Economic Data Unavailable'
                 ) : (
                   'Estimate Value'
                 )}
               </button>
-            </>
+            </fieldset>
           ) : (
             /* Results Section */
             <div className="glass-panel p-5 sm:p-6 space-y-6 animate-slide-up">

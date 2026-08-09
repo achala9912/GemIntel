@@ -34,6 +34,15 @@ export interface EconomicSnapshot {
   exchange_rate: number;
 }
 
+export interface EconomicContext {
+  source: "manual" | "historical_database" | "current_with_latest_history";
+  valuation_month: string;
+  current_month: string;
+  current: EconomicSnapshot;
+  lags: EconomicSnapshot[];
+  lag_months: string[];
+}
+
 export interface GemFactors {
   weight_ct: number;
   gem_type: string;
@@ -113,13 +122,7 @@ export interface PredictionResult {
   };
   model_predictions: Record<string, ModelPrediction>;
   explanation: LocalShapExplanation;
-  economic_context: {
-    source: "manual" | "historical_database" | "current_with_latest_history";
-    valuation_month: string;
-    current: EconomicSnapshot;
-    lags: EconomicSnapshot[];
-    lag_months: string[];
-  };
+  economic_context: EconomicContext;
 }
 
 export async function fetchFactorOptions(): Promise<FactorOptions> {
@@ -131,6 +134,27 @@ export async function fetchFactorOptions(): Promise<FactorOptions> {
 
   const data = await res.json();
   return data.factor_options;
+}
+
+export async function fetchEconomicContext(
+  valuationDate: string,
+  signal?: AbortSignal
+): Promise<EconomicContext> {
+  const query = new URLSearchParams({ valuation_date: valuationDate });
+  const res = await fetch(`${API_BASE}/api/valuation/economic-context?${query}`, {
+    cache: "no-store",
+    signal,
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => null);
+    const detail = error?.detail;
+    throw new Error(
+      typeof detail === "string" ? detail : "Failed to load economic context"
+    );
+  }
+
+  return res.json();
 }
 
 export async function predictPrice(
