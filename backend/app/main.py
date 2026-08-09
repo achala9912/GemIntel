@@ -35,10 +35,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from app.services.model_downloader import ensure_models_exist
+
 # Load Models on Startup
 @app.on_event("startup")
 async def startup_event():
     try:
+        ensure_models_exist()
         load_all_models()
     except Exception as e:
         print(f"[Error] Critical error loading models: {e}")

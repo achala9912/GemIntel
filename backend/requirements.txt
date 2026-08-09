@@ -29,3 +29,6 @@ torchvision>=0.25.0
 timm>=1.0.27
 # Identification (M02) — DINOv2 backbone
 transformers>=4.40.0
+huggingface_hub>=0.20.0
+gradio
+
