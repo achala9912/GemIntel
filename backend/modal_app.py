@@ -1,11 +1,16 @@
 import modal
 import os
+from pathlib import Path
 
-# Define Modal container image with Python 3.11 and backend dependencies
+backend_dir = Path(__file__).resolve().parent
+
+# Define Modal container image with Python 3.11, system packages, and local app/data sources
 image = (
     modal.Image.debian_slim(python_version="3.11")
     .apt_install("git", "libimage-exiftool-perl")
     .pip_install_from_requirements("requirements.txt")
+    .add_local_python_source("app")
+    .add_local_dir(backend_dir / "data", remote_path="/root/data")
 )
 
 app = modal.App("gemintel-backend")
