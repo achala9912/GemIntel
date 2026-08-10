@@ -47,7 +47,7 @@ const EMPTY_ECONOMIC_FACTORS: EconomicSnapshotDraft = {
   exchange_rate: '',
 };
 
-const DEFAULT_CONFIDENCE_LEVEL = 0.5;
+const DEFAULT_CONFIDENCE_LEVEL = 0.9;
 
 const getLocalDateString = () => {
   const now = new Date();
