@@ -52,11 +52,13 @@ export default function Home() {
   const handleStartFacetedFlow = () => {
     sessionStorage.setItem('faceted_flow_active', 'true');
     sessionStorage.setItem('faceted_flow_step', '1');
+    sessionStorage.removeItem('faceted_flow_gem_type');
     sessionStorage.removeItem('faceted_flow_image');
     sessionStorage.removeItem('faceted_flow_image_name');
     sessionStorage.removeItem('faceted_flow_auth_result');
     sessionStorage.removeItem('faceted_flow_identify_result');
     sessionStorage.removeItem('faceted_flow_carat_result');
+    sessionStorage.removeItem('faceted_flow_valuation_result');
     router.push('/authentication');
   };
 

@@ -20,12 +20,13 @@ app = modal.App("gemintel-backend")
     image=image,
     timeout=600,
     secrets=[
+        modal.Secret.from_name("gemintel-secrets"),
         modal.Secret.from_dict(
             {
                 "HF_MODEL_REPO": os.getenv("HF_MODEL_REPO", "dmCoder/gemintel-models"),
                 "VALUATION_N_JOBS": "1",
             }
-        )
+        ),
     ],
 )
 @modal.asgi_app()

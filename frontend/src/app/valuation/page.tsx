@@ -308,6 +308,155 @@ export default function Valuation() {
   const [authResult, setAuthResult] = useState<any>(null);
   const [identifyResult, setIdentifyResult] = useState<any>(null);
 
+function computeFlowGemFactors(): GemFactors {
+  const defaultFactors: GemFactors = {
+    weight_ct: 1.5,
+    gem_type: 'Blue Sapphire',
+    hue: 'Royal Blue',
+    colour_intensity: 'Vivid',
+    clarity: 'VVS',
+    shape: 'Cushion',
+    cut: 'Mixed',
+    natural_or_synthetic: 'Natural',
+    heat_treatment: 'Not Heat Treated',
+  };
+
+  if (typeof window === 'undefined') return defaultFactors;
+
+  const authStr = sessionStorage.getItem('faceted_flow_auth_result');
+  const identifyStr = sessionStorage.getItem('faceted_flow_identify_result');
+  const roughStr = sessionStorage.getItem('rough_flow_cut_result');
+
+  let idRes: any = null;
+  if (identifyStr) {
+    try { idRes = JSON.parse(identifyStr); } catch (e) { console.error(e); }
+  } else if (roughStr) {
+    try { idRes = JSON.parse(roughStr); } catch (e) { console.error(e); }
+  }
+
+  if (!idRes) {
+    const savedType = sessionStorage.getItem('faceted_flow_gem_type');
+    if (savedType) {
+      const cleanType = savedType.replace('Ceylon ', '');
+      return { ...defaultFactors, gem_type: cleanType };
+    }
+    return defaultFactors;
+  }
+
+  let mappedGemType = 'Blue Sapphire';
+  const incomingGemType = idRes.gem_type || sessionStorage.getItem('faceted_flow_gem_type');
+  if (incomingGemType === 'Blue Sapphire' || incomingGemType === 'Ceylon Blue Sapphire') mappedGemType = 'Blue Sapphire';
+  else if (incomingGemType === 'Blue Spinel' || incomingGemType === 'Ceylon Blue Spinel') mappedGemType = 'Blue Spinel';
+  else if (incomingGemType === 'Blue Topaz' || incomingGemType === 'Ceylon Blue Topaz') mappedGemType = 'Blue Topaz';
+  else if (incomingGemType) mappedGemType = String(incomingGemType).replace('Ceylon ', '');
+
+  let mappedShape = 'Cushion';
+  const rawShape = 
+    idRes.aggregate?.cut?.shape?.label ||
+    idRes.shape ||
+    idRes.cut_shape ||
+    idRes.predicted_shape ||
+    idRes.prediction?.cut;
+
+  if (rawShape && typeof rawShape === 'string') {
+    const cleanShape = rawShape.toLowerCase().trim();
+    if (cleanShape.includes('square') || cleanShape.includes('asscher')) mappedShape = 'Asscher';
+    else if (cleanShape.includes('cushion')) mappedShape = 'Cushion';
+    else if (cleanShape.includes('octagon') || cleanShape.includes('emerald') || cleanShape.includes('baguette')) mappedShape = 'Emerald';
+    else if (cleanShape.includes('heart')) mappedShape = 'Heart';
+    else if (cleanShape.includes('marquise')) mappedShape = 'Marquise';
+    else if (cleanShape.includes('oval')) mappedShape = 'Oval';
+    else if (cleanShape.includes('pear') || cleanShape.includes('teardrop')) mappedShape = 'Pear';
+    else if (cleanShape.includes('radiant') || cleanShape.includes('trillion') || cleanShape.includes('trilliant')) mappedShape = 'Radiant';
+    else if (cleanShape.includes('round') || cleanShape.includes('circle')) mappedShape = 'Round';
+  }
+
+  let mappedCut = 'Mixed';
+  const rawCut = 
+    idRes.aggregate?.cut?.cut_style?.label ||
+    idRes.cut_style ||
+    idRes.cut ||
+    idRes.predicted_cut ||
+    idRes.prediction?.cut_style;
+
+  if (rawCut && typeof rawCut === 'string') {
+    const cleanCut = rawCut.toLowerCase().trim();
+    if (cleanCut.includes('brilliant')) mappedCut = 'Brilliant';
+    else if (cleanCut.includes('step')) mappedCut = 'Step';
+    else if (cleanCut.includes('mixed')) mappedCut = 'Mixed';
+    else if (cleanCut.includes('asscher')) mappedCut = 'Asscher Cut';
+    else if (cleanCut.includes('radiant')) mappedCut = 'Radiant Cut';
+    else if (cleanCut.includes('emerald')) mappedCut = 'Emerald';
+  }
+
+  let mappedColorIntensity = 'Vivid';
+  const rawIntensity = idRes.aggregate?.color?.intensity?.label || idRes.aggregate?.color?.saturation?.label;
+  if (rawIntensity) {
+    const cleanedInt = rawIntensity.toLowerCase().trim();
+    if (cleanedInt.includes('vivid')) mappedColorIntensity = 'Vivid';
+    else if (cleanedInt.includes('intense')) mappedColorIntensity = 'Intense';
+    else if (cleanedInt.includes('deep')) mappedColorIntensity = 'Deep';
+    else if (cleanedInt.includes('dark')) mappedColorIntensity = 'Dark';
+    else if (cleanedInt.includes('light')) mappedColorIntensity = 'Light';
+    else if (cleanedInt.includes('medium')) mappedColorIntensity = 'Medium';
+  }
+
+  let mappedHue = 'Royal Blue';
+  const rawHue = idRes.aggregate?.color?.hue?.label;
+  if (rawHue) {
+    const normalizedHue = rawHue.toLowerCase().replaceAll('-', '_').replaceAll(' ', '_');
+    const hueMap: Record<string, string> = {
+      blue: 'Blue',
+      cobalt: 'Cobalt Blue', cobalt_blue: 'Cobalt Blue',
+      cornflower: 'Cornflower Blue', cornflower_blue: 'Cornflower Blue',
+      london: 'London Blue', london_blue: 'London Blue',
+      royal: 'Royal Blue', royal_blue: 'Royal Blue',
+      sky: 'Sky Blue', sky_blue: 'Sky Blue',
+      swiss: 'Swiss Blue', swiss_blue: 'Swiss Blue',
+    };
+    mappedHue = hueMap[normalizedHue] || rawHue.split(/[_-]/).map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  }
+
+  let mappedClarity = 'VVS';
+  const rawClarity = idRes.aggregate?.clarity?.grade?.label;
+  if (rawClarity) {
+    const cleanedClarity = rawClarity.toLowerCase().trim();
+    if (cleanedClarity.includes('eye') || cleanedClarity.includes('clean')) mappedClarity = 'Eye-clean';
+    else if (cleanedClarity.includes('if') || cleanedClarity.includes('flawless')) mappedClarity = 'IF';
+    else if (cleanedClarity.includes('vvs')) mappedClarity = 'VVS';
+    else if (cleanedClarity.includes('vs')) mappedClarity = 'VS';
+  }
+
+  const caratStr = sessionStorage.getItem('faceted_flow_carat_result');
+  let mappedWeight = 1.5;
+  if (caratStr) {
+    try {
+      const caratRes = JSON.parse(caratStr);
+      if (caratRes && typeof caratRes.carat === 'number' && caratRes.carat > 0) {
+        mappedWeight = +((caratRes.carat).toFixed(2));
+      }
+    } catch (err) {
+      console.error('Error parsing carat result in valuation page', err);
+    }
+  }
+
+  const authPrediction = authStr
+    ? JSON.parse(authStr)?.ensemble_result?.prediction
+    : 'Natural';
+
+  return {
+    weight_ct: mappedWeight,
+    gem_type: mappedGemType,
+    shape: mappedShape,
+    cut: mappedCut,
+    hue: mappedHue,
+    clarity: mappedClarity,
+    colour_intensity: mappedColorIntensity,
+    natural_or_synthetic: String(authPrediction).toLowerCase().includes('synthetic') ? 'Synthetic' : 'Natural',
+    heat_treatment: 'Not Heat Treated',
+  };
+}
+
   useEffect(() => {
     const active = sessionStorage.getItem('faceted_flow_active') === 'true';
     setIsFlowActive(active);
@@ -338,136 +487,13 @@ export default function Valuation() {
       }
 
       if (idRes) {
-        try {
-          setIdentifyResult(idRes);
-
-          // 1. Gem type mapping
-          let mappedGemType = 'Blue Sapphire';
-          const incomingGemType = idRes.gem_type;
-          if (incomingGemType === 'Blue Sapphire' || incomingGemType === 'Ceylon Blue Sapphire') mappedGemType = 'Blue Sapphire';
-          else if (incomingGemType === 'Blue Spinel' || incomingGemType === 'Ceylon Blue Spinel') mappedGemType = 'Blue Spinel';
-          else if (incomingGemType === 'Blue Topaz' || incomingGemType === 'Ceylon Blue Topaz') mappedGemType = 'Blue Topaz';
-          else if (incomingGemType) mappedGemType = String(incomingGemType).replace('Ceylon ', '');
-
-          // 2. Shape mapping (e.g. 'square' -> 'Asscher', 'octagon' -> 'Emerald', 'round' -> 'Round')
-          let mappedShape = 'Cushion';
-          const rawShape = 
-            idRes.aggregate?.cut?.shape?.label ||
-            idRes.shape ||
-            idRes.cut_shape ||
-            idRes.predicted_shape ||
-            idRes.prediction?.cut;
-
-          if (rawShape && typeof rawShape === 'string') {
-            const cleanShape = rawShape.toLowerCase().trim();
-            if (cleanShape.includes('square') || cleanShape.includes('asscher')) mappedShape = 'Asscher';
-            else if (cleanShape.includes('cushion')) mappedShape = 'Cushion';
-            else if (cleanShape.includes('octagon') || cleanShape.includes('emerald') || cleanShape.includes('baguette')) mappedShape = 'Emerald';
-            else if (cleanShape.includes('heart')) mappedShape = 'Heart';
-            else if (cleanShape.includes('marquise')) mappedShape = 'Marquise';
-            else if (cleanShape.includes('oval')) mappedShape = 'Oval';
-            else if (cleanShape.includes('pear') || cleanShape.includes('teardrop')) mappedShape = 'Pear';
-            else if (cleanShape.includes('radiant') || cleanShape.includes('trillion') || cleanShape.includes('trilliant')) mappedShape = 'Radiant';
-            else if (cleanShape.includes('round') || cleanShape.includes('circle')) mappedShape = 'Round';
-          }
-
-          // 3. Cut style mapping (e.g. 'brilliant cut' -> 'Brilliant', 'mixed cut' -> 'Mixed', 'step cut' -> 'Step')
-          let mappedCut = 'Mixed';
-          const rawCut = 
-            idRes.aggregate?.cut?.cut_style?.label ||
-            idRes.cut_style ||
-            idRes.cut ||
-            idRes.predicted_cut ||
-            idRes.prediction?.cut_style;
-
-          if (rawCut && typeof rawCut === 'string') {
-            const cleanCut = rawCut.toLowerCase().trim();
-            if (cleanCut.includes('brilliant')) mappedCut = 'Brilliant';
-            else if (cleanCut.includes('step')) mappedCut = 'Step';
-            else if (cleanCut.includes('mixed')) mappedCut = 'Mixed';
-            else if (cleanCut.includes('asscher')) mappedCut = 'Asscher Cut';
-            else if (cleanCut.includes('radiant')) mappedCut = 'Radiant Cut';
-            else if (cleanCut.includes('emerald')) mappedCut = 'Emerald';
-          }
-
-          // 4. Color Intensity mapping: intensity -> saturation fallback
-          let mappedColorIntensity = 'Vivid';
-          const rawIntensity = idRes.aggregate?.color?.intensity?.label || idRes.aggregate?.color?.saturation?.label;
-          if (rawIntensity) {
-            const cleanedInt = rawIntensity.toLowerCase().trim();
-            if (cleanedInt.includes('vivid')) mappedColorIntensity = 'Vivid';
-            else if (cleanedInt.includes('intense')) mappedColorIntensity = 'Intense';
-            else if (cleanedInt.includes('deep')) mappedColorIntensity = 'Deep';
-            else if (cleanedInt.includes('dark')) mappedColorIntensity = 'Dark';
-            else if (cleanedInt.includes('light')) mappedColorIntensity = 'Light';
-            else if (cleanedInt.includes('medium')) mappedColorIntensity = 'Medium';
-          }
-
-          // 5. Hue mapping
-          let mappedHue = 'Royal Blue';
-          const rawHue = idRes.aggregate?.color?.hue?.label;
-          if (rawHue) {
-            const normalizedHue = rawHue.toLowerCase().replaceAll('-', '_').replaceAll(' ', '_');
-            const hueMap: Record<string, string> = {
-              blue: 'Blue',
-              cobalt: 'Cobalt Blue', cobalt_blue: 'Cobalt Blue',
-              cornflower: 'Cornflower Blue', cornflower_blue: 'Cornflower Blue',
-              london: 'London Blue', london_blue: 'London Blue',
-              royal: 'Royal Blue', royal_blue: 'Royal Blue',
-              sky: 'Sky Blue', sky_blue: 'Sky Blue',
-              swiss: 'Swiss Blue', swiss_blue: 'Swiss Blue',
-            };
-            mappedHue = hueMap[normalizedHue] || rawHue.split(/[_-]/).map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-          }
-
-          // 6. Clarity grade mapping
-          let mappedClarity = 'VVS';
-          const rawClarity = idRes.aggregate?.clarity?.grade?.label;
-          if (rawClarity) {
-            const cleanedClarity = rawClarity.toLowerCase().trim();
-            if (cleanedClarity.includes('eye') || cleanedClarity.includes('clean')) mappedClarity = 'Eye-clean';
-            else if (cleanedClarity.includes('if') || cleanedClarity.includes('flawless')) mappedClarity = 'IF';
-            else if (cleanedClarity.includes('vvs')) mappedClarity = 'VVS';
-            else if (cleanedClarity.includes('vs')) mappedClarity = 'VS';
-          }
-
-          const caratStr = sessionStorage.getItem('faceted_flow_carat_result');
-          let mappedWeight = 1.5;
-          if (caratStr) {
-            try {
-              const caratRes = JSON.parse(caratStr);
-              if (caratRes && typeof caratRes.carat === 'number' && caratRes.carat > 0) {
-                mappedWeight = +((caratRes.carat).toFixed(2));
-              }
-            } catch (err) {
-              console.error('Error parsing carat result in valuation page', err);
-            }
-          }
-
-          const authPrediction = authStr
-            ? JSON.parse(authStr)?.ensemble_result?.prediction
-            : 'Natural';
-
-          setGemFactors((prev) => ({
-            ...prev,
-            weight_ct: mappedWeight,
-            gem_type: mappedGemType,
-            shape: mappedShape,
-            cut: mappedCut,
-            hue: mappedHue,
-            clarity: mappedClarity,
-            colour_intensity: mappedColorIntensity,
-            natural_or_synthetic:
-              String(authPrediction).toLowerCase().includes('synthetic')
-                ? 'Synthetic'
-                : 'Natural',
-          }));
-        } catch (e) {
-          console.error('Error pre-populating valuation fields from flow', e);
-        }
+        setIdentifyResult(idRes);
       }
+
+      setGemFactors(computeFlowGemFactors());
     }
   }, []);
+
 
   // Gem Factors Form State
   const [gemFactors, setGemFactors] = useState<GemFactors>({
@@ -608,17 +634,21 @@ export default function Valuation() {
     setShowResult(false);
     setResult(null);
     sessionStorage.removeItem('faceted_flow_valuation_result');
-    setGemFactors({
-      weight_ct: 1.5,
-      gem_type: 'Blue Sapphire',
-      hue: 'Royal Blue',
-      colour_intensity: 'Vivid',
-      clarity: 'VVS',
-      shape: 'Cushion',
-      cut: 'Mixed',
-      natural_or_synthetic: 'Natural',
-      heat_treatment: 'Not Heat Treated',
-    });
+    if (isFlowActive || (typeof window !== 'undefined' && sessionStorage.getItem('faceted_flow_identify_result'))) {
+      setGemFactors(computeFlowGemFactors());
+    } else {
+      setGemFactors({
+        weight_ct: 1.5,
+        gem_type: 'Blue Sapphire',
+        hue: 'Royal Blue',
+        colour_intensity: 'Vivid',
+        clarity: 'VVS',
+        shape: 'Cushion',
+        cut: 'Mixed',
+        natural_or_synthetic: 'Natural',
+        heat_treatment: 'Not Heat Treated',
+      });
+    }
     setValuationDate(getLocalDateString());
     setEconomicContextReloadKey((value) => value + 1);
     setConfidenceLevel(DEFAULT_CONFIDENCE_LEVEL);
@@ -672,6 +702,7 @@ export default function Valuation() {
   ];
 
   const handleBack = () => {
+    sessionStorage.removeItem('faceted_flow_valuation_result');
     sessionStorage.setItem('faceted_flow_step', '2');
     router.push('/identification');
   };
