@@ -390,13 +390,29 @@ export default function GemViewer3D({
   const [autoRotate, setAutoRotate] = useState(true);
   const [bloomEnabled, setBloomEnabled] = useState(true);
   const [dispersionEnabled, setDispersionEnabled] = useState(true);
+
+  // Max Yield Cut calculation
+  const cutYields = data.prediction.cut_yields || {};
+  let maxYieldCut = data.prediction.cut || "Round";
+  let maxYieldVal = -1;
+  ["Round", "Oval", "Cushion", "Emerald"].forEach((cut) => {
+    const yVal = cutYields[cut];
+    if (yVal !== undefined && yVal > maxYieldVal) {
+      maxYieldVal = yVal;
+      maxYieldCut = cut;
+    }
+  });
+  if (maxYieldVal === -1) {
+    maxYieldVal = data.prediction.yield_pct || 0;
+  }
+
   const [prevCut, setPrevCut] = useState<string | undefined>(data.prediction.cut);
-  const [selectedCut, setSelectedCut] = useState<string>(data.prediction.cut || "Oval");
+  const [selectedCut, setSelectedCut] = useState<string>(maxYieldCut);
   const [showInsight, setShowInsight] = useState<boolean>(false);
 
   if (data.prediction.cut !== prevCut) {
     setPrevCut(data.prediction.cut);
-    setSelectedCut(data.prediction.cut || "Oval");
+    setSelectedCut(maxYieldCut);
   }
 
   const preset = GEM_PRESETS[data.gem_type] || GEM_PRESETS.blue_sapphire;
@@ -808,23 +824,6 @@ export default function GemViewer3D({
     if (controlsRef.current) controlsRef.current.autoRotate = autoRotate;
   }, [autoRotate]);
 
-  // Dual-Target Cut Analytics (Industry-Grade Matching)
-  const cutYields = data.prediction.cut_yields || {};
-  const bestShapeCut = data.prediction.cut || "Round";
-  const bestShapeYield = cutYields[bestShapeCut] ?? data.prediction.yield_pct;
-
-  // Find the shape that maximizes raw weight retention
-  let maxYieldCut = bestShapeCut;
-  let maxYieldVal = -1;
-  ["Round", "Oval", "Cushion", "Emerald"].forEach((cut) => {
-    const yVal = cutYields[cut];
-    if (yVal !== undefined && yVal > maxYieldVal) {
-      maxYieldVal = yVal;
-      maxYieldCut = cut;
-    }
-  });
-
-  const isDualMatch = bestShapeCut.toLowerCase() === maxYieldCut.toLowerCase();
   const safeLength = Math.max(L, W);
   const safeWidth = Math.min(L, W);
   const lwRatio = safeWidth > 0 ? safeLength / safeWidth : 1.0;
@@ -839,7 +838,7 @@ export default function GemViewer3D({
           
           {/* Mobile/Desktop Left Section: Gem Info & Close Button */}
           <div className="flex items-center justify-between gap-2">
-            {/* 1. Left Card: Gem Info, Dimensions & Dual-Target Badges */}
+            {/* 1. Left Card: Gem Info, Dimensions & Optimal Cut Badge */}
             <div className="flex items-center gap-2.5 sm:gap-3 flex-1 min-w-0">
               <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-blue-600/20 border border-blue-400/30 flex items-center justify-center text-base sm:text-xl shadow-[0_0_12px_rgba(59,130,246,0.25)] flex-shrink-0">
                 💎
@@ -866,33 +865,12 @@ export default function GemViewer3D({
                   {L.toFixed(2)} × {W.toFixed(2)} × {D.toFixed(2)} mm
                 </div>
 
-                {/* Industry Dual-Target Badges */}
-                {isDualMatch ? (
-                  <div className="inline-flex items-center gap-1 bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md mt-1 shadow-sm">
-                    <span>★ Optimal:</span>
-                    <span className="text-white font-extrabold">{bestShapeCut}</span>
-                    <span className="text-emerald-400 font-extrabold">({bestShapeYield.toFixed(1)}%)</span>
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 mt-1">
-                    <div 
-                      title="Best Optical Symmetry & Commercial Value" 
-                      className="inline-flex items-center gap-1 bg-blue-500/15 border border-blue-400/30 text-blue-300 text-[8.5px] sm:text-[9.5px] font-bold px-1.5 py-0.5 rounded-md shadow-sm"
-                    >
-                      <span>💎 Best Value:</span>
-                      <span className="text-white font-extrabold">{bestShapeCut}</span>
-                      <span className="text-blue-300 font-extrabold">({bestShapeYield.toFixed(1)}%)</span>
-                    </div>
-                    <div 
-                      title="Maximum Raw Crystal Mass Retention" 
-                      className="inline-flex items-center gap-1 bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-[8.5px] sm:text-[9.5px] font-bold px-1.5 py-0.5 rounded-md shadow-sm"
-                    >
-                      <span>⚖️ Max Yield:</span>
-                      <span className="text-white font-extrabold">{maxYieldCut}</span>
-                      <span className="text-emerald-400 font-extrabold">({maxYieldVal.toFixed(1)}%)</span>
-                    </div>
-                  </div>
-                )}
+                {/* Optimal Cut Badge (Max Yield) */}
+                <div className="inline-flex items-center gap-1 bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md mt-1 shadow-sm">
+                  <span>⚖️ Max Yield:</span>
+                  <span className="text-white font-extrabold">{maxYieldCut}</span>
+                  <span className="text-emerald-400 font-extrabold">({maxYieldVal.toFixed(1)}%)</span>
+                </div>
               </div>
             </div>
 
@@ -917,27 +895,14 @@ export default function GemViewer3D({
           <div className="grid grid-cols-4 md:flex md:items-center gap-1.5 sm:gap-2 w-full md:w-auto pt-1 sm:pt-1">
             {["Round", "Oval", "Cushion", "Emerald"].map((cutName) => {
               const yieldVal = data.prediction.cut_yields?.[cutName];
-              const isBestShape = cutName.toLowerCase() === bestShapeCut.toLowerCase();
               const isMaxYield = cutName.toLowerCase() === maxYieldCut.toLowerCase();
               const isSelected = cutName.toLowerCase() === selectedCut?.toLowerCase();
 
-              // Badge logic
+              // Badge logic - only Max Yield cut gets the badge
               let badgeConfig: { label: string; activeClass: string; idleClass: string } | null = null;
-              if (isDualMatch && isBestShape) {
+              if (isMaxYield) {
                 badgeConfig = {
-                  label: "★ Optimal",
-                  activeClass: "bg-emerald-400 text-slate-950 ring-1 ring-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.6)]",
-                  idleClass: "bg-emerald-500/25 text-emerald-300 border border-emerald-400/40",
-                };
-              } else if (!isDualMatch && isBestShape) {
-                badgeConfig = {
-                  label: "💎 Best Value",
-                  activeClass: "bg-blue-400 text-slate-950 ring-1 ring-blue-300 shadow-[0_0_8px_rgba(96,165,250,0.6)]",
-                  idleClass: "bg-blue-500/25 text-blue-300 border border-blue-400/40",
-                };
-              } else if (!isDualMatch && isMaxYield) {
-                badgeConfig = {
-                  label: "⚖️ Max Yield",
+                  label: "MAX YIELD",
                   activeClass: "bg-emerald-400 text-slate-950 ring-1 ring-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.6)]",
                   idleClass: "bg-emerald-500/25 text-emerald-300 border border-emerald-400/40",
                 };
@@ -951,14 +916,12 @@ export default function GemViewer3D({
                   className={`relative flex flex-col items-center justify-center py-1.5 sm:py-2.5 px-1 sm:px-2 md:w-20 rounded-xl sm:rounded-2xl border transition-all cursor-pointer ${
                     isSelected
                       ? "bg-blue-600/25 border-blue-400 text-white shadow-[0_0_15px_rgba(59,130,246,0.35)] ring-1 ring-blue-400/60 scale-[1.02]"
-                      : isBestShape
-                        ? "bg-blue-950/20 border-blue-500/40 text-slate-200 hover:border-blue-400/70"
-                        : isMaxYield
-                          ? "bg-emerald-950/20 border-emerald-500/40 text-slate-200 hover:border-emerald-400/70"
-                          : "bg-white/[0.04] border-white/[0.06] hover:bg-white/[0.08] text-slate-300 hover:text-white"
+                      : isMaxYield
+                        ? "bg-emerald-950/20 border-emerald-500/40 text-slate-200 hover:border-emerald-400/70"
+                        : "bg-white/[0.04] border-white/[0.06] hover:bg-white/[0.08] text-slate-300 hover:text-white"
                   }`}
                 >
-                  {/* Distinct Target Badges */}
+                  {/* Target Badge */}
                   {badgeConfig && (
                     <span className={`absolute -top-2 px-1 sm:px-1.5 py-0.5 rounded-full text-[6.5px] sm:text-[7.5px] font-black uppercase tracking-wider shadow-sm transition-all whitespace-nowrap ${
                       isSelected ? badgeConfig.activeClass : badgeConfig.idleClass
@@ -977,11 +940,9 @@ export default function GemViewer3D({
                   <div className={`mb-0.5 sm:mb-1 transition-transform ${
                     isSelected 
                       ? "text-blue-400 scale-110" 
-                      : isBestShape 
-                        ? "text-blue-300" 
-                        : isMaxYield 
-                          ? "text-emerald-300" 
-                          : "text-slate-400"
+                      : isMaxYield 
+                        ? "text-emerald-300" 
+                        : "text-slate-400"
                   }`}>
                     {CUT_ICONS[cutName] || CUT_ICONS.Oval}
                   </div>
@@ -989,11 +950,9 @@ export default function GemViewer3D({
                   <span className={`text-[9px] sm:text-[11px] font-bold leading-tight mt-0.5 ${
                     isSelected 
                       ? "text-blue-200" 
-                      : isBestShape 
-                        ? "text-blue-300" 
-                        : isMaxYield 
-                          ? "text-emerald-400" 
-                          : "text-slate-400"
+                      : isMaxYield 
+                        ? "text-emerald-400" 
+                        : "text-slate-400"
                   }`}>
                     {yieldVal !== undefined ? `${yieldVal.toFixed(1)}%` : "—"}
                   </span>
@@ -1031,35 +990,21 @@ export default function GemViewer3D({
                   </span>
                 </div>
 
-                <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-400/25">
-                  <div className="font-bold text-blue-300 flex items-center gap-1.5 mb-1 text-[11px]">
-                    <span>💎 Best Value & Optical Match:</span>
-                    <span className="text-white font-extrabold">{bestShapeCut} ({bestShapeYield.toFixed(1)}%)</span>
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-400/25">
+                  <div className="font-bold text-emerald-300 flex items-center gap-1.5 mb-1 text-[11px]">
+                    <span>⚖️ Optimal Cut (Max Yield):</span>
+                    <span className="text-white font-extrabold">{maxYieldCut} ({maxYieldVal.toFixed(1)}%)</span>
                   </div>
                   <p className="text-slate-300 text-[10.5px] leading-relaxed">
-                    {lwRatio <= 1.15
-                      ? `The equant aspect ratio (L/W ${lwRatio.toFixed(2)}) is the gold standard for ${bestShapeCut} faceting, producing maximum brilliance, optical symmetry, and high per-carat market value.`
-                      : `The rough proportions (L/W ${lwRatio.toFixed(2)}) provide ideal face-up spread and balance for a ${bestShapeCut} cut.`}
+                    {maxYieldCut === "Cushion"
+                      ? `Cushion contours preserve corner bulk from blocky crystals, achieving the maximum raw mass yield of ${maxYieldVal.toFixed(1)}%.`
+                      : `${maxYieldCut} cut minimizes sawing and grinding waste, achieving the maximum material yield of ${maxYieldVal.toFixed(1)}%.`}
                   </p>
                 </div>
 
-                {!isDualMatch && (
-                  <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-400/25">
-                    <div className="font-bold text-emerald-300 flex items-center gap-1.5 mb-1 text-[11px]">
-                      <span>⚖️ Maximum Mass Retention:</span>
-                      <span className="text-white font-extrabold">{maxYieldCut} ({maxYieldVal.toFixed(1)}%)</span>
-                    </div>
-                    <p className="text-slate-300 text-[10.5px] leading-relaxed">
-                      {maxYieldCut === "Cushion"
-                        ? `Cushion contours preserve corner bulk from blocky crystals, saving +${(maxYieldVal - bestShapeYield).toFixed(1)}% more raw weight compared to ${bestShapeCut}.`
-                        : `${maxYieldCut} cut minimizes sawing/grinding waste (+${(maxYieldVal - bestShapeYield).toFixed(1)}% raw weight retained).`}
-                    </p>
-                  </div>
-                )}
-
                 <div className="text-[9.5px] text-slate-400 border-t border-white/5 pt-2 flex items-start gap-1.5 leading-relaxed">
                   <span className="shrink-0 mt-0.5">💡</span>
-                  <span><strong>Industry Standard:</strong> Gem cutters select <strong>{bestShapeCut}</strong> for premium per-carat pricing and brilliance, or <strong>{maxYieldCut}</strong> to maintain highest finished carat weight tiers.</span>
+                  <span><strong>Optimal Cut Standard:</strong> Lapidary model selects <strong>{maxYieldCut}</strong> as the optimal cut configuration for maximum raw weight retention.</span>
                 </div>
               </div>
             </div>
